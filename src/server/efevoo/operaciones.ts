@@ -139,14 +139,6 @@ export type Ejecutada = OperacionEfevoo & {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const COLUMNAS = `o.id, o.company_id, o.tipo, o.estado, o.ambiente, o.referencia, o.monto_centavos::text as monto_centavos,
-  o.tarjeta_id, o.tarjeta_inventario, o.terminacion, o.saldo_previo_centavos::text as saldo_previo_centavos,
-  o.id_efevoo, o.id_movimiento_efevoo, o.codigo_efevoo, o.reintento_de, o.creada_en, o.resuelta_en,
-  o.employee_id, o.nombre_tarjeta, o.motivo,
-  v.idep_cliente, t.id_efevoo as tarjeta_id_efevoo, t.terminacion as terminacion_tarjeta`;
-const DESDE = `from efevoo_operaciones o
-  left join efevoo_clientes v on v.company_id = o.company_id
-  left join efevoo_tarjetas t on t.id = o.tarjeta_id`;
 
 type Quien = { base: ContextoDeBase; actor: Actor };
 
@@ -192,8 +184,22 @@ function leerFila(valor: unknown): OperacionEfevoo & { employeeId: string | null
   };
 }
 
-async function leerOperacion(consulta: Consulta, donde: string, params: unknown[]) {
-  const r = await aplicarSentencia(consulta, `select ${COLUMNAS} ${DESDE} where ${donde}`, params);
+/** Una operación de la empresa, por su id o por la llave de intento. SQL literal: solo placeholders $n. */
+async function leerOperacion(consulta: Consulta, companyId: string, por: { id: string } | { llave: string }) {
+  const r = await aplicarSentencia(
+    consulta,
+    `select o.id, o.company_id, o.tipo, o.estado, o.ambiente, o.referencia, o.monto_centavos::text as monto_centavos,
+            o.tarjeta_id, o.tarjeta_inventario, o.terminacion, o.saldo_previo_centavos::text as saldo_previo_centavos,
+            o.id_efevoo, o.id_movimiento_efevoo, o.codigo_efevoo, o.reintento_de, o.creada_en, o.resuelta_en,
+            o.employee_id, o.nombre_tarjeta, o.motivo,
+            v.idep_cliente, t.id_efevoo as tarjeta_id_efevoo, t.terminacion as terminacion_tarjeta
+       from efevoo_operaciones o
+       left join efevoo_clientes v on v.company_id = o.company_id
+       left join efevoo_tarjetas t on t.id = o.tarjeta_id
+      where o.company_id = $1
+        and (($2::uuid is not null and o.id = $2::uuid) or ($2::uuid is null and o.llave_intento = $3::uuid))`,
+    [companyId, "id" in por ? por.id : null, "llave" in por ? por.llave : null],
+  );
   return r.rows[0] ? leerFila(r.rows[0]) : null;
 }
 
@@ -231,7 +237,7 @@ async function asentar(q: Quien, entrada: EntradaOperacion, ambiente: "sandbox" 
     throw new ErrorDeDominio("monto_invalido");
   }
   const leerPorLlave = (consulta: Consulta) =>
-    leerOperacion(consulta, "o.company_id = $1 and o.llave_intento = $2", [entrada.companyId, entrada.llave]);
+    leerOperacion(consulta, entrada.companyId, { llave: entrada.llave });
   try {
     return await conContexto(q.base, async (consulta) => {
       const id = randomUUID();
@@ -257,7 +263,7 @@ async function asentar(q: Quien, entrada: EntradaOperacion, ambiente: "sandbox" 
         mismaOperacion(previa, entrada);
         return { op: previa, nueva: false };
       }
-      const op = await leerOperacion(consulta, "o.id = $1", [id]);
+      const op = await leerOperacion(consulta, entrada.companyId, { id });
       if (!op) throw new ErrorDeDominio("base_no_disponible");
       await auditar(consulta, q.actor, {
         accion: `efevoo_${entrada.tipo}`,
@@ -296,7 +302,7 @@ async function resolver(q: Quien, op: OperacionEfevoo, estado: Exclude<EstadoOpe
   return conContexto(q.base, async (consulta) => {
     await auditar(consulta, q.actor, { accion: `efevoo_${estado}`, identificador: op.id, cambio: cambioDe(op, estado, codigoBase) });
     await aplicarSentencia(consulta, "select efevoo_resolver_operacion($1, $2, $3, $4, $5)", [op.id, estado, idEfevoo, codigoBase, idMovimiento]);
-    const fila = await leerOperacion(consulta, "o.id = $1", [op.id]);
+    const fila = await leerOperacion(consulta, op.companyId, { id: op.id });
     if (!fila) throw new ErrorDeDominio("base_no_disponible");
     return publica(fila);
   });
@@ -398,7 +404,7 @@ export async function conciliarOperacionEfevoo(
   if (!UUID.test(operacionId)) throw new ErrorDeDominio("entrada_invalida");
   const q = quien(ctx, companyId);
   const d = dependencias(deps);
-  const fila = await conContexto(q.base, (consulta) => leerOperacion(consulta, "o.id = $1 and o.company_id = $2", [operacionId, companyId]));
+  const fila = await conContexto(q.base, (consulta) => leerOperacion(consulta, companyId, { id: operacionId }));
   if (!fila) throw new ErrorDeDominio("operacion_no_encontrada");
   const op = publica(fila);
   if (op.estado === "confirmada" || op.estado === "fallida") return { resultado: "ya_resuelta", operacion: op };
@@ -540,7 +546,7 @@ export async function reintentarOperacionEfevoo(
 ): Promise<Ejecutada> {
   if (!UUID.test(operacionId)) throw new ErrorDeDominio("entrada_invalida");
   const q = quien(ctx, companyId);
-  const anterior = await conContexto(q.base, (consulta) => leerOperacion(consulta, "o.id = $1 and o.company_id = $2", [operacionId, companyId]));
+  const anterior = await conContexto(q.base, (consulta) => leerOperacion(consulta, companyId, { id: operacionId }));
   if (!anterior) throw new ErrorDeDominio("operacion_no_encontrada");
   if (anterior.estado !== "fallida") throw new ErrorDeDominio("reintento_no_valido");
   return ejecutarOperacionEfevoo(ctx, {

@@ -418,3 +418,14 @@ form + .operacion-lista {
     transition: none !important;
   }
 }
+
+/* Tarjetas (Efevoo) en la ficha del cliente: cada bloque con su subtítulo. */
+.efevoo-bloque {
+  margin-top: 28px;
+}
+.efevoo-bloque > h3 {
+  margin: 0 0 12px;
+}
+.efevoo-cancelar > summary {
+  cursor: pointer;
+}

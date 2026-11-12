@@ -71,3 +71,11 @@ Por eso O2, O3 y O4 se construyen y se prueban contra el Efevoo falso, y su vali
 - **Cómo se concilia ahora** una carga o un retiro incierto: misma referencia, importe exacto, tipo `Abono`/`Cargo` y `FechaHora` (hora de México) no anterior a la operación, con 2 minutos de margen. Con más de una coincidencia queda incierta para revisarla a mano. Efevoo repite referencias: en la 560 conviven dos `9100002` y una `1234567` de otro origen.
 - **Solo son rechazo definitivo** `validacion`, `id_cero`, 115, 122, 101, 163, 112 y 401. Cualquier otro código (901, 1, 100…) deja la operación incierta: no prueba que el dinero no se movió.
 - **Cloudflare:** el sandbox responde 403 «error code: 1010» a `urllib` de Python por su firma; con `fetch` de node funciona. Las sondas van con node.
+
+## Desfase del reloj de Efevoo (pregunta de -03, 2026-11-12)
+
+Una carga y un retiro de $0.01 sobre la tarjeta 560 del cliente 19, con efecto neto cero (excepción de Gil: saldo 500 y estado activo antes y después). Crudo en `desfase-del-reloj.json`.
+
+- `FechaHora` (hora de México) va **1 s** después de la hora en que salió la llamada. La llamada misma tarda unos 2 s, así que no hay desfase medible. La ventana de −2 min de la conciliación tiene margen de sobra.
+- Confirma E1-10 en vivo: recién hechos, los dos movimientos llegan **sin `TipoMovimientoCargoAbono`** y con el importe como **número**. El concepto sí viene («PAGO A TARJETA» y «DEVOLUCIÓN PAGO A TARJETA»), y de ahí sale el tipo.
+- Confirma las series: fundCard respondió con el id 3065 y su movimiento es 4535; unfundCard respondió con 2668 y su movimiento es 4536.
