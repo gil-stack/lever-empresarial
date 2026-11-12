@@ -159,7 +159,7 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     expect((await estadoFalso()).tarjetas.find((t) => t.id === 563)!.email).toBe("");
     await captura(page, "o3-asignacion-401");
     // PC2-2: el selector dice cuántas tarjetas tiene cada quien.
-    await expect(page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[0] })).toHaveText(`${EMPLEADOS_CEIBA[0]} · 1 tarjeta`);
+    await expect(page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[0] })).toHaveText(`${EMPLEADOS_CEIBA[0]} · 1 tarjeta vigente`);
     // Ahora la asignación pasa pero la activación cae (401): la tarjeta queda asignada sin activar.
     await simular({ metodo: "activateCard", falla: "401" });
     await llenarAsignacion(page, { empleado: EMPLEADOS_CEIBA[1], terminacion: "0168", ultimos8: "40000168" });
@@ -171,11 +171,14 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     await expect(opcionMarco).toBeDisabled();
     await expect(opcionMarco).toContainText("tiene ****0168 sin activar");
     await captura(page, "o3-asignada-sin-activar");
-    await page.getByRole("button", { name: "Retomar: activar ****0168" }).click();
+    // Una sola entrada para activarla: el «Activar» de la lista (el aviso de arriba solo lleva ahí).
+    await expect(page.getByRole("button", { name: /activar \*\*\*\*0168/i })).toHaveCount(1);
+    await page.getByRole("link", { name: "actívala en la lista de tarjetas" }).click();
+    await page.locator("li[data-tarjeta='0168']").getByRole("button", { name: "Activar ****0168" }).click();
     await page.waitForURL(/aviso=efevoo_tarjeta_activada/);
     await expect(page.locator("li[data-tarjeta='0168']")).toContainText("Activa");
-    await expect(page.getByRole("button", { name: /Retomar/ })).toHaveCount(0);
-    await expect(page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[1] })).toHaveText(`${EMPLEADOS_CEIBA[1]} · 1 tarjeta`);
+    await expect(page.getByRole("button", { name: /activar \*\*\*\*0168/i })).toHaveCount(0);
+    await expect(page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[1] })).toHaveText(`${EMPLEADOS_CEIBA[1]} · 1 tarjeta vigente`);
   });
 
   test("O4: cancelar pide la terminación escrita y es irreversible", async () => {
@@ -195,6 +198,8 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     await expect(page.locator("li[data-tarjeta='0168']")).toContainText("Cancelada");
     expect(await ops("cancelacion", "confirmada")).toBe(1);
     expect((await estadoFalso()).tarjetas.find((t) => t.id === 563)!.estado).toBe("cancelled");
+    // Con su única tarjeta cancelada, la persona queda «sin tarjeta vigente»: las canceladas no cuentan.
+    await expect(page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[1] })).toHaveText(`${EMPLEADOS_CEIBA[1]} · sin tarjeta vigente`);
     await captura(page, "o4-cancelada");
   });
 

@@ -9,9 +9,10 @@ import { cerrarConexion } from "../../src/nucleo/db.ts";
 import type { ContextoDeTenant } from "../../src/nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
-import { clienteHttpEfevoo } from "../../src/server/efevoo/cliente.ts";
+import { clienteHttpEfevoo, type ClienteEfevoo } from "../../src/server/efevoo/cliente.ts";
 import type { ConfigEfevoo } from "../../src/server/efevoo/config.ts";
 import {
+  cerrarOperacionManualEfevoo,
   conciliarOperacionEfevoo,
   ejecutarOperacionEfevoo,
   llamadaEstandar,
@@ -113,6 +114,41 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
   const altaBeta = await ejecutarOperacionEfevoo(personal, { tipo: "alta_cliente", llave: randomUUID(), companyId: beta.id },
     async (_op, efevoo) => String((await efevoo.crearCliente({ correo: correoBeta, razonSocial: RAZON })).idepCliente), deps());
   assert.deepEqual([altaBeta.estado, altaBeta.idEfevoo, altaBeta.codigoEfevoo], ["confirmada", String(previa.idepCliente), "conciliada"]);
+
+  // PC2-1b: la búsqueda por correo va del más nuevo al más viejo, primero la misma razón social, se detiene en la
+  // primera coincidencia y tiene tope (20 dentro del alta). Se cuentan los getClient.
+  const contado = (base: ClienteEfevoo) => {
+    const cuenta = { lecturas: 0 };
+    return { cuenta, cliente: { ...base, leerCliente: (id: number) => { cuenta.lecturas += 1; return base.leerCliente(id); } } as ClienteEfevoo };
+  };
+  const otro = clienteHttpEfevoo(config);
+  for (let i = 0; i < 210; i++) await otro.crearCliente({ correo: `viejo-${i}@lever.test`, razonSocial: `Cliente viejo ${i}` });
+  const gamma = await darDeAltaComoDuena(url, personal, { rfc: "GCE170101AB2", razonSocial: "Gamma Ciclo", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" },
+    { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const correoGamma = `empresa-${gamma.id.replace(/-/g, "").slice(0, 12)}@lever.test`;
+  const g = contado(clienteHttpEfevoo(config, fetch, 400));
+  falso.simular({ metodo: "createClient", falla: "timeout" });
+  const altaGamma = await ejecutarOperacionEfevoo(personal, { tipo: "alta_cliente", llave: randomUUID(), companyId: gamma.id },
+    async (_op, ef) => String((await ef.crearCliente({ correo: correoGamma, razonSocial: "Gamma Ciclo" })).idepCliente), { config, efevoo: g.cliente });
+  assert.equal(altaGamma.estado, "confirmada", "con 210 clientes más viejos, el alta nueva se encuentra en el acto");
+  assert.ok(g.cuenta.lecturas <= 20, `getClient dentro del alta: ${g.cuenta.lecturas}`);
+  // Con 25 homónimos MÁS NUEVOS que el cliente de la empresa, el tope de 20 se agota: «ambigua» (sigue incierta), nunca
+  // «no apareció»; la conciliación explícita (tope 200) sí lo encuentra.
+  const delta = await darDeAltaComoDuena(url, personal, { rfc: "DCE170101AB3", razonSocial: "Delta Ciclo", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" },
+    { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const correoDelta = `empresa-${delta.id.replace(/-/g, "").slice(0, 12)}@lever.test`;
+  const delDelta = await otro.crearCliente({ correo: correoDelta, razonSocial: "Delta Ciclo" });
+  for (let i = 0; i < 25; i++) await otro.crearCliente({ correo: `homonimo-${i}@lever.test`, razonSocial: "Delta Ciclo" });
+  const altaDelta = await ejecutarOperacionEfevoo(personal, { tipo: "alta_cliente", llave: randomUUID(), companyId: delta.id },
+    async (_op, ef) => String((await ef.crearCliente({ correo: correoDelta, razonSocial: "Delta Ciclo" })).idepCliente), deps());
+  assert.deepEqual([altaDelta.estado, altaDelta.codigoEfevoo], ["incierta", "1"], "tope agotado dentro del alta: incierta, no fallida");
+  // Pasados los 10 minutos, si la conciliación agota su tope (aquí 10, con 25 homónimos más nuevos) es «ambigua»,
+  // nunca «no apareció»: el alta sí ocurrió y un reintento solo recibiría otro «previamente registrado».
+  ejecutar(url, `set session_replication_role = replica; update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id = '${altaDelta.id}'; set session_replication_role = origin;`);
+  const agotada = await conciliarOperacionEfevoo(personal, delta.id, altaDelta.id, deps({ topeAltaConciliacion: 10 }));
+  assert.deepEqual([agotada.resultado, agotada.operacion.estado], ["ambigua", "incierta"]);
+  const conciliadaDelta = await conciliarOperacionEfevoo(personal, delta.id, altaDelta.id, deps());
+  assert.deepEqual([conciliadaDelta.resultado, conciliadaDelta.operacion.idEfevoo], ["confirmada", String(delDelta.idepCliente)]);
 
   // O2: depósito de prueba con su saldo previo anotado; doble clic deja uno.
   const efevoo = deps().efevoo!;
@@ -276,7 +312,8 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
 
   // E1-2: una carga sin respuesta (5xx, incierta) no impide cancelar la tarjeta.
   falso.simular({ metodo: "fundCard", falla: "5xx", idCard: 557 });
-  assert.deepEqual(pick(await ejecutarOperacionEfevoo(liberador, entrada({ tipo: "carga", tarjetaId: T, montoCentavos: 100 }), llamadaEstandar, deps())), ["incierta", "http_502"]);
+  const sinRespuesta = await ejecutarOperacionEfevoo(liberador, entrada({ tipo: "carga", tarjetaId: T, montoCentavos: 100 }), llamadaEstandar, deps());
+  assert.deepEqual(pick(sinRespuesta), ["incierta", "http_502"]);
 
   // O4: cancelar (administración de la empresa) deja la tarjeta cancelada con su motivo.
   const cancelada = await ejecutarOperacionEfevoo(admin, entrada({ tipo: "cancelacion", tarjetaId: T, motivo: "Robo de la tarjeta" }), llamadaEstandar, deps());
@@ -285,10 +322,19 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
     { estado: "cancelada", motivo_cancelacion: "Robo de la tarjeta" });
   assert.equal(falso.estado().tarjetas.find((t) => t.id === 557)!.estado, "cancelled");
 
+  // CM-1: el cierre manual de la carga sin respuesta (tarjeta ya cancelada) deja su evento con «resultado desconocido».
+  ejecutar(url, `set session_replication_role = replica; update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id = '${sinRespuesta.id}'; set session_replication_role = origin;`);
+  const cerrada = await cerrarOperacionManualEfevoo(personal, E, sinRespuesta.id, "La tarjeta se canceló y Efevoo ya no deja leer sus movimientos", deps());
+  assert.deepEqual([cerrada.estado, cerrada.codigoEfevoo], ["fallida", "cierre_manual"]);
+  const evento = uno<{ cambio: Record<string, unknown>; motivo: string }>(`select cambio, motivo from audit_log where accion = 'efevoo_cierre_manual' and identificador = '${sinRespuesta.id}'`)[0]!;
+  assert.equal(evento.cambio.resultado, "desconocido");
+  assert.equal("estado" in evento.cambio, false, "el evento no dice «fallida»");
+  assert.match(evento.motivo, /ya no deja leer/);
+
   // Bitácora: cada operación dejó su evento de asentar y el de resolver, sin correos ni números de tarjeta.
   const eventos = uno<{ accion: string; cambio: unknown }>("select accion, cambio from audit_log where entidad = 'efevoo_operaciones' order by ocurrido_en");
   const ops = uno<{ n: number }>("select count(*)::int as n from efevoo_operaciones")[0]!.n;
-  assert.equal(eventos.filter((e) => !["efevoo_confirmada", "efevoo_fallida", "efevoo_incierta"].includes(e.accion)).length, ops);
+  assert.equal(eventos.filter((e) => !["efevoo_confirmada", "efevoo_fallida", "efevoo_incierta", "efevoo_cierre_manual"].includes(e.accion)).length, ops);
   assert.doesNotMatch(JSON.stringify(eventos), /@|\d{13,19}/);
 }
 

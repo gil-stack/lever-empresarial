@@ -72,7 +72,7 @@ export function FormularioAsignarEfevoo({
               {e.nombre}
               {e.porActivar
                 ? ` · tiene ****${e.porActivar.terminacion} sin activar`
-                : e.tarjetas > 0 ? ` · ${e.tarjetas} tarjeta${e.tarjetas === 1 ? "" : "s"}` : " · sin tarjeta"}
+                : e.tarjetas > 0 ? ` · ${e.tarjetas} tarjeta${e.tarjetas === 1 ? "" : "s"} vigente${e.tarjetas === 1 ? "" : "s"}` : " · sin tarjeta vigente"}
             </option>
           ))}
         </select>

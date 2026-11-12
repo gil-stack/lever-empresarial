@@ -65,6 +65,13 @@ export const RECHAZOS_DEFINITIVOS: ReadonlySet<string> = new Set([
   "saldo_insuficiente", "sin_tarjeta", "tarjeta_sin_titular", "sin_vinculo", "sin_monto",
 ]);
 
+/**
+ * Cuántos clientes sin vincular se leen (un getClient cada uno, ~600 ms en el sandbox) al buscar un alta por
+ * correo: pocos dentro del alta misma, más en la conciliación que se pide a mano (PC2-1b).
+ */
+export const TOPE_ALTA_EN_EL_ACTO = 20;
+export const TOPE_ALTA_CONCILIACION = 200;
+
 /** Minutos desde que se asienta una operación antes de poder concluir que no apareció en Efevoo. */
 export const MINUTOS_PARA_NO_APARECIO = 10;
 
@@ -131,6 +138,8 @@ export type DependenciasOperacion = {
   efevoo?: ClienteEfevoo;
   auditar?: Auditar;
   ahora?: () => Date;
+  /** Cuántos clientes lee la conciliación de un alta (TOPE_ALTA_CONCILIACION); las pruebas lo bajan. */
+  topeAltaConciliacion?: number;
 };
 
 export type Ejecutada = OperacionEfevoo & {
@@ -303,7 +312,11 @@ async function resolver(
 ) {
   const codigoBase = codigoParaBase(codigo);
   return conContexto(q.base, async (consulta) => {
-    await auditar(consulta, q.actor, { accion: evento?.accion ?? `efevoo_${estado}`, identificador: op.id, motivo: evento?.motivo ?? null, cambio: cambioDe(op, estado, codigoBase) });
+    // El cierre manual no sabe qué pasó en Efevoo: su evento dice «resultado desconocido», no «fallida» (CM-1).
+    const cambio = evento?.accion === "efevoo_cierre_manual"
+      ? { tipo: op.tipo, monto_centavos: op.montoCentavos, referencia: op.referencia, terminacion: op.terminacion, resultado: "desconocido", codigo_efevoo: codigoBase }
+      : cambioDe(op, estado, codigoBase);
+    await auditar(consulta, q.actor, { accion: evento?.accion ?? `efevoo_${estado}`, identificador: op.id, motivo: evento?.motivo ?? null, cambio });
     await aplicarSentencia(consulta, "select efevoo_resolver_operacion($1, $2, $3, $4, $5)", [op.id, estado, idEfevoo, codigoBase, idMovimiento]);
     const fila = await leerOperacion(consulta, op.companyId, { id: op.id });
     if (!fila) throw new ErrorDeDominio("base_no_disponible");
@@ -381,7 +394,7 @@ export async function ejecutarOperacionEfevoo(
   if (op.tipo === "alta_cliente" && resultado.estado === "incierta") {
     try {
       const fila = await conContexto(q.base, (consulta) => leerOperacion(consulta, op.companyId, { id: op.id }));
-      const hallada = fila ? await buscarEnEfevoo(fila, d.efevoo, op.companyId, q, d.ambiente) : null;
+      const hallada = fila ? await buscarEnEfevoo(fila, d.efevoo, op.companyId, q, d.ambiente, TOPE_ALTA_EN_EL_ACTO) : null;
       if (hallada?.aparecio && hallada.idEfevoo) {
         idEfevoo = hallada.idEfevoo;
         resultado = { estado: "confirmada", codigo: "conciliada" };
@@ -427,7 +440,7 @@ export async function conciliarOperacionEfevoo(
   const op = publica(fila);
   if (op.estado === "confirmada" || op.estado === "fallida") return { resultado: "ya_resuelta", operacion: op };
 
-  const encontrada = await buscarEnEfevoo(fila, d.efevoo, companyId, q, d.ambiente);
+  const encontrada = await buscarEnEfevoo(fila, d.efevoo, companyId, q, d.ambiente, deps?.topeAltaConciliacion ?? TOPE_ALTA_CONCILIACION);
   if (encontrada.ambigua) return { resultado: "ambigua", operacion: op };
   if (encontrada.aparecio) {
     return { resultado: "confirmada", operacion: await resolver(q, op, "confirmada", encontrada.idEfevoo, "conciliada", d.auditar, encontrada.idMovimiento ?? null) };
@@ -443,6 +456,7 @@ async function buscarEnEfevoo(
   companyId: string,
   q: Quien,
   ambiente: "sandbox" | "produccion",
+  topeAlta = TOPE_ALTA_CONCILIACION,
 ): Promise<{ aparecio: boolean; idEfevoo: string | null; idMovimiento?: string | null; ambigua?: boolean }> {
   const no = { aparecio: false, idEfevoo: null };
   const ambigua = { ...no, ambigua: true };
@@ -484,19 +498,28 @@ async function buscarEnEfevoo(
     case "alta_cliente": {
       // Por CORREO (PC2-1): en Efevoo el correo es único (un segundo alta con el mismo da «Cliente previamente
       // registrado»), la razón social no. getClientList no filtra por correo: se lee cada cliente sin vincular.
-      const { correo, vinculados } = await conContexto(q.base, async (consulta) => ({
-        correo: await correoDeAltaEfevoo(consulta, companyId, ambiente),
-        vinculados: new Set((await aplicarSentencia(consulta, "select idep_cliente from efevoo_clientes", [])).rows.map((x) => Number(registro(x).idep_cliente))),
-      }));
+      // PC2-1b: del más nuevo al más viejo (el cliente recién creado tiene el idepCliente más alto), primero los
+      // de la misma razón social, y se detiene en la primera coincidencia de correo (es único). Con un tope: si se
+      // agota sin hallarlo, no se sabe → «ambigua», nunca «no apareció» (que llevaría a otro «previamente registrado»).
+      const { correo, razon, vinculados } = await conContexto(q.base, async (consulta) => {
+        const r = (await aplicarSentencia(consulta,
+          `select coalesce((select v.razon_social from kyb_versiones v where v.company_id = c.id and v.estado = 'enviada' order by v.numero desc limit 1),
+                           c.razon_social) as razon
+             from companies c where c.id = $1`, [companyId])).rows[0];
+        return {
+          correo: await correoDeAltaEfevoo(consulta, companyId, ambiente),
+          razon: r ? textoONulo(registro(r).razon)?.trim().toLowerCase() ?? null : null,
+          vinculados: new Set((await aplicarSentencia(consulta, "select idep_cliente from efevoo_clientes", [])).rows.map((x) => Number(registro(x).idep_cliente))),
+        };
+      });
       if (!correo) return no;
-      const candidatos = (await efevoo.listarClientes()).filter((c) => !vinculados.has(c.idepCliente)).slice(0, 200);
-      const iguales: number[] = [];
-      for (const c of candidatos) {
-        const detalle = await efevoo.leerCliente(c.idepCliente);
-        if (detalle.correo === correo) iguales.push(c.idepCliente);
+      const sinVincular = (await efevoo.listarClientes()).filter((c) => !vinculados.has(c.idepCliente));
+      const mismaRazon = (c: { nombre: string | null }) => razon !== null && c.nombre?.trim().toLowerCase() === razon;
+      const enOrden = [...sinVincular].sort((a, b) => Number(mismaRazon(b)) - Number(mismaRazon(a)) || b.idepCliente - a.idepCliente);
+      for (const c of enOrden.slice(0, topeAlta)) {
+        if ((await efevoo.leerCliente(c.idepCliente)).correo === correo) return { aparecio: true, idEfevoo: String(c.idepCliente) };
       }
-      if (iguales.length > 1) return ambigua;
-      return iguales.length === 1 ? { aparecio: true, idEfevoo: String(iguales[0]) } : no;
+      return enOrden.length > topeAlta ? ambigua : no;
     }
     default: {
       const id = op.tipo === "asignacion" ? op.tarjetaInventario : op.tarjetaIdEfevoo;

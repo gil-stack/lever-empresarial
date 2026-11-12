@@ -85,7 +85,7 @@ export type SeccionEfevoo = {
   errorEfevoo: string | null;
   tarjetas: TarjetaEnOperacion[];
   operaciones: OperacionEnOperacion[];
-  /** Empleados activos, con cuántas tarjetas vivas tienen y la que tengan asignada sin activar (PC2-2). */
+  /** Empleados activos, con cuántas tarjetas vigentes tienen (asignada, activa o bloqueada; no las canceladas) y la que tengan asignada sin activar (PC2-2). */
   empleados: { id: string; nombre: string; tarjetas: number; porActivar: { tarjetaId: string; terminacion: string } | null }[];
   expediente: { razonSocial: string; rfc: string; conDomicilio: boolean; representantes: number; correo: string | null } | null;
 };
