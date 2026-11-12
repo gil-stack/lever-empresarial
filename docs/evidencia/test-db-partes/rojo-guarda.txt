@@ -1,0 +1,40 @@
+▶ test:db en dos partes
+  ✖ cada prueba de Postgres está en exactamente una parte, y cada archivo del reparto existe y es de Postgres (9.219375ms)
+  ✔ las dos partes tienen pruebas (0.096875ms)
+✖ test:db en dos partes (9.700125ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 68.60075
+
+✖ failing tests:
+
+test at tests/ci/partes-postgres.test.ts:37:3
+✖ cada prueba de Postgres está en exactamente una parte, y cada archivo del reparto existe y es de Postgres (9.219375ms)
+  AssertionError [ERR_ASSERTION]: pruebas de Postgres fuera del reparto o repetidas
+  + actual - expected
+  
+  + [
+  +   'tests/esquema/deriva.test.ts'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/partes-postgres.test.ts:45:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at node:internal/test_runner/test:1887:71
+      at node:internal/per_context/primordials:504:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:478:3)
+      at node:internal/per_context/primordials:504:9
+      at Array.map (<anonymous>) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'tests/esquema/deriva.test.ts' ],
+    expected: [],
+    operator: 'deepStrictEqual',
