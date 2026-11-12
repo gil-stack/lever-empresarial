@@ -194,7 +194,7 @@ export const CATALOGO = {
   efevoo_fallida: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
   efevoo_incierta: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
   // Cerrada a mano con motivo: el resultado en Efevoo es desconocido (la tarjeta está cancelada y no se puede leer).
-  efevoo_cierre_manual: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_cierre_manual: { entidad: "efevoo_operaciones", cambio: ["tipo", "monto_centavos", "referencia", "terminacion", "resultado", "codigo_efevoo"] },
 } as const satisfies Record<string, { entidad: string; cambio: readonly string[] }>;
 
 export type AccionDeBitacora = keyof typeof CATALOGO;

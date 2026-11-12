@@ -111,14 +111,12 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
 
           <section aria-labelledby="efevoo-asignar-titulo" className="efevoo-bloque">
             <h3 id="efevoo-asignar-titulo">Asignar una tarjeta</h3>
+            {/* Una sola entrada para retomar: el «Activar» de la lista de tarjetas; aquí solo se avisa y se lleva ahí. */}
             {seccion.empleados.filter((e) => e.porActivar).map((e) => (
-              <form key={e.id} action={activarEfevooAccion} className="efevoo-retomar" data-retomar={e.porActivar!.terminacion}>
-                <input type="hidden" name="companyId" value={companyId} />
-                <input type="hidden" name="llave" value={randomUUID()} />
-                <input type="hidden" name="tarjetaId" value={e.porActivar!.tarjetaId} />
-                <p>{e.nombre} tiene la tarjeta ****{e.porActivar!.terminacion} asignada sin activar: retómala antes de asignarle otra.</p>
-                <div className="acciones"><BotonEnviar>Retomar: activar ****{e.porActivar!.terminacion}</BotonEnviar></div>
-              </form>
+              <NotaRegla key={e.id}>
+                {e.nombre} tiene la tarjeta ****{e.porActivar!.terminacion} asignada sin activar:{" "}
+                <a href={`#tarjeta-${e.porActivar!.terminacion}`}>actívala en la lista de tarjetas</a> antes de asignarle otra.
+              </NotaRegla>
             ))}
             {seccion.inventario.length === 0 ? (
               <Vacio titulo="Sin plásticos en el inventario">{seccion.errorEfevoo ? "No se pudo leer el inventario de Efevoo." : "Efevoo no tiene plásticos disponibles."}</Vacio>
@@ -143,7 +141,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
           <h3 id="efevoo-tarjetas-titulo">Tarjetas</h3>
           <ul className="operacion-lista">
             {seccion.tarjetas.map((t) => (
-              <li key={t.id} data-tarjeta={t.terminacion}>
+              <li key={t.id} id={`tarjeta-${t.terminacion}`} data-tarjeta={t.terminacion}>
                 <div className="operacion-fila">
                   <p>****{t.terminacion} · {t.nombreTarjeta}{t.empleado ? ` · ${t.empleado}` : ""}</p>
                   <Insignia tono={t.estado === "activa" ? "sello" : t.estado === "cancelada" ? "aviso" : "neutro"}>{ESTADOS_TARJETA[t.estado]}</Insignia>
