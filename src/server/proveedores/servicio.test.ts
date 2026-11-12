@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { capacidadesDe, type RolCliente } from "../../nucleo/capacidades.ts";
-import type { ContextoDeTenant } from "../../nucleo/contexto.ts";
+import type { ContextoConEmpresa, ContextoDeTenant } from "../../nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
+import { resolverContexto } from "../tenencia/resolver.ts";
 import type { AlmacenConstancia } from "./constancia.ts";
 import { darDeAltaProveedor } from "./servicio.ts";
 import type { ContextoProveedores, RepositorioProveedores } from "./tipos.ts";
@@ -15,6 +16,42 @@ const PDF = new Uint8Array(80);
 PDF.set([0x25, 0x50, 0x44, 0x46, 0x2d]);
 
 describe("alta de proveedor", () => {
+  it("la suspensión impide consultar, subir PDFs y auditar antes de cualquier escritura", async () => {
+    for (const rol of ["administrador", "liberador"] as const) {
+      const contexto = await contextoSuspendido(rol);
+      const libro = memoria();
+      const llamadas: string[] = [];
+      const deps = {
+        repositorio: {
+          ...libro,
+          async conEmpresa<T>(contexto: ContextoConEmpresa, tarea: (tx: ContextoProveedores) => Promise<T>): Promise<T> {
+            llamadas.push("repositorio");
+            return libro.conEmpresa(contexto, tarea);
+          },
+        },
+        almacen: {
+          async guardar(archivo: Parameters<AlmacenConstancia["guardar"]>[0]) { llamadas.push("guardar"); return { clave: archivo.clave }; },
+          async borrar() { llamadas.push("borrar"); },
+        },
+        async auditar() { llamadas.push("auditar"); },
+      };
+      const error = await darDeAltaProveedor(contexto, { ...entrada({}), contrato: { nombre: "contrato.pdf", bytes: PDF } }, deps)
+        .then(() => null, (error: unknown) => error);
+      assert.deepEqual(llamadas, []);
+      assert.equal(libro.altas, 0);
+      assert.ok(error instanceof ErrorDeDominio && error.codigo === "sin_permiso");
+    }
+  });
+
+  it("la suspensión rechaza el alta antes de acceder a los bytes del PDF", async () => {
+    const contexto = await contextoSuspendido("administrador");
+    const archivo = { nombre: "constancia.pdf", get bytes(): Uint8Array { throw new Error("no debe leer el PDF"); } };
+    await assert.rejects(
+      () => darDeAltaProveedor(contexto, { ...entrada({}), constancia: archivo }),
+      (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "sin_permiso",
+    );
+  });
+
   it("no guarda una CLABE con dígito malo", async () => {
     const libro = memoria();
     await assert.rejects(
@@ -67,6 +104,19 @@ describe("alta de proveedor", () => {
     );
   });
 });
+
+async function contextoSuspendido(rol: RolCliente): Promise<ContextoDeTenant> {
+  const base = ctx([rol]);
+  assert.ok(base.empresa);
+  const empresa = { ...base.empresa, estado: "suspendida", roles: [rol] };
+  const { ctx: resuelto } = await resolverContexto({
+    sesion: { id: base.sesionId, usuario: base.persona, venceEn: new Date("2026-11-14"), segundoFactor: { metodo: "totp", en: new Date("2026-11-13") } },
+    empresaPedida: EMPRESA,
+    peticionId: null,
+    superficie: "cliente",
+  }, { repositorio: { async pertenencia() { return { membresias: [empresa], personal: null }; } } });
+  return resuelto;
+}
 
 function entrada(parcial: { clabe?: string; rfc?: string }) {
   return {
@@ -124,6 +174,7 @@ function memoria(areas: Record<string, string> = {}): RepositorioProveedores & {
       estado.altas += 1;
     },
     async insertarClabe() {},
+    async vincularContrato() {},
     async nombreDeArea(areaId) {
       return areas[areaId] ?? null;
     },

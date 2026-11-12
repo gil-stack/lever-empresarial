@@ -9,7 +9,7 @@ import {
 import type { ContextoDeTenant, EmpresaDelContexto } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
-import { membresiaConRoles } from "../empresa/estado";
+import { capacidadesSegunEstado, membresiaConRoles } from "../empresa/estado";
 import type { Sesion } from "../session/tipos";
 
 export type MembresiaLeida = EmpresaDelContexto & { roles: RolCliente[] };
@@ -36,7 +36,7 @@ export type ContextoResuelto = { ctx: ContextoDeTenant; eleccion: Eleccion };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Solo una empresa activa da roles y capacidades. El resto no actúa. */
+/** Una empresa suspendida conserva sus roles, pero solo puede consultar. */
 
 export async function resolverContexto(
   entrada: {
@@ -102,7 +102,7 @@ export async function resolverContexto(
         razonSocial: m.razonSocial,
         roles: membresiaConRoles(m.estado) ? [...m.roles] : [],
       })),
-      capacidades: capacidadesDe({ rolesCliente, rolesPlataforma }),
+      capacidades: capacidadesSegunEstado(elegida?.estado, capacidadesDe({ rolesCliente, rolesPlataforma })),
     },
   };
 }

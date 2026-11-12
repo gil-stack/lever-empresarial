@@ -54,8 +54,8 @@ export async function darDeAltaProveedor(
   entrada: EntradaAltaProveedor,
   deps?: DependenciasProveedores,
 ): Promise<AltaGuardada & { mensaje: string }> {
-  const preparado = prepararEntrada(entrada);
   const conEmpresa = exigir(ctx, "cliente.proveedores.alta");
+  const preparado = prepararEntrada(entrada);
   const actor = actorDeCliente(conEmpresa);
   const listo = resolver(deps);
   const ahora = listo.ahora();
