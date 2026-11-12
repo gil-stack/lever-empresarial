@@ -22,12 +22,16 @@ marca() {
   echo "[e2e] $1 · $(( $(date +%s) - inicio )) s"
 }
 
-export E2E_PUERTO="${E2E_PUERTO:-3153}"
-export E2E_BLOB_PUERTO="${E2E_BLOB_PUERTO:-4896}"
-export E2E_EFEVOO_PUERTO="${E2E_EFEVOO_PUERTO:-4897}"
-puerto_pg=5553
-puerto_navegador=4813
-pg=ci-postgres
+# Puertos del modo ci (sin E2E_ADMIN_URL): ninguno de los laboratorios asignados (HANDOFF y relevo-2026-11-12), para
+# que una corrida local en modo ci no choque con el laboratorio de nadie. tests/ci/contenedores-ci.test.ts lo revisa.
+export E2E_PUERTO="${E2E_PUERTO:-3263}"
+export E2E_BLOB_PUERTO="${E2E_BLOB_PUERTO:-4926}"
+export E2E_EFEVOO_PUERTO="${E2E_EFEVOO_PUERTO:-4927}"
+puerto_pg=5643
+puerto_navegador=4833
+# Otro contenedor que las partes de test:db (r71-2).
+pg=ci-postgres-e2e
+export CI_POSTGRES_CONTENEDOR="$pg"
 navegador=ci-navegador
 contenedores=""
 
@@ -56,10 +60,10 @@ esperar() {
 if [ -z "${E2E_ADMIN_URL:-}" ]; then
   version=$(node -p 'require("@playwright/test/package.json").version')
   imagen="mcr.microsoft.com/playwright:v${version}-noble"
-  # Las dos imágenes se descargan mientras compila Next.
-  docker pull -q postgres:17 >/dev/null &
+  # Las dos imágenes se descargan mientras compila Next, con reintentos (el registro a veces corta con EOF).
+  sh scripts/ci/descargar-imagen.sh postgres:17 &
   descarga_pg=$!
-  docker pull -q "$imagen" >/dev/null &
+  sh scripts/ci/descargar-imagen.sh "$imagen" &
   descarga_navegador=$!
   docker rm -f "$pg" "$navegador" >/dev/null 2>&1 || true
   contenedores="$pg $navegador"

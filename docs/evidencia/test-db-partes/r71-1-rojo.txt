@@ -1,0 +1,50 @@
+▶ descarga de imágenes con reintentos
+  ✔ el script existe y los dos scripts del CI descargan con él, no con un docker pull suelto (0.548708ms)
+  ✔ dos fallas del registro y luego bien: descarga al tercer intento y registra los intentos (537.350875ms)
+  ✖ r71-1: lo permanente (manifest unknown, not found, denied, unauthorized) no se reintenta y el motivo de docker va en el mensaje (418.025833ms)
+  ✖ cinco fallas: sale con error y un mensaje que nombra la imagen (525.42625ms)
+✖ descarga de imágenes con reintentos (1481.867333ms)
+ℹ tests 4
+ℹ suites 1
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1668.474334
+
+✖ failing tests:
+
+test at tests/ci/descargar-imagen.test.ts:65:3
+✖ r71-1: lo permanente (manifest unknown, not found, denied, unauthorized) no se reintenta y el motivo de docker va en el mensaje (418.025833ms)
+  AssertionError [ERR_ASSERTION]: Error response from daemon: manifest unknown
+  
+  5 !== 1
+  
+      at <anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:75:16)
+      at conDockerFalso (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:31:5)
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:72:7)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 5,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/ci/descargar-imagen.test.ts:82:3
+✖ cinco fallas: sale con error y un mensaje que nombra la imagen (525.42625ms)
+  AssertionError [ERR_ASSERTION]: el último motivo de docker va en el mensaje
+      at <anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:88:14)
+      at conDockerFalso (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:31:5)
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:83:5)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)

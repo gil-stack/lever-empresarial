@@ -44,7 +44,7 @@ Al terminar, `global-teardown.ts` detiene el servidor y el emulador y borra la b
 Variables:
 
 - `E2E_ADMIN_URL`: Postgres administrador donde se crea y se borra la base. Puede venir sin base; entonces se usa `postgres`.
-- `E2E_PUERTO` (3153 en el script, 3109 si se llama a Playwright directo) y `E2E_BLOB_PUERTO` (4896).
+- `E2E_PUERTO` (3263 en el script, 3109 si se llama a Playwright directo) y `E2E_BLOB_PUERTO` (4926). En modo ci el script usa puertos que no son de ningún laboratorio asignado.
 - `E2E_BASE_URL`: otro origen del portal, que debe coincidir con el de las Server Actions.
 - `CHROME_PATH`: otro Chrome; sin ella se usa el Chromium de Playwright.
 - `E2E_CAPTURAS`: carpeta de las capturas de evidencia de Pagos y Personas (`test-results/…`). En CI no se toman (`E2E_SIN_CAPTURAS=1`).
@@ -53,7 +53,7 @@ Variables:
 
 `turbo.json` declara ocho tareas, de `test:e2e:1` a `test:e2e:8`, con las etiquetas `ci` y `ci:cpus:4`. Vercel CI las corre en cada push en paralelo, cada una en su propia máquina, junto con typecheck, lint, test, test:db, build y security. Cada parte corre `playwright test --shard=N/8` con su propio build, su propio Postgres y su propio `next start`, y el tope de 12 minutos se mide por parte. En CI:
 
-- Postgres corre en un contenedor `postgres:17` (puerto 5553, el mismo dentro y fuera).
+- Postgres corre en un contenedor `postgres:17` (contenedor `ci-postgres-e2e`, puerto 5643, el mismo dentro y fuera; el navegador escucha en 4833).
 - Chromium corre en la imagen oficial `mcr.microsoft.com/playwright:v<versión>-noble` con `playwright run-server` y red del anfitrión. La imagen de la tarea no trae las bibliotecas del navegador. El corredor, la siembra, el emulador y `next start` siguen en la máquina de la tarea.
 - `retries: 0`, sin video, con traza sin capturas y sin capturas de evidencia.
 - Playwright reparte las partes por grupo y por número de pruebas, no por tiempo: un spec sin `mode: "parallel"` es un solo grupo (los `describe` seriales de adentro viajan juntos), y un grupo va entero a la parte donde empieza. `operacion.spec.ts` es `parallel` solo para partirse en nueve `describe` seriales; su orden decide el reparto (lo explica el comentario de arriba del archivo). Con 210 pruebas en ocho partes quedan 26, 31, 25, 26, 29, 23, 30 y 20 (`--list --shard=N/8`). El orden sale de los tiempos de pruebas del CI, no de los locales: en el CI las de Operación tardan unas 6 veces más. Antecedentes:

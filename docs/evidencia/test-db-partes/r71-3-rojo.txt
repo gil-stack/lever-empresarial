@@ -1,0 +1,60 @@
+▶ contenedores del CI
+  ✔ test:db:1 y test:db:2 usan contenedor y puerto propios y solo borran el suyo (1657.719042ms)
+  ✔ la e2e usa otro contenedor y otro puerto que las dos partes de test:db (1534.10875ms)
+  ✖ los puertos del modo ci de la e2e no son los de ningún laboratorio asignado (HANDOFF y relevo-2026-11-12) (0.774583ms)
+✖ contenedores del CI (3193.042125ms)
+▶ descarga de imágenes con reintentos
+  ✔ el script existe y los dos scripts del CI descargan con él, no con un docker pull suelto (0.654167ms)
+  ✔ dos fallas del registro y luego bien: descarga al tercer intento y registra los intentos (547.048584ms)
+  ✔ un 5xx del registro también es pasajero: se reintenta (774.580084ms)
+  ✖ también son pasajeros el 429 (toomanyrequests) y el DNS: se reintentan (686.144042ms)
+  ✔ r71-1: lo permanente (manifest unknown, not found, denied, unauthorized) no se reintenta y el motivo de docker va en el mensaje (2280.330667ms)
+  ✔ cinco fallas: sale con error y un mensaje que nombra la imagen (463.61675ms)
+✖ descarga de imágenes con reintentos (4752.958208ms)
+ℹ tests 9
+ℹ suites 2
+ℹ pass 7
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4927.921291
+
+✖ failing tests:
+
+test at tests/ci/contenedores-ci.test.ts:59:3
+✖ los puertos del modo ci de la e2e no son los de ningún laboratorio asignado (HANDOFF y relevo-2026-11-12) (0.774583ms)
+  AssertionError [ERR_ASSERTION]: el puerto de postgres (5553) es de un laboratorio asignado
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/contenedores-ci.test.ts:72:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/ci/descargar-imagen.test.ts:73:3
+✖ también son pasajeros el 429 (toomanyrequests) y el DNS: se reintentan (686.144042ms)
+  AssertionError [ERR_ASSERTION]: Error response from daemon: toomanyrequests: You have reached your pull rate limit: [docker] postgres:17: intento 1 de 5 falló: Error response from daemon: toomanyrequests: You have reached your pull rate limit
+  No se pudo descargar la imagen postgres:17: Error response from daemon: toomanyrequests: You have reached your pull rate limit (no parece pasajero; no se reintenta).
+  
+  
+  1 !== 0
+  
+      at <anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:81:16)
+      at conDockerFalso (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:31:5)
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:79:7)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
