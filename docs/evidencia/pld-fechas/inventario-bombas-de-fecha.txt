@@ -1,0 +1,95 @@
+# Bombas de fecha: «hoy», «hace N minutos», T00:00, E2E_TODAY y la fecha UTC (toISOString().slice(0, 10), current_date)
+# Buscado en main (dd24198) en tests/, src/ y db/migrations/, y en las ramas del #63 (cobranza) y del #64 (runway).
+
+## Arregladas en este PR (main)
+- tests/pld/pld-postgres.test.ts:630, haceMinutos(N): de 00:00 a 00:0N de México caía en ayer. Usos: :870 (5 min, caso X),
+  :882 (1 min, comunicación), :941 (60 min, caso W, la que tumbaba 8 pruebas en cascada) y :1398 (2 min). Ahora
+  minutosAtrasDeHoy (tests/pld/momento-en-mexico.ts) se queda en las 00:00 de hoy. Matriz en matriz-reloj-fijo.txt.
+- tests/e2e/pld.spec.ts, ahoraParaCampo() (B5 :747, comunicación :570 y envío periódico :578): «ahora − 1 min» de
+  00:00 a 00:01 queda bajo el min del campo (dictaminadoEl T00:00 o el cierre): el navegador no envía, y enviarPost se
+  agota. Ahora es minutosAtrasDeHoy(new Date(), 1). Sonda en b5-min-del-campo.txt.
+- tests/e2e/nomina.spec.ts, aprobaciones.spec.ts y flujo-de-caja.spec.ts, hoy() = E2E_TODAY (la fecha de la siembra):
+  una corrida que cruza la medianoche de México llena fechas de ayer. Roja en nómina (el primer pago de ayer queda
+  bajo el min del campo y el envío no sale) con la siembra de ayer y del domingo; aprobaciones y flujo de caja pasan
+  con la fecha vieja, pero comparan contra lo que calcula el servidor y llevan el mismo arreglo que runway (-a5,
+  19484623): hoyEnMexico(new Date()) de src/dominio/personas al usarlo. Contraprueba en e2e-today-contraprueba.txt.
+
+## Revisadas, sin bomba
+- Regla de producción 0030:2417 (acuse_antes_del_dictamen): correcta. hoy_mexico() (0028:31) y pld_fecha_mx (0030:43)
+  usan America/Mexico_City; leerFechaHora (src/server/pld/comite.ts:483) lee el datetime-local con −06:00 fijo,
+  correcto porque México no tiene horario de verano desde 2022. modo_oficial_sin_sesiones solo fue cascada.
+- tests/pld/pld-postgres.test.ts:924, `${hoy}T00:00`: es el primer minuto de hoy, nunca anterior al dictamen de hoy.
+- tests/pld/pld-postgres.test.ts:853, :898 y :1128 y los demás «Date.now() − N» de segundo factor: comparan
+  instantes, no días.
+- tests/aislamiento/telefono.test.ts:143, baja = fecha UTC: con reloj falso a las 20:00 de México (UTC ya es mañana)
+  y a las 12:00 pasa (telefono-*.log en el scratchpad).
+- src/server/telefono/repositorio.ts:11, :20 y :31, baja_en > current_date (día de la sesión, UTC): la base no deja
+  una baja futura (0011:250 y 0017:416, día de México), así que baja_en ≤ hoy en México ≤ current_date en UTC y el
+  resultado es el mismo. Es una inconsistencia de estilo, no cambia nada visible.
+- src/components/personas/formularios-detalle.tsx:43, «hoy» en UTC para erroresDeAltaPersona: armarAlta no usa hoy
+  en esos campos (src/dominio/personas.ts:437, «void hoy»).
+- tests/e2e/operacion.spec.ts:1010, :1162 y :1441, «mañana» = ahora + 2 días en UTC: siempre futuro en México.
+- tests/e2e/pagos-proveedores.spec.ts:46, fecha(dias) en UTC: +5, +20 y +25 son futuros en cualquier hora;
+  fecha(−2) es una obligación pasada, sin mínimo.
+- tests/operacion/portal-postgres.test.ts:193, tests/personas/colaboradores-postgres.test.ts:300 y
+  tests/pld/reglas-postgres.test.ts:189: aritmética de días sobre una fecha dada, sin «ahora».
+- src/dominio/flujo/fechas.ts:31, src/dominio/pagos-proveedores.ts:53 y src/dominio/operacion/comisiones.ts:57:
+  suman días a una fecha AAAA-MM-DD en UTC, sin «ahora».
+
+## Ramas del #63 y del #64 (no son de este PR; anotadas para su dueño)
+- tests/e2e/cobranza.spec.ts:48 y tests/e2e/runway.spec.ts:38: ya usan hoyEnMexico al momento de usarla.
+- tests/cobranza/reglas-base.test.ts:189 y :224, pagado_el = current_date (UTC): ninguna regla compara pagado_el con
+  «hoy» (solo la forma del estado y su inmutabilidad), así que no explota.
+
+## scripts/ (r66-N2; recorridos de evidencia y altas por la dueña, no corren en el CI)
+grep -rnE "toISOString\(\)\.slice\(0, ?10\)|current_date|now\(\)::date|T00:00|Date\.now\(\) - |hoyEnMexico|getDate\(\)|E2E_TODAY|new Date\(\)" scripts
+- scripts/evidencia/inicio-pendientes.mjs:61 y scripts/evidencia/ola1b-consola/flujos.mjs:16, fecha(dias) en UTC: se
+  usa con +5, +6, +10, +20 y +25 (futuros a cualquier hora de México) y con −2 para una obligación pasada, sin mínimo.
+- scripts/evidencia/ola-r2-pld/preparar.ts:150 y :213 y scripts/evidencia/ola-2b/preparar.ts:102, current_date ± N
+  días en pagos de ejemplo: ninguna regla compara esas fechas con «hoy» en México.
+- scripts/evidencia/ola1b-superficies.mjs:360 (alta_en = current_date) y scripts/evidencia/ola-r-alta.mjs:1360
+  (fecha_archivo = current_date): ni alta_en ni fecha_archivo tienen una regla contra «hoy» en la base.
+- scripts/evidencia/ola-r2-pld.mjs:43 y scripts/evidencia/ola1b-consola/flujos.mjs:24: «hoy» en México al momento de
+  usarlo. Los preparar.ts y flujo-de-caja-*.ts lo calculan con hoyEnMexico(new Date()) al sembrar, en un solo paso.
+- scripts/evidencia/flujo-de-caja.mjs:86 y :96, ola-r2-pld.mjs:111 y :126 e inicio-pendientes.mjs:331: aritmética o
+  formato de una fecha dada, sin «ahora».
+- Los Date.now() − inicio (seguridad-cuentas, enumeracion-tope, ola-2b-navegacion, ola-r-alta, ola-r2-pld) miden
+  duraciones. personal-por-la-duena.ts:82 y :96 pasan el instante actual, no un día.
+Sin bombas en scripts/.
+
+## pld-postgres.test.ts cruzando la medianoche a la mitad de la suite (r66-N1, arreglada en este PR)
+- :140 calculaba `hoy` una sola vez al arrancar; sesiones y manifiestos se fechan con él, y propuestas y documentos con
+  la hora de la base. Arrancando a las 23:59:57 de México fallaban 5 de 28 (propuesta_posterior_a_la_sesion ×3 y el
+  manifiesto con hasta: hoy). Calcular `hoy` en cada uso no basta: una misma prueba registra la sesión de hoy y la
+  propuesta segundos después, y si la medianoche cae entre las dos la regla la rechaza con razón. Por eso la suite
+  espera a que pase la medianoche si faltan menos de 10 min (la suite dura de 3.7 a 14 s en local y test:db completo
+  238 s en el CI). Evidencia en cruce-de-medianoche-r66-n1.txt.
+
+## Fechas fijadas al cargar un módulo (r66-N3)
+grep de `new Date()` / `Date.now()` fuera de funciones en los apoyos que importa pld-postgres
+(tests/operacion/apoyo-alta-regulada.ts, tests/aislamiento/postgres.ts, tests/pld/momento-en-mexico.ts) y en
+tests/pld/ y tests/operacion/:
+- tests/operacion/apoyo-alta-regulada.ts:19, SESION_SOFIPO.segundoFactor.en = new Date() al importar: con la espera de
+  la medianoche de 46d5e6d (hasta 10 min), cambiarRolPersonal (vigencia del factor de 5 min) daba
+  reautenticacion_requerida en pld-postgres:1382 arrancando de 23:50 a ~23:55. Ahora `en` es un getter: «verificado
+  hace 1 s» en cada uso (1 s atrás porque factorReciente lee la hora antes que el factor y exige una edad ≥ 0). Lo
+  usan pld-postgres, reglas-postgres, alta-regulada-postgres y la siembra de la e2e. Arreglada.
+- tests/operacion/portal-postgres.test.ts:24-25, AHORA = new Date() y la sesión del personal con ese factor: misma
+  clase (solo explotaría si el archivo tardara más de 5 min). Ahora usa SESION_SOFIPO. Arreglada.
+- tests/operacion/seguridad.test.ts:11 y tests/proveedores/pagos-proveedores.test.ts:43: AHORA es una fecha fija
+  ("2026-11-0xT12:00:00Z") que se pasa como reloj; no depende de cuándo se carga.
+- tests/aislamiento/postgres.ts y tests/pld/momento-en-mexico.ts: sin fechas al cargar (en momento-en-mexico,
+  `ahora = new Date()` es un parámetro por omisión, se evalúa en cada llamada).
+- Las demás sesiones con `en: new Date()` (pld-postgres:376, :455 y :1816; alta-regulada-postgres:818 y :1046) se crean
+  dentro de la prueba, justo antes de usarse.
+El margen de la espera baja a 2 min: pld-postgres dura de 10 a 19 s en el CI (28 corridas) y 23 s en local con carga.
+
+## Fechas fijadas al cargar un módulo en todo tests/ y en los *.test.ts de src/ (r66-N4)
+Con el AST de TypeScript (docs/evidencia/pld-fechas/fondo/fechas-al-cargar.cjs.txt): cada new Date() sin argumentos,
+Date.now() o performance.now() que se evalúa fuera de toda función.
+- Antes de este PR había tres: tests/operacion/apoyo-alta-regulada.ts:19 (SESION_SOFIPO, r66-N3),
+  tests/operacion/portal-postgres.test.ts:24 (r66-N3) y src/server/proveedores/servicio-clabes.test.ts:16 (SESION del
+  cliente, vigencia de 30 min: no explotaba, la prueba dura milisegundos).
+- servicio-clabes.test.ts lleva el mismo getter que SESION_SOFIPO («verificado hace 1 s» en cada uso). Arreglada.
+- Después del arreglo, el detector da cero en tests/ (*.ts y *.mjs) y en src/**/*.test.ts. Los «hoy» de las e2e, de
+  colaboradores-postgres y los emitirConHoraReal son funciones: se evalúan en cada uso.

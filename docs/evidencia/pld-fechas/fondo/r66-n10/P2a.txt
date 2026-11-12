@@ -1,0 +1,214 @@
+  ✘   1 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (25.4s)
+  ✘   2 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (17.2s)
+  ✘   3 tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (3.0s)
+  ✘   4 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (21.4s)
+  ✘   5 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (18.6s)
+  ✘   6 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (18.1s)
+  ✘   7 tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (15.8s)
+  ✓   8 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (2.0s)
+  ✓   9 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (2.5s)
+  ✓  10 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (3.2s)
+  ✓  11 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (3.1s)
+  ✘  12 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (19.9s)
+  ✘  13 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (17.8s)
+  ✓  14 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (2.1s)
+  ✓  15 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (4.4s)
+  ✘  16 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (19.9s)
+  ✘  17 tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (4.2s)
+  ✘  18 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (39.9s)
+  ✘  19 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (19.5s)
+  ✓  20 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (4.0s)
+  ✓  21 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (2.6s)
+  ✓  22 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (4.0s)
+  ✓  23 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (4.3s)
+
+  1) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="37" height="37" data-gpu="si" data-ms="60.05" data-estado="vivo" data-cuadros="160" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="37" height="37" data-gpu="si" data-ms="60.05" data-estado="vivo" data-cuadros="161" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="37" height="37" data-gpu="si" data-ms="60.05" data-estado="vivo" data-cuadros="162" class="escena-lienzo"></canvas>
+
+  2) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="54" height="54" data-gpu="si" data-ms="62.25" data-cuadros="21" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="54" height="54" data-gpu="si" data-ms="62.15" data-cuadros="22" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="54" height="54" data-gpu="si" data-ms="62.06" data-cuadros="23" data-estado="vivo" class="escena-lienzo"></canvas>
+
+  3) tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar
+    Error: cuadros largos del fondo después de su primera pintura
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 1
+    Received:    30
+
+  4) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="65" height="65" data-gpu="si" data-ms="150.20" data-cuadros="33" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="65" height="65" data-gpu="si" data-ms="150.19" data-cuadros="34" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="65" height="65" data-gpu="si" data-ms="150.19" data-cuadros="35" data-estado="vivo" class="escena-lienzo"></canvas>
+
+  5) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › estable ─────────
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="82" height="82" data-gpu="si" data-ms="150.44" data-cuadros="16" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="82" height="82" data-gpu="si" data-ms="150.41" data-cuadros="17" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="82" height="82" data-gpu="si" data-ms="150.39" data-cuadros="18" data-estado="vivo" class="escena-lienzo"></canvas>
+
+  6) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › estable ─────────
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="41" height="41" data-gpu="si" data-ms="60.20" data-cuadros="33" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="41" height="41" data-gpu="si" data-ms="60.19" data-cuadros="34" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="41" height="41" data-gpu="si" data-ms="60.19" data-cuadros="35" data-estado="vivo" class="escena-lienzo"></canvas>
+
+  7) tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros
+    Error: pinturas hasta quedarse quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "2"
+    Received: "226"
+    Timeout:  15000ms
+    Call log:
+      - pinturas hasta quedarse quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="7" height="7" data-gpu="si" data-ms="84.13" data-cuadros="4" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "4"
+        - locator resolved to <canvas width="7" height="7" data-gpu="si" data-ms="75.38" data-cuadros="5" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "5"
+        - locator resolved to <canvas width="7" height="7" data-gpu="si" data-ms="69.53" data-cuadros="6" data-estado="vivo" class="escena-lienzo"></canvas>
+
+  8) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="82" height="82" data-gpu="si" data-ms="150.33" data-cuadros="19" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="82" height="82" data-gpu="si" data-ms="150.31" data-cuadros="20" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="82" height="82" data-gpu="si" data-ms="150.30" data-cuadros="21" data-estado="vivo" class="escena-lienzo"></canvas>
+
+  9) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="109" height="109" data-gpu="si" data-ms="154.29" data-cuadros="11" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="109" height="109" data-gpu="si" data-ms="153.94" data-cuadros="12" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="109" height="109" data-gpu="si" data-ms="153.65" data-cuadros="13" data-estado="vivo" class="escena-lienzo"></canvas>
+
+  10) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="32" height="32" data-gpu="si" data-ms="60.14" data-cuadros="60" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="32" height="32" data-gpu="si" data-ms="60.13" data-cuadros="61" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="32" height="32" data-gpu="si" data-ms="60.13" data-cuadros="62" data-estado="vivo" class="escena-lienzo"></canvas>
+
+  11) tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar
+    Error: cuadros largos del fondo después de su primera pintura
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 1
+    Received:    14
+
+  12) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="75" height="75" data-gpu="si" data-ms="150.06" data-estado="vivo" data-cuadros="158" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="75" height="75" data-gpu="si" data-ms="150.06" data-estado="vivo" data-cuadros="159" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="75" height="75" data-gpu="si" data-ms="150.06" data-estado="vivo" data-cuadros="160" class="escena-lienzo"></canvas>
+
+  13) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms
+    Error: quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "lento"
+    Received: "vivo"
+    Timeout:  15000ms
+    Call log:
+      - quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="41" height="41" data-gpu="si" data-ms="60.23" data-cuadros="39" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="41" height="41" data-gpu="si" data-ms="60.23" data-cuadros="40" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "vivo"
+        - locator resolved to <canvas width="41" height="41" data-gpu="si" data-ms="60.22" data-cuadros="41" data-estado="vivo" class="escena-lienzo"></canvas>
+  13 failed
+  10 passed (4.7m)
+[e2e] recorridos terminados con estado 1 · 23 pruebas corridas · 285 s

@@ -1,0 +1,9 @@
+# Las 3 specs del fondo (23 pruebas) × 30 vueltas, con 18 bucles de CPU (carga.sh), con las guardas de r66-N7, N8 y N9
+  690 passed (41.1m)
+salida=0 2470 s
+# Fallas: 0
+# Duración por prueba: mediana 3.5 s · p95 5.4 s · máx 8.4 s
+
+# Con el código final, S9 y el control:
+n7f-S9 (S9): estado 1 · 22 ✓ · 1 ✘ · 85 s · src: 0 cambios
+n7f-C2D (C2D): estado 0 · 23 ✓ · 0 ✘ · 85 s · src: 0 cambios

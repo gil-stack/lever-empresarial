@@ -1,0 +1,56 @@
+# pld-postgres.test.ts con Postgres 5553 y Node bajo libfaketime (los dos procesos ven la hora falsa: primera línea de cada corrida)
+# Guion: a-la-hora.sh (abajo). tsx se lanza con node directo: /usr/bin/env (SIP) borra DYLD_* y Node correría con la hora real.
+
+## main (dd24198)
+10-nov 23:59 CDMX · ℹ pass 28 · ℹ fail 0 · 
+11-nov 00:00:30 CDMX · ℹ pass 19 · ℹ fail 9 · pld-postgres.test.ts:874 pld-postgres.test.ts:941 
+11-nov 00:05 CDMX · ℹ pass 20 · ℹ fail 8 · pld-postgres.test.ts:941 
+11-nov 00:30 CDMX · ℹ pass 20 · ℹ fail 8 · pld-postgres.test.ts:941 
+11-nov 00:59 CDMX · ℹ pass 20 · ℹ fail 8 · pld-postgres.test.ts:941 
+11-nov 01:00:30 CDMX · ℹ pass 28 · ℹ fail 0 · 
+11-nov 05:59 CDMX · ℹ pass 28 · ℹ fail 0 · 
+11-nov 06:00 CDMX · ℹ pass 28 · ℹ fail 0 · 
+11-nov 12:00 CDMX · ℹ pass 28 · ℹ fail 0 · 
+11-nov 18:01 CDMX · ℹ pass 28 · ℹ fail 0 · 
+12-nov 00:20 CDMX · ℹ pass 20 · ℹ fail 8 · pld-postgres.test.ts:941 
+12-nov 12:00 CDMX · ℹ pass 28 · ℹ fail 0 · 
+
+## con el arreglo
+10-nov 23:59 CDMX · now()=2026-11-10 23:59:00.201348 · node CDMX 2026-11-10 23:59:00 · ℹ pass 28 · ℹ fail 0
+11-nov 00:00:30 CDMX · now()=2026-11-11 00:00:30.276303 · node CDMX 2026-11-11 00:00:30 · ℹ pass 28 · ℹ fail 0
+11-nov 00:05 CDMX · now()=2026-11-11 00:05:00.27029 · node CDMX 2026-11-11 00:05:00 · ℹ pass 28 · ℹ fail 0
+11-nov 00:30 CDMX · now()=2026-11-11 00:30:00.325284 · node CDMX 2026-11-11 00:30:00 · ℹ pass 28 · ℹ fail 0
+11-nov 00:59 CDMX · now()=2026-11-11 00:59:00.26961 · node CDMX 2026-11-11 00:59:00 · ℹ pass 28 · ℹ fail 0
+11-nov 01:00:30 CDMX · now()=2026-11-11 01:00:30.261232 · node CDMX 2026-11-11 01:00:30 · ℹ pass 28 · ℹ fail 0
+11-nov 05:59 CDMX · now()=2026-11-11 05:59:00.296586 · node CDMX 2026-11-11 05:59:00 · ℹ pass 28 · ℹ fail 0
+11-nov 06:00 CDMX · now()=2026-11-11 06:00:00.249092 · node CDMX 2026-11-11 06:00:00 · ℹ pass 28 · ℹ fail 0
+11-nov 12:00 CDMX · now()=2026-11-11 12:00:00.07527 · node CDMX 2026-11-11 12:00:00 · ℹ pass 28 · ℹ fail 0
+11-nov 18:01 CDMX · now()=2026-11-11 18:01:00.264896 · node CDMX 2026-11-11 18:01:00 · ℹ pass 28 · ℹ fail 0
+12-nov 00:20 CDMX · now()=2026-11-12 00:20:00.262419 · node CDMX 2026-11-12 00:20:00 · ℹ pass 28 · ℹ fail 0
+12-nov 12:00 CDMX · now()=2026-11-12 12:00:00.25405 · node CDMX 2026-11-12 12:00:00 · ℹ pass 28 · ℹ fail 0
+
+## En vivo, sin reloj falso, main a las 00:07 reales del 11-nov
+ℹ pass 20
+ℹ fail 8
+  ErrorDeDominio: acuse_antes_del_dictamen
+      at traducirPld (src/server/pld/base.ts:148:62)
+
+## a-la-hora.sh
+#!/bin/bash
+# Uso: a-la-hora.sh "<UTC YYYY-MM-DD HH:MM:SS>" <salida.log>
+# Postgres 5553 y Node con libfaketime arrancando en ese instante (el reloj avanza).
+set -u
+S=<scratchpad>
+M=<scratchpad>
+RAIZ=${RAIZ:-<raíz del repo>}
+PGB=/opt/homebrew/opt/postgresql@17/bin
+FT=(env TZ=UTC DYLD_FORCE_FLAT_NAMESPACE=1 DYLD_INSERT_LIBRARIES=/opt/homebrew/lib/faketime/libfaketime.1.dylib FAKETIME="@$1" FAKETIME_DONT_RESET=1)
+"${FT[@]}" LC_ALL=C $PGB/postgres -D $S/pg5553 -p 5553 -c unix_socket_directories='' >> $S/pg5553.log 2>&1 &
+pg=$!
+for i in $(seq 1 50); do $PGB/pg_isready -q -h 127.0.0.1 -p 5553 && break; sleep 0.2; done
+echo "postgres pid=$pg now()=$($PGB/psql -h 127.0.0.1 -p 5553 -U postgres -Atc "select now() at time zone 'America/Mexico_City'")" > "$2"
+cd "$RAIZ"
+"${FT[@]}" PATH="$M/pf/bin:$PATH" AISLAMIENTO_DATABASE_URL=postgres://postgres@127.0.0.1:5553/postgres node -e 'console.log("node CDMX", new Date().toLocaleString("sv-SE",{timeZone:"America/Mexico_City"}))' >> "$2" 2>&1
+"${FT[@]}" PATH="$M/pf/bin:$PATH" AISLAMIENTO_DATABASE_URL=postgres://postgres@127.0.0.1:5553/postgres /opt/homebrew/bin/node node_modules/tsx/dist/cli.mjs --test --test-concurrency=1 ${PRUEBAS:-tests/pld/pld-postgres.test.ts} >> "$2" 2>&1
+echo "salida=$?" >> "$2"
+kill -INT $pg; wait $pg 2>/dev/null
