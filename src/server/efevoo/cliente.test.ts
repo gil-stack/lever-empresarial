@@ -157,6 +157,26 @@ describe("Efevoo: cliente HTTP", () => {
     assert.deepEqual(m.map((x) => [x.referencia, x.centavos]), [["9100002", 1], ["9100002", 101], ["1234567", 50000]]);
   });
 
+  it("lee el tipo del movimiento real: Abono es carga y Cargo es retiro, importe sin signo en texto (lectura de -03)", async () => {
+    const f = falso([json(contrato("getTransactionsCard-560-tras-retiros"))]);
+    const m = await clienteHttpEfevoo(CONFIG, f.fetch).movimientosDeTarjeta(560, "t@lever.test");
+    const porRef = (r: string) => m.filter((x) => x.referencia === r).map((x) => [x.idMovimiento, x.tipo, x.centavos, x.concepto, x.fechaHora]);
+    assert.deepEqual(porRef("9100003"), [["4528", "cargo", 102, "DEVOLUCIÓN PAGO A TARJETA", "2026-11-11 22:37:22"]]);
+    assert.deepEqual(porRef("9100005"), [["4530", "abono", 99_999_900, "PAGO A TARJETA", "2026-11-11 22:37:28"]]);
+    assert.equal(m.find((x) => x.referencia === "9100004")?.saldoDespuesCentavos, -99_949_900);
+  });
+
+  it("unas observaciones iguales a cualquier texto no mueven el monto de lugar", async () => {
+    for (const obs of ["__monto_lever__", "\"amount\":1", "}}"]) {
+      const f = falso([json(contrato("fundCard-560"))]);
+      await clienteHttpEfevoo(CONFIG, f.fetch).cargarTarjeta(560, "t@lever.test", 1234, "9100002", obs);
+      const cuerpo = JSON.parse(f.llamadas[0]!.cuerpo) as { payload: { amount: unknown; observations: unknown } };
+      assert.equal(cuerpo.payload.amount, 12.34, obs);
+      assert.equal(cuerpo.payload.observations, obs);
+      assert.match(f.llamadas[0]!.cuerpo, /"amount":12\.34\}\}$/);
+    }
+  });
+
   it("lee los movimientos del saldo de la empresa", async () => {
     const f = falso([json(contrato("balanceMovements-19"))]);
     const m = await clienteHttpEfevoo(CONFIG, f.fetch).movimientosCliente(19, 1, 5);

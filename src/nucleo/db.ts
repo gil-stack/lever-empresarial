@@ -182,6 +182,9 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (marca.includes("auth_codigos")) return new ErrorDeDominio("respaldo_duplicado");
     if (marca.includes("auth_retos")) return new ErrorDeDominio("reto_duplicado");
     if (marca.includes("auth_entradas")) return new ErrorDeDominio("entrada_duplicada");
+    if (marca.includes("efevoo_operaciones_abierta")) return new ErrorDeDominio("operacion_en_curso");
+    if (marca.includes("efevoo_operaciones_reintento_unico")) return new ErrorDeDominio("reintento_ya_hecho");
+    if (marca.includes("efevoo_operaciones_intento")) return new ErrorDeDominio("intento_concurrente");
     if (marca.includes("suppliers_rfc")) return new ErrorDeDominio("proveedor_duplicado");
     if (marca.includes("rfc")) return new ErrorDeDominio("rfc_duplicado");
     if (marca.includes("correo")) return new ErrorDeDominio("correo_duplicado");
@@ -229,6 +232,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (CODIGOS_DE_FIRMA.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_AUTENTICACION.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_CLABE.has(mensaje)) return new ErrorDeDominio(mensaje);
+    if (CODIGOS_DE_EFEVOO.has(mensaje)) return new ErrorDeDominio(mensaje);
     const dePersonas = FRASES_DE_PERSONAS[mensaje.trim()];
     if (dePersonas) return new ErrorDeDominio(dePersonas);
     if (CODIGOS_DE_TENENCIA.has(mensaje)) return new ErrorDeDominio(mensaje);
@@ -240,6 +244,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     const deCobranza = FRASES_DE_COBRANZA[mensaje.trim()];
     if (deCobranza) return new ErrorDeDominio(deCobranza);
     if (FRASES_DE_AUDITORIA.has(mensaje)) return new ErrorDeDominio("auditoria_no_disponible");
+    if (mensaje === "auditoria_de_efevoo_ausente") return new ErrorDeDominio("auditoria_no_disponible");
   }
   if (codigo === "23514" && marca.includes("lotes_prueba_dos_firmas")) {
     return new ErrorDeDominio("misma_persona_en_las_dos_firmas");
@@ -363,6 +368,27 @@ const CODIGOS_DE_ALTA_REGULADA = new Set([
   "sin_permiso_expediente",
   "documento_no_existe",
   "cliente_de_baja",
+]);
+
+/** Reglas de Efevoo (0033). El servicio las muestra por su nombre. */
+const CODIGOS_DE_EFEVOO = new Set([
+  "intento_con_otros_datos",
+  "sin_permiso_para_efevoo",
+  "efevoo_operacion_no_valida",
+  "efevoo_operacion_inmutable",
+  "efevoo_no_se_borra",
+  "solo_empresas_reales",
+  "empresa_ya_vinculada",
+  "empresa_sin_vinculo",
+  "tarjeta_no_encontrada",
+  "tarjeta_en_otro_estado",
+  "tarjeta_en_cancelacion",
+  "tarjeta_ya_asignada",
+  "empleado_no_activo",
+  "reintento_no_valido",
+  "operacion_no_encontrada",
+  "transicion_no_valida",
+  "conciliacion_prematura",
 ]);
 
 const CODIGOS_DE_CLABE = new Set([

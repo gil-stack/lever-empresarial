@@ -60,7 +60,7 @@ export type Titular = {
   domicilio: string;
 };
 
-export type ClienteResumen = { idepCliente: number; saldoCentavos: number | null; totalTarjetas: number | null };
+export type ClienteResumen = { idepCliente: number; nombre: string | null; saldoCentavos: number | null; totalTarjetas: number | null };
 export type ClienteDetalle = { idepCliente: number; correo: string | null; estatus: number | null; saldoCentavos: number | null };
 export type MovimientoCliente = {
   id: number;
@@ -81,7 +81,21 @@ export type TarjetaEfevoo = {
   conTitular: boolean;
 };
 export type ListaDeTarjetas = { total: number; enInventario: number | null; paginaFinal: number; tarjetas: TarjetaEfevoo[] };
-export type MovimientoTarjeta = { idMovimiento: string; referencia: string | null; centavos: number | null; concepto: string; fechaHora: string };
+/**
+ * Un movimiento de getTransactionsCard. El importe llega sin signo: el signo lo
+ * da TipoMovimientoCargoAbono (Abono = carga, «PAGO A TARJETA»; Cargo = retiro,
+ * «DEVOLUCIÓN PAGO A TARJETA»). FechaHora viene en hora de México. El
+ * IDMovimiento es de otra serie que el id que responde fundCard/unfundCard.
+ */
+export type MovimientoTarjeta = {
+  idMovimiento: string;
+  referencia: string | null;
+  centavos: number | null;
+  tipo: "abono" | "cargo" | null;
+  concepto: string;
+  fechaHora: string;
+  saldoDespuesCentavos: number | null;
+};
 export type OperacionDeTarjeta = { id: number; saldoFinalCentavos: number | null };
 
 export interface ClienteEfevoo {
@@ -143,16 +157,19 @@ export function codigoDeEstado(cuerpo: unknown): string | null {
 
 // Cliente HTTP ------------------------------------------------------------------
 
-const MARCA_MONTO = "__monto_lever__";
-
 export function clienteHttpEfevoo(config: ConfigEfevoo, hacerFetch: Fetch = fetch, esperaMs = ESPERA_MS): ClienteEfevoo {
   /**
    * Una llamada. El monto, si lo hay, viaja como el número JSON exacto que
    * sale de los centavos ("12.34"), sin pasar por un flotante.
    */
   async function pedir(metodo: string, payload: Record<string, unknown>, montoCentavos?: number): Promise<unknown> {
-    let cuerpo = JSON.stringify({ method: metodo, payload: montoCentavos === undefined ? payload : { ...payload, amount: MARCA_MONTO } });
-    if (montoCentavos !== undefined) cuerpo = cuerpo.replace(`"${MARCA_MONTO}"`, centavosAPesos(montoCentavos));
+    // El monto se agrega al final del payload como el número JSON exacto ("12.34"), sin
+    // pasar por un flotante y sin marcador de texto que otro campo pudiera repetir.
+    let cuerpo = JSON.stringify({ method: metodo, payload });
+    if (montoCentavos !== undefined) {
+      if (!cuerpo.endsWith("}}")) throw new Error("cuerpo_invalido");
+      cuerpo = `${cuerpo.slice(0, -2)}${cuerpo.endsWith("{}}") ? "" : ","}"amount":${centavosAPesos(montoCentavos)}}}`;
+    }
     const corte = new AbortController();
     const reloj = setTimeout(() => corte.abort(), esperaMs);
     const inicio = Date.now();
@@ -313,7 +330,7 @@ export function clienteHttpEfevoo(config: ConfigEfevoo, hacerFetch: Fetch = fetc
         const o = objeto(c);
         const id = idPositivo(o?.idepCliente);
         if (!o || id === null) throw ilegible("getClientList");
-        return { idepCliente: id, saldoCentavos: pesosACentavos(o.balance), totalTarjetas: entero(o.totalCards) };
+        return { idepCliente: id, nombre: texto(o.name), saldoCentavos: pesosACentavos(o.balance), totalTarjetas: entero(o.totalCards) };
       });
     },
 
@@ -381,12 +398,15 @@ export function clienteHttpEfevoo(config: ConfigEfevoo, hacerFetch: Fetch = fetc
         const idMovimiento = texto(o?.IDMovimiento) ?? (entero(o?.IDMovimiento) !== null ? String(o?.IDMovimiento) : null);
         if (!o || !idMovimiento) throw ilegible("getTransactionsCard");
         const referencia = texto(o.Referencia)?.trim() ?? null;
+        const tipo = texto(o.TipoMovimientoCargoAbono)?.trim().toLowerCase();
         return {
           idMovimiento,
           referencia: referencia && REFERENCIA.test(referencia) ? referencia : null,
           centavos: pesosACentavos(o.ImporteMovimiento ?? o.Importe),
+          tipo: tipo === "abono" || tipo === "cargo" ? tipo : null,
           concepto: (texto(o.ConceptoMovimiento) ?? "").slice(0, 80),
           fechaHora: texto(o.FechaHora) ?? "",
+          saldoDespuesCentavos: pesosACentavos(o.SaldoDespuesMovimiento),
         };
       });
     },
