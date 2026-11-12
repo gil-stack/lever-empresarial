@@ -5,6 +5,7 @@ import { BotonEnviar, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } fro
 import { formatoPesos } from "@/dominio/centavos";
 import type { SeccionEfevoo } from "@/server/efevoo/operacion";
 
+import { anclaDeTarjeta } from "./ancla-efevoo";
 import { fechaHora } from "./formato";
 import { FormularioAsignarEfevoo, FormularioCancelarEfevoo, FormularioDepositoEfevoo } from "./formularios-efevoo";
 
@@ -115,7 +116,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
             {seccion.empleados.filter((e) => e.porActivar).map((e) => (
               <NotaRegla key={e.id}>
                 {e.nombre} tiene la tarjeta ****{e.porActivar!.terminacion} asignada sin activar:{" "}
-                <a href={`#tarjeta-${e.porActivar!.terminacion}`}>actívala en la lista de tarjetas</a> antes de asignarle otra.
+                <a href={`#${anclaDeTarjeta({ id: e.porActivar!.tarjetaId, terminacion: e.porActivar!.terminacion })}`}>actívala en la lista de tarjetas</a> antes de asignarle otra.
               </NotaRegla>
             ))}
             {seccion.inventario.length === 0 ? (
@@ -141,7 +142,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
           <h3 id="efevoo-tarjetas-titulo">Tarjetas</h3>
           <ul className="operacion-lista">
             {seccion.tarjetas.map((t) => (
-              <li key={t.id} id={`tarjeta-${t.terminacion}`} data-tarjeta={t.terminacion}>
+              <li key={t.id} id={anclaDeTarjeta(t)} data-tarjeta={t.terminacion}>
                 <div className="operacion-fila">
                   <p>****{t.terminacion} · {t.nombreTarjeta}{t.empleado ? ` · ${t.empleado}` : ""}</p>
                   <Insignia tono={t.estado === "activa" ? "sello" : t.estado === "cancelada" ? "aviso" : "neutro"}>{ESTADOS_TARJETA[t.estado]}</Insignia>
