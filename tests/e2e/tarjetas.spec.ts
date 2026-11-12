@@ -14,7 +14,10 @@ import { CORREOS_TARJETAS } from "./siembra-tarjetas";
  * falso con dos tarjetas activas, la de Tito y la de Tere. La prueba prepara el falso con el cliente de Efevoo de la
  * aplicación y escribe el vínculo y las tarjetas como dueña (lo que en el producto hace Operación, de E1).
  */
-test.describe.configure({ mode: "serial" });
+// «parallel» solo para que el reparto de la e2e pueda partir el archivo (con workers: 1 corren en orden, una tras
+// otra). Cada parte del CI tiene su propia base y su propio Efevoo falso: la siembra (vincular) es idempotente y la
+// primera prueba de cada parte la hace. Ninguna prueba depende de que otra haya corrido antes.
+test.describe.configure({ mode: "parallel" });
 
 const EMPRESA = () => {
   const id = process.env.E2E_TARJETAS_ID;
@@ -46,6 +49,14 @@ async function foto(page: Page, nombre: string): Promise<void> {
 }
 
 async function vincular(): Promise<Sembrado> {
+  // Ya vinculada en esta base (otra prueba de la misma parte): se reusan sus tarjetas.
+  const previas = await consultar<{ id: string; terminacion: string; correo: string }>(
+    `select t.id, t.terminacion, u.correo from efevoo_tarjetas t join employees e on e.id = t.employee_id join users u on u.id = e.user_id
+      where t.company_id = $1 order by t.creada_en`, [EMPRESA()]);
+  const de = (correo: string) => previas.find((t) => t.correo === correo);
+  const titoPrevia = de(CORREOS_TARJETAS.tito);
+  const terePrevia = de(CORREOS_TARJETAS.tere);
+  if (titoPrevia && terePrevia) return { tito: titoPrevia, tere: terePrevia };
   const leida = leerConfigEfevoo(process.env);
   if (!leida.config) throw new Error("La e2e no dejó configurado el Efevoo falso.");
   const efevoo = clienteHttpEfevoo(leida.config);

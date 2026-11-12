@@ -1,0 +1,50 @@
+import glob, json, os, sys, textwrap
+
+# Escribe los archivos del fondo desde el plan (python3 generar.py plan.json, desde la raíz del repositorio).
+# Copia de docs/evidencia/runway/reparto/generar.py.txt, con la prueba de 40 ms que ahora usa comprobarSinWebGl (#66).
+plan = json.load(open(sys.argv[1]))
+fuente = next(t for t in (open(f).read() for f in sorted(glob.glob("tests/e2e/*.spec.ts"))) if 'test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms"' in t)
+ini = fuente.index('test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms"')
+fin = fuente.index("\n});\n", ini) + 5
+cuarenta = fuente[ini:fin]
+E = {"tarea": "una tarea ajena de 800 ms", "buf": "el búfer del motor crece una vez", "lien": "el lienzo cambia de tamaño en cada cuadro", "est": "estable", "arr": "arrastrar la ventana"}
+
+
+def llamada(c):
+    if c == "cuarenta":
+        return "\n" + cuarenta
+    tipo, dpr, *esc = c.split(":")
+    if tipo == "real":
+        return f"pruebasDelFondo([{dpr}], {{ equipos: [], deVerdad: true }});"
+    if tipo == "sin":
+        return f'pruebasDelFondo([{dpr}], {{ equipos: ["sin GPU"], deVerdad: false, escenarios: ["{E[esc[0]]}"] }});'
+    if tipo == "gpu":
+        return f'pruebasDelFondo([{dpr}], {{ equipos: ["con GPU rápida"], escenarios: ["{E[esc[0]]}"] }});'
+    raise Exception(c)
+
+
+LUGAR = {
+    "abanico-del-fondo": "abanico-del-fondo.spec.ts (el primer archivo, antes de accesibilidad): una sin GPU que abre la parte 1.",
+    "animacion-del-fondo": "animacion-del-fondo.spec.ts (después de accesibilidad): dos de GPU a DPR 2 cierran la parte 1; las demás, sin GPU, abren la 2.",
+    "rueda-del-fondo": "rueda-del-fondo.spec.ts (entre roles y runway): seis de GPU cierran la parte 7.",
+    "velocidad-del-fondo": "velocidad-del-fondo.spec.ts (después de tarjetas, el último archivo): dos de GPU cierran la parte 8, la última.",
+}
+COMUN_TEXTO = "Las pruebas se definen en fondo-pruebas.ts y se reparten en ARCHIVOS, cuyo nombre los deja en distintos lugares del orden alfabético. El reparto de la e2e corta por número de pruebas, en orden, y las pruebas con GPU emulada tardan en el CI de 34 a 162 s cada una (WebGL por software): el acomodo sale del simulador del reparto con el tiempo máximo observado de cada prueba, comprobado con `playwright test --list --shard=N/8` (tests/e2e/LEEME.md), y deja cada una al final de su parte, sin pruebas normales después (cada una abre y cierra su propio navegador). Si cambia el número de pruebas antes de estos archivos, los cortes se mueven y hay que volver a acomodarlas. Cada prueba entra con su propia cookie y no comparte estado: «parallel» solo para que el reparto pueda partir el archivo (con workers: 1 corren una tras otra)."
+
+for f in ["brillo-del-fondo", "fondo", "optica-retina", "velocidad-del-fondo", "abanico-del-fondo", "animacion-del-fondo", "lienzo-del-fondo",
+          "rueda-del-fondo", "sombra-del-fondo"]:
+    p = f"tests/e2e/{f}.spec.ts"
+    if os.path.exists(p):
+        os.remove(p)
+nombres = sorted(plan)
+lista = ", ".join(nombres[:-1]) + " y " + nombres[-1]
+COMUN = "\n".join("// " + l for l in textwrap.wrap(COMUN_TEXTO.replace("ARCHIVOS", f"{len(nombres)} archivos ({lista})"), 126))
+for archivo, llamadas in plan.items():
+    usa = "cuarenta" in llamadas
+    cab = ['import { expect, test } from "@playwright/test";' if usa else 'import { test } from "@playwright/test";', "",
+           'import { comprobarSinWebGl, pruebasDelFondo } from "./fondo-pruebas";' if usa else 'import { pruebasDelFondo } from "./fondo-pruebas";']
+    if usa:
+        cab.append('import { INICIO, entrar } from "./marco-apoyo";')
+    cab += ["", "// " + LUGAR.get(archivo, f"{archivo}.spec.ts: su lugar en el orden lo da el nombre."), COMUN, 'test.describe.configure({ mode: "parallel" });', ""]
+    open(f"tests/e2e/{archivo}.spec.ts", "w").write("\n".join(cab + [llamada(c) for c in llamadas]) + "\n")
+print("escritos:", ", ".join(nombres))
