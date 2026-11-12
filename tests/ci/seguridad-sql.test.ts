@@ -277,3 +277,23 @@ test("R70-7: una acción en línea (\"use server\" como primera sentencia de una
   assert.equal(esServidor("src/app/x/page.tsx", `export default function P() { const a = 1; "use server"; return null; }`), false);
   assert.equal(esServidor("src/app/x/page.tsx", `export default function P() { return <p>use server</p>; }`), false);
 });
+
+test("R70-8: \"use server\" en cualquier lugar del prólogo de directivas, del archivo o de una función (L13 y A13)", () => {
+  // L13: una función con "use strict" y luego "use server".
+  const enLinea = `export default function Pagina() {
+    async function guardar(datos: FormData) {
+      "use strict";
+      'use server';
+      return aplicarSentencia(consulta, \`select * from t where a = '\${String(datos.get("x"))}'\`, []);
+    }
+    return <form action={guardar} />;
+  }`;
+  assert.equal(esServidor("src/app/x/page.tsx", enLinea), true);
+  // A13: el archivo con "use strict" y luego "use server", con un comentario antes.
+  const archivo = `/** acciones */\n"use strict";\n"use server";\nexport async function f(x: string) { return aplicarSentencia(consulta, \`select '\${x}'\`, []); }`;
+  assert.equal(esServidor("src/app/x/acciones-otras-cosas.tsx", archivo), true);
+  assert.equal(esServidor("src/app/x/modulo.ts", archivo), true);
+  // Después de una sentencia que no es directiva ya no es prólogo; una plantilla tampoco es directiva.
+  assert.equal(esServidor("src/app/x/modulo.ts", `"use strict";\nconst a = 1;\n"use server";`), false);
+  assert.equal(esServidor("src/app/x/modulo.ts", "`use server`;\nexport const a = 1;"), false);
+});

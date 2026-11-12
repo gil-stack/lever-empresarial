@@ -667,25 +667,34 @@ export function esServidor(ruta, texto = "") {
   if (ruta.startsWith("src/nucleo/") && ruta.endsWith(".ts")) return true;
   if (ruta.startsWith("src/app/") && ruta.endsWith("/route.ts")) return true;
   // Las acciones del servidor: `acciones.ts`, `acciones-<algo>.ts` (por ejemplo acciones-efevoo.ts) y todo
-  // archivo de src/app que empiece con "use server".
+  // archivo de src/app con "use server" en su prólogo de directivas, o en el de una de sus funciones (R70-7/8).
   if (ruta.startsWith("src/app/") && /\/acciones(-[^/]+)?\.ts$/.test(ruta)) return true;
-  if (ruta.startsWith("src/app/") && /\.tsx?$/.test(ruta) && /^\s*(\/\/[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*['"]use server['"]/.test(texto)) return true;
-  // R70-7: una acción en línea (por ejemplo dentro de un page.tsx): "use server" como primera sentencia de una función.
-  if (ruta.startsWith("src/app/") && /\.tsx?$/.test(ruta) && texto.includes("use server") && tieneAccionEnLinea(ruta, texto)) return true;
+  if (ruta.startsWith("src/app/") && /\.tsx?$/.test(ruta) && texto.includes("use server") && tieneAccionDeServidor(ruta, texto)) return true;
   return false;
 }
 
-function tieneAccionEnLinea(ruta, texto) {
+/**
+ * ¿Alguna directiva del prólogo (las sentencias iniciales que son una cadena literal, como "use strict") es
+ * "use server"? Así lo lee Next: `"use strict"; "use server";` también es una acción de servidor (R70-8).
+ */
+function prologoConUseServer(sentencias) {
+  for (const sentencia of sentencias) {
+    if (!ts.isExpressionStatement(sentencia) || !ts.isStringLiteral(sentencia.expression)) return false;
+    if (sentencia.expression.text === "use server") return true;
+  }
+  return false;
+}
+
+/** El archivo (su prólogo) o alguna de sus funciones (el prólogo de su cuerpo) es una acción de servidor. */
+function tieneAccionDeServidor(ruta, texto) {
   const fuente = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true, ruta.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  if (prologoConUseServer(fuente.statements)) return true;
   let hallada = false;
   function visitar(nodo) {
     if (hallada) return;
-    if (ts.isFunctionLike(nodo) && nodo.body && ts.isBlock(nodo.body)) {
-      const primera = nodo.body.statements[0];
-      if (primera && ts.isExpressionStatement(primera) && ts.isStringLiteral(primera.expression) && primera.expression.text === "use server") {
-        hallada = true;
-        return;
-      }
+    if (ts.isFunctionLike(nodo) && nodo.body && ts.isBlock(nodo.body) && prologoConUseServer(nodo.body.statements)) {
+      hallada = true;
+      return;
     }
     ts.forEachChild(nodo, visitar);
   }
