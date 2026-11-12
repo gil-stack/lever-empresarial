@@ -214,7 +214,12 @@ CREATE TABLE efevoo_operaciones (
   saldo_previo_centavos bigint,
   motivo text,
   reintento_de uuid REFERENCES efevoo_operaciones (id) ON DELETE RESTRICT,
+  -- El id que dio Efevoo al responder: el idepCliente del alta, el id de la tarjeta
+  -- asignada, o el id de la respuesta de fundCard/unfundCard (su propia serie).
   id_efevoo text,
+  -- El IDMovimiento de getTransactionsCard (otra serie) o el id del movimiento de
+  -- balanceMovements, cuando la operación se encontró al conciliarla.
+  id_movimiento_efevoo text,
   codigo_efevoo text,
   actor_tipo text NOT NULL,
   creada_por uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
@@ -254,10 +259,11 @@ CREATE TABLE efevoo_operaciones (
     AND (tipo = 'deposito_prueba' OR saldo_previo_centavos IS NULL)
   ),
   CONSTRAINT efevoo_operaciones_estado CHECK (
-    (estado = 'pendiente' AND resuelta_por IS NULL AND resuelta_en IS NULL AND id_efevoo IS NULL AND codigo_efevoo IS NULL)
+    (estado = 'pendiente' AND resuelta_por IS NULL AND resuelta_en IS NULL AND id_efevoo IS NULL AND id_movimiento_efevoo IS NULL AND codigo_efevoo IS NULL)
     OR (estado IN ('confirmada', 'fallida', 'incierta') AND resuelta_en IS NOT NULL)
   ),
   CONSTRAINT efevoo_operaciones_id_efevoo CHECK (id_efevoo IS NULL OR id_efevoo ~ '^[0-9]{1,18}$'),
+  CONSTRAINT efevoo_operaciones_id_movimiento CHECK (id_movimiento_efevoo IS NULL OR id_movimiento_efevoo ~ '^[1-9][0-9]{0,17}$'),
   CONSTRAINT efevoo_operaciones_codigo CHECK (codigo_efevoo IS NULL OR codigo_efevoo ~ '^[a-z0-9_]{1,32}$')
 );
 
@@ -310,7 +316,7 @@ BEGIN
   END IF;
 
   IF NEW.estado <> 'pendiente' OR NEW.resuelta_por IS NOT NULL OR NEW.resuelta_en IS NOT NULL
-     OR NEW.id_efevoo IS NOT NULL OR NEW.codigo_efevoo IS NOT NULL THEN
+     OR NEW.id_efevoo IS NOT NULL OR NEW.id_movimiento_efevoo IS NOT NULL OR NEW.codigo_efevoo IS NOT NULL THEN
     RAISE EXCEPTION 'efevoo_operacion_no_valida';
   END IF;
   IF app_usuario() IS NULL OR NEW.creada_por IS DISTINCT FROM app_usuario() THEN
@@ -451,7 +457,7 @@ FOR EACH ROW EXECUTE FUNCTION efevoo_no_se_borra();
 -- tarjeta, y activar, bloquear, desbloquear y cancelar cambian su estado. Puede
 -- resolverla el personal de administración del operador, o en la empresa quien
 -- puede asentar ese tipo. Quien llama deja el evento en la bitácora en la misma transacción.
-CREATE FUNCTION efevoo_resolver_operacion(p_id uuid, p_estado text, p_id_efevoo text, p_codigo text)
+CREATE FUNCTION efevoo_resolver_operacion(p_id uuid, p_estado text, p_id_efevoo text, p_codigo text, p_id_movimiento text DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, pg_temp
@@ -491,13 +497,24 @@ BEGIN
     RAISE EXCEPTION 'efevoo_operacion_no_valida';
   END IF;
   -- Una carga o un retiro confirmados llevan el id positivo de Efevoo: un id 0 es el falso éxito.
-  IF p_estado = 'confirmada' AND op.tipo IN ('carga', 'retiro') AND (p_id_efevoo IS NULL OR p_id_efevoo !~ '^[1-9][0-9]{0,17}$') THEN
+  IF p_estado = 'confirmada' AND op.tipo IN ('carga', 'retiro')
+     AND coalesce(p_id_efevoo, '') !~ '^[1-9][0-9]{0,17}$' AND coalesce(p_id_movimiento, '') !~ '^[1-9][0-9]{0,17}$' THEN
     RAISE EXCEPTION 'efevoo_operacion_no_valida';
+  END IF;
+  -- Una pendiente solo falla por un rechazo que diga que Efevoo no hizo nada
+  -- (los mismos del ciclo, RECHAZOS_DEFINITIVOS en src/server/efevoo/operaciones.ts)
+  -- o porque no apareció a los 10 minutos. Cualquier otro código la deja incierta.
+  IF op.estado = 'pendiente' AND p_estado = 'fallida' AND p_codigo IS DISTINCT FROM 'no_aparecio'
+     AND (p_codigo IS NULL OR NOT p_codigo = ANY (ARRAY[
+       'validacion', 'id_cero', '115', '122', '101', '163', '112', '401',
+       'saldo_insuficiente', 'sin_tarjeta', 'tarjeta_sin_titular', 'sin_vinculo', 'sin_monto'
+     ])) THEN
+    RAISE EXCEPTION 'transicion_no_valida';
   END IF;
 
   PERFORM set_config('efevoo.resolviendo', p_id::text, true);
   UPDATE efevoo_operaciones
-     SET estado = p_estado, id_efevoo = p_id_efevoo, codigo_efevoo = p_codigo,
+     SET estado = p_estado, id_efevoo = p_id_efevoo, id_movimiento_efevoo = p_id_movimiento, codigo_efevoo = p_codigo,
          resuelta_por = app_usuario(), resuelta_en = now()
    WHERE id = p_id;
   PERFORM set_config('efevoo.resolviendo', '', true);
@@ -528,8 +545,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION efevoo_resolver_operacion(uuid, text, text, text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION efevoo_resolver_operacion(uuid, text, text, text) TO plataforma_sofipo, plataforma_cliente;
+REVOKE ALL ON FUNCTION efevoo_resolver_operacion(uuid, text, text, text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION efevoo_resolver_operacion(uuid, text, text, text, text) TO plataforma_sofipo, plataforma_cliente;
 
 -- Bitácora en la misma transacción ---------------------------------------------------
 

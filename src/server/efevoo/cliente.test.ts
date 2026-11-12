@@ -166,6 +166,12 @@ describe("Efevoo: cliente HTTP", () => {
     assert.equal(m.find((x) => x.referencia === "9100004")?.saldoDespuesCentavos, -99_949_900);
   });
 
+  it("recién hecho, sin TipoMovimientoCargoAbono: el tipo sale del concepto (captura -b de -06, E1-10)", async () => {
+    const f = falso([json(contrato("getTransactionsCard-560-b"))]);
+    const m = await clienteHttpEfevoo(CONFIG, f.fetch).movimientosDeTarjeta(560, "t@lever.test");
+    assert.deepEqual(m.filter((x) => x.referencia === "9100002").map((x) => [x.idMovimiento, x.tipo, x.centavos]), [["4527", "abono", 1], ["4526", "abono", 101]]);
+  });
+
   it("unas observaciones iguales a cualquier texto no mueven el monto de lugar", async () => {
     for (const obs of ["__monto_lever__", "\"amount\":1", "}}"]) {
       const f = falso([json(contrato("fundCard-560"))]);

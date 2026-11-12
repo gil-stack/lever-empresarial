@@ -26,6 +26,25 @@ async function falla(p: Promise<unknown>): Promise<ErrorEfevoo> {
 }
 
 describe("Efevoo falso", () => {
+  it("un movimiento recién hecho llega sin TipoMovimientoCargoAbono y con el importe como número (como la captura -b)", async () => {
+    const otro = await iniciarEfevooFalso(0, undefined, { minutosSinTipo: 3 });
+    try {
+      const c = clienteHttpEfevoo({ url: `${otro.url}/v1/apiservice`, usuario: otro.usuario, llave: otro.llave, ambiente: "sandbox" });
+      const { idepCliente } = await c.crearCliente({ correo: "r@lever.test", razonSocial: "R" });
+      await c.asignarTarjeta({ producto: 16, subproducto: 19, idepCliente, ultimos8: ultimos8De("1363"), titular });
+      await c.cargarTarjeta(557, titular.correo, 101, "1000001", "x");
+      const crudo = await fetch(`${otro.url}/v1/apiservice`, { method: "POST", headers: { "X-API-USER": otro.usuario, "X-API-KEY": otro.llave },
+        body: JSON.stringify({ method: "getTransactionsCard", payload: { email: titular.correo, card: 557, descending: true, card_bin: "" } }) });
+      const t = ((await crudo.json()) as { response: { transactions: Record<string, unknown>[] } }).response.transactions[0]!;
+      assert.equal("TipoMovimientoCargoAbono" in t, false);
+      assert.equal(t.ImporteMovimiento, 1.01);
+      // El cliente saca el tipo del concepto medido.
+      assert.equal((await c.movimientosDeTarjeta(557, titular.correo))[0]!.tipo, "abono");
+    } finally {
+      await otro.cerrar();
+    }
+  });
+
   before(async () => {
     falso = await iniciarEfevooFalso(0);
     const leida = leerConfigEfevoo({ EFEVOO_URL: falso.url, EFEVOO_API_USER: falso.usuario, EFEVOO_API_KEY: falso.llave, EFEVOO_AMBIENTE: "sandbox" });
@@ -70,7 +89,8 @@ describe("Efevoo falso", () => {
     const r = await fetch(`${falso.url}/simular`, { method: "POST", body: JSON.stringify({ metodo: "movimiento", idCard: 557, concepto: "OTRO", importe: 2, tipo: "Abono" }) });
     assert.equal(r.status, 200);
     const conInyectados = await efevoo.movimientosDeTarjeta(557, titular.correo);
-    assert.deepEqual(conInyectados.slice(0, 2).map((m) => [m.concepto, m.centavos, m.tipo]), [["OTRO", 200, "abono"], ["COMPRA 4495830012349476", 150, "cargo"]]);
+    // Recién hechos llegan sin TipoMovimientoCargoAbono: con un concepto desconocido, el tipo queda nulo (no se adivina).
+    assert.deepEqual(conInyectados.slice(0, 2).map((m) => [m.concepto, m.centavos, m.tipo]), [["OTRO", 200, null], ["COMPRA 4495830012349476", 150, null]]);
     assert.equal(falso.estado().tarjetas.find((t) => t.id === 557)!.saldoCentavos, 12_300, "inyectar no toca el saldo");
 
     await efevoo.bloquearTarjeta(557, titular.correo, "block");

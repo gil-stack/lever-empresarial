@@ -50,19 +50,25 @@ type TarjetaFalsa = {
  * TipoMovimientoCargoAbono; una carga es «PAGO A TARJETA» (Abono, M09282600MXN484)
  * y un retiro «DEVOLUCIÓN PAGO A TARJETA» (Cargo, M09DT2600MXN484); el
  * IDMovimiento es de otra serie que el id que responde fundCard o unfundCard.
+ * Recién hecho (captura getTransactionsCard-560-b), el movimiento llega SIN
+ * TipoMovimientoCargoAbono y con el importe como número; el falso lo da así
+ * durante sus primeros `minutosSinTipo` (3 por omisión).
  */
 export type MovimientoFalso = {
   idMovimiento: number;
   referencia: string | null;
   centavos: number;
   tipo: "Abono" | "Cargo";
+  /** Sin TipoMovimientoCargoAbono aunque pase el tiempo (solo inyectado). */
+  sinTipo?: boolean;
   concepto: string;
   clave: string;
   fecha: Date;
   observaciones: string;
   saldoDespuesCentavos: number | null;
 };
-export type MovimientoInyectado = { idCard: number; concepto: string; importe: number; tipo: "Abono" | "Cargo"; referencia?: string; fecha?: string };
+/** `tipo` null: un movimiento sin TipoMovimientoCargoAbono aunque ya no sea reciente. */
+export type MovimientoInyectado = { idCard: number; concepto: string; importe: number; tipo: "Abono" | "Cargo" | null; referencia?: string; fecha?: string };
 
 export type EfevooFalso = {
   /** Valor de EFEVOO_URL. */
@@ -94,10 +100,11 @@ const ERROR_1 = (response: unknown = "Ha ocurrido un error") => ({ response, sta
 const ERROR_TEXTO = (code: string, message: string) => ({ status: { code, message, mensaje: message }, response: {} });
 
 function fechaRegistro(d: Date): string {
-  // Como la da balanceMovements en el sandbox: "4/1/2026 5:22:52 PM".
-  const h = d.getHours() % 12 === 0 ? 12 : d.getHours() % 12;
+  // Como la da balanceMovements en el sandbox: "4/1/2026 5:22:52 PM", en hora de México (UTC−6).
+  const m = new Date(d.getTime() - 6 * 3_600_000);
+  const h = m.getUTCHours() % 12 === 0 ? 12 : m.getUTCHours() % 12;
   const dos = (n: number) => String(n).padStart(2, "0");
-  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()} ${h}:${dos(d.getMinutes())}:${dos(d.getSeconds())} ${d.getHours() < 12 ? "AM" : "PM"}`;
+  return `${m.getUTCMonth() + 1}/${m.getUTCDate()}/${m.getUTCFullYear()} ${h}:${dos(m.getUTCMinutes())}:${dos(m.getUTCSeconds())} ${m.getUTCHours() < 12 ? "AM" : "PM"}`;
 }
 /** FechaHora de getTransactionsCard: hora de México (UTC−6, sin horario de verano desde 2022). */
 function fechaHora(d: Date): string {
@@ -116,7 +123,12 @@ function centavos(v: unknown): number | null {
   return m[1] ? -c : c;
 }
 
-export async function iniciarEfevooFalso(puerto = 0, credenciales = { usuario: "efevoo-falso", llave: "llave-del-efevoo-falso" }): Promise<EfevooFalso> {
+export async function iniciarEfevooFalso(
+  puerto = 0,
+  credenciales = { usuario: "efevoo-falso", llave: "llave-del-efevoo-falso" },
+  opciones: { minutosSinTipo?: number } = {},
+): Promise<EfevooFalso> {
+  const minutosSinTipo = opciones.minutosSinTipo ?? 3;
   let clientes = new Map<number, ClienteFalso>();
   let tarjetas = new Map<number, TarjetaFalsa>();
   let fallas: FallaPendiente[] = [];
@@ -146,9 +158,9 @@ export async function iniciarEfevooFalso(puerto = 0, credenciales = { usuario: "
   function inyectarMovimiento(m: MovimientoInyectado) {
     const t = tarjetas.get(Number(m.idCard));
     const c = centavos(m.importe);
-    if (!t || c === null || c <= 0 || (m.tipo !== "Abono" && m.tipo !== "Cargo") || typeof m.concepto !== "string") throw new Error("movimiento no válido");
+    if (!t || c === null || c <= 0 || (m.tipo !== "Abono" && m.tipo !== "Cargo" && m.tipo !== null) || typeof m.concepto !== "string") throw new Error("movimiento no válido");
     t.transacciones.push({
-      idMovimiento: siguienteIdMovimiento++, referencia: m.referencia ?? null, centavos: c, tipo: m.tipo, concepto: m.concepto.slice(0, 200),
+      idMovimiento: siguienteIdMovimiento++, referencia: m.referencia ?? null, centavos: c, tipo: m.tipo ?? "Abono", sinTipo: m.tipo === null, concepto: m.concepto.slice(0, 200),
       clave: m.tipo === "Abono" ? "M09282600MXN484" : "M09DT2600MXN484", fecha: m.fecha ? new Date(m.fecha) : new Date(),
       observaciones: "", saldoDespuesCentavos: null,
     });
@@ -245,15 +257,22 @@ export async function iniciarEfevooFalso(puerto = 0, credenciales = { usuario: "
         const t = tarjetas.get(Number(p.card));
         if (!t || !t.email || t.email !== p.email) return [200, ERROR_TEXTO("115", "ERROR: Cuenta no encontrada.")];
         const lista = [...t.transacciones].sort((a, b) => (p.descending === false ? a.idMovimiento - b.idMovimiento : b.idMovimiento - a.idMovimiento));
-        return [200, { status: OK_TEXTO, response: { transactions: lista.map((x) => ({
+        return [200, { status: OK_TEXTO, response: { transactions: lista.map((x) => {
+          const reciente = Date.now() - x.fecha.getTime() < minutosSinTipo * 60_000;
+          const sinTipo = x.sinTipo || reciente;
+          return {
           MCC: "", Correo: t.email, IDSpei: null, Moneda: "MXN", Nombre: t.nombre, Importe: importeTexto(x.centavos), Tarjeta: t.bin, company: 1,
           Comercio: null, FechaHora: fechaHora(x.fecha), EnTransito: null, Referencia: x.referencia ?? "", IDOperacion: "0", IdOperacion: "",
           MedioAcceso: t.bin, Autorizacion: "", IDMovimiento: String(x.idMovimiento), IdMovimiento: String(x.idMovimiento), Organizacion: "EPCVC",
           Observaciones: x.observaciones, ClaveMovimiento: x.clave, FechaMovimiento: fechaHora(x.fecha), TipoTransaccion: null, MonedaMovimiento: "MXN",
           ImporteMovimiento: importeTexto(x.centavos), ConceptoMovimiento: x.concepto, ReferenciaNumerica: x.referencia ?? "",
           DescripcionMovimiento: x.concepto, SaldoDespuesMovimiento: x.saldoDespuesCentavos === null ? "" : (x.saldoDespuesCentavos / 100).toFixed(2),
-          ImporteOrigenMovimiento: importeTexto(x.centavos), TipoMovimientoCargoAbono: x.tipo,
-        })) } }];
+          ImporteOrigenMovimiento: importeTexto(x.centavos),
+          // Recién hecho: sin tipo y con el importe como número (pesos).
+          ...(sinTipo ? {} : { TipoMovimientoCargoAbono: x.tipo }),
+          ...(reciente ? { Importe: pesos(x.centavos), ImporteMovimiento: pesos(x.centavos) } : {}),
+          };
+        }) } }];
       }
       case "assignCard": {
         const d = (p.client_data ?? {}) as Record<string, unknown>;
