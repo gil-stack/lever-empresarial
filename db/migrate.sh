@@ -120,6 +120,23 @@ trap cleanup EXIT
   for file in "${sorted[@]}"; do
     version="$(basename "$file" .sql)"
     variable="applied_${version}"
+    # Las 0022 históricas no crearon el historial que 0030 ya necesita.
+    # Adelantar SOLO la reparación incremental en ese caso permite llegar
+    # hasta HEAD sin repetir 0022 ni borrar marcas. Comparte transacción y
+    # candado con el resto; al llegar a 0034 su marca impide repetirla.
+    if [[ "$version" == "0030_pld_alertas_reportes" ]]; then
+      cat <<EOF
+SELECT to_regclass('public.supplier_payment_request_history') IS NULL
+  AND NOT EXISTS (SELECT 1 FROM schema_migrations WHERE version = '0034_pagos_proveedores_hardening')
+  AS reparar_pagos_antes_de_0030
+\\gset
+\\if :reparar_pagos_antes_de_0030
+\\echo Aplicando 0034_pagos_proveedores_hardening (prerrequisito de 0030)
+\\i ${MIGRATIONS_DIR}/0034_pagos_proveedores_hardening.sql
+INSERT INTO schema_migrations (version) VALUES ('0034_pagos_proveedores_hardening');
+\\endif
+EOF
+    fi
     cat <<EOF
 SELECT CASE WHEN EXISTS (
   SELECT 1 FROM schema_migrations WHERE version = '${version}'
