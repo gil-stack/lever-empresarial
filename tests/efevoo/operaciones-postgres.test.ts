@@ -4,6 +4,7 @@ import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import pg from "pg";
 
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import type { ContextoDePersonal, ContextoDeTenant } from "../../src/nucleo/contexto.ts";
@@ -407,6 +408,75 @@ async function activacionEnProduccion(url: string, personal: ContextoDePersonal,
   const configSandbox = { ...config, ambiente: "sandbox" as const };
   assert.equal((await darDeAltaEnEfevoo(personal, { companyId: sandbox.id, llave: randomUUID() },
     { config: configSandbox, efevoo: clienteHttpEfevoo(configSandbox) })).estado, "confirmada");
+  await serializarEstado(url, personal, empresa, deps);
+}
+
+/** Una transición sin confirmar debe detener la operación, incluso si la foto inicial todavía dice «activa». */
+async function serializarEstado(
+  url: string,
+  personal: ContextoDePersonal,
+  empresa: { id: string; razonSocial: string },
+  deps: DependenciasOperacion,
+) {
+  const [admin] = await administrador(url, personal, empresa, "admin-carrera@ejemplo.mx");
+  const entrada = (tipo: EntradaOperacion["tipo"], extra: Partial<EntradaOperacion> = {}): EntradaOperacion =>
+    ({ companyId: empresa.id, llave: randomUUID(), tipo, ...extra });
+  // Tarjeta activa de producción; las llamadas ya confirmadas son el fixture del intento concurrente.
+  const asignada = await ejecutarOperacionEfevoo(personal, entrada("asignacion", {
+    inventario: { idEfevoo: 557, terminacion: "1363", employeeId: null, nombreTarjeta: "PRUEBA LEVER" },
+  }), async () => "557", deps);
+  assert.equal(asignada.estado, "confirmada");
+  const tarjeta = consultarJson<{ id: string }[]>(url,
+    `select json_agg(x) from (select id from efevoo_tarjetas where company_id = '${empresa.id}') x`)[0]!.id;
+  await ejecutarOperacionEfevoo(personal, entrada("activacion", { tarjetaId: tarjeta }), async () => null, deps);
+  const cambio = new pg.Client({ connectionString: url });
+  const observador = new pg.Client({ connectionString: url });
+  await cambio.connect();
+  await observador.connect();
+  try {
+    const permisos = await observador.query("select has_table_privilege('plataforma_cliente', 'companies', 'UPDATE') as puede");
+    assert.equal(permisos.rows[0].puede, false, "no se concede UPDATE de empresas al portal");
+    for (const [ctx, tipo] of [[personal, "asignacion_cliente"], [admin, "carga"]] as const) {
+      await cambio.query("begin");
+      await cambio.query("set local session_replication_role = replica");
+      await cambio.query("update companies set estado = 'suspendida' where id = $1", [empresa.id]);
+      let efectos = 0;
+      let terminada = false;
+      const intento = ejecutarOperacionEfevoo(ctx, entrada(tipo, {
+        tarjetaId: tarjeta, ...(tipo === "carga" ? { montoCentavos: 100 } : {}),
+      }), async () => { efectos += 1; return null; }, deps)
+        .then((valor) => ({ valor, error: null }), (error: unknown) => ({ valor: null, error }))
+        .finally(() => { terminada = true; });
+      try {
+        let espero = false;
+        for (let i = 0; i < 80 && !terminada; i += 1) {
+          const bloqueada = await observador.query(`select exists (
+            select 1 from pg_stat_activity where datname = current_database()
+              and wait_event_type = 'Lock' and query like '%insert into efevoo_operaciones%'
+          ) as esperando`);
+          if (bloqueada.rows[0].esperando) { espero = true; break; }
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+        assert.ok(espero, `${tipo}: debe esperar a la transición en curso`);
+        assert.equal(efectos, 0);
+        await cambio.query("commit");
+        const resultado = await intento;
+        assert.ok(resultado.error instanceof ErrorDeDominio);
+        assert.equal(resultado.error.codigo, "empresa_no_activa_efevoo");
+        assert.equal(efectos, 0, "ningún efecto externo después de perder la activación");
+      } finally {
+        await cambio.query("rollback");
+        await intento;
+        await cambio.query("begin");
+        await cambio.query("set local session_replication_role = replica");
+        await cambio.query("update companies set estado = 'activa' where id = $1", [empresa.id]);
+        await cambio.query("commit");
+      }
+    }
+  } finally {
+    await cambio.end();
+    await observador.end();
+  }
 }
 
 function pick(op: { estado: string; codigoEfevoo: string | null }): [string, string | null] {

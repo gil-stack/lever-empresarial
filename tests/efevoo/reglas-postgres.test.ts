@@ -205,6 +205,12 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
     update efevoo_clientes set ambiente = 'produccion' where company_id = '${E}';
     update efevoo_tarjetas set ambiente = 'produccion' where company_id = '${E}';
     set session_replication_role = origin;`);
+  await rechaza("la guarda definer no autoriza al contador", "sin_permiso_para_efevoo",
+    (c) => asentar(c, C, ids.contador, { tipo: "carga", ambiente: "produccion", tarjeta: T, monto: 1 }), C, ids.contador);
+  await rechaza("la guarda definer no autoriza a personal sin administración", "sin_permiso_para_efevoo",
+    (c) => asentar(c, S, ids.cumplimiento, { tipo: "alta_cliente", ambiente: "produccion" }), S, ids.cumplimiento);
+  await rechaza("la guarda definer no da acceso a otra empresa", ["sin_permiso_para_efevoo", "42501"],
+    (c) => asentar(c, C, ids.admin, { tipo: "alta_cliente", ambiente: "produccion", empresa: base.beta, evento: false }), C, ids.admin);
   for (const estado of ["prospecto", "en_alta", "suspendida", "baja"]) {
     ejecutar(duena, `set session_replication_role = replica;
       update companies set estado = '${estado}' where id = '${E}'; set session_replication_role = origin;`);
