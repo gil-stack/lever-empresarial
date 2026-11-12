@@ -1,0 +1,5 @@
+# Las 3 specs del fondo (23 pruebas) × 30 vueltas (--repeat-each=30), con 18 bucles de CPU (carga.sh: grupo propio, trap y timeout)
+  690 passed (39.5m)
+salida=0 2372 s
+# Fallas: 0
+# Duración por prueba: mediana 3.5 s · p95 5.4 s · máx 6.7 s

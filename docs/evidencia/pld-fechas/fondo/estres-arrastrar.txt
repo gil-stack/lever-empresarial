@@ -1,0 +1,46 @@
+# Estrés de «con GPU rápida (emulado) a DPR 1 › arrastrar la ventana» (la prueba real, 30 vueltas por fila)
+# Carga: carga.sh con 18 bucles de CPU (grupo propio, trap y timeout) + la CPU del navegador frenada por CDP
+# (Emulation.setCPUThrottlingRate, parche-freno.py: temporal, no se sube). ×16 deja el dibujo en 0.24-0.55 ms de media,
+# como los 0.63 ms de la falla del CI. Variantes: vieja = HEAD (46d5e6d.. 42d88ae); nonce+vieja = la hoja con nonce y el
+# criterio viejo (todo cuadro largo con un script del fondo); nueva = nonce + guarda de 48 px + criterio nuevo.
+
+vieja      ×16:  1 failed  29 passed (4.0m) 
+vieja      ×24:  23 failed  7 passed (3.3m) 
+nonce+vieja ×16:  10 failed  20 passed (2.8m) 
+nonce+vieja ×24: 30 failed (corrida previa a corregir el parche de la nueva; misma variante)
+nueva      ×16:  30 passed (3.0m) 
+nueva      ×24:  30 passed (3.8m) 
+
+## Sin freno: prueba de diagnóstico (diagnostico-fondo.spec.ts.txt), 30 vueltas cada una
+sin-carga: 30 vueltas; cuadros largos con script del fondo: 0
+carga36: 30 vueltas; cuadros largos con script del fondo: 0
+freno4: 30 vueltas; cuadros largos con script del fondo: 0
+freno8: 30 vueltas; cuadros largos con script del fondo: 0
+
+## Qué cuadro sale largo (diagnóstico con freno ×24, lienzo a pantalla completa como en HEAD): cada cuadro largo
+## con un script del fondo: su duración, cuánto fue pintado (render, desde renderStart) y los scripts de 5 ms o más
+## (Long Animation Frames solo lista esos). Lo largo lo ponen otros scripts de la página (streaming de React) y su espera.
+{"vuelta": 0, "desdeArrastre": -128, "duracion": 80, "render": 6, "scripts": [["Promise.resolve", 12, "otro"], ["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 0, "desdeArrastre": 44, "duracion": 59, "render": 6, "scripts": [["ReadableStreamDefaultReader.read.then", 13, "otro"], ["ReadableStreamDefaultReader.read.then", 14, "otro"], ["TimerHandler:setTimeout", 5, "otro"], ["ReadableStreamDefaultReader.read.then", 8, "otro"], ["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 0, "desdeArrastre": 658, "duracion": 82, "render": 6, "scripts": [["ReadableStreamDefaultReader.read.then", 19, "otro"], ["ReadableStreamDefaultReader.read.then", 12, "otro"], ["FrameRequestCallback", 7, "fondo"]]}
+{"vuelta": 0, "desdeArrastre": 1238, "duracion": 103, "render": 5, "scripts": [["ReadableStreamDefaultReader.read.then", 25, "otro"], ["ReadableStreamDefaultReader.read.then", 16, "otro"], ["FrameRequestCallback", 5, "fondo"]]}
+{"vuelta": 0, "desdeArrastre": 3076, "duracion": 64, "render": 5, "scripts": [["FrameRequestCallback", 5, "fondo"]]}
+{"vuelta": 1, "desdeArrastre": 271, "duracion": 77, "render": 7, "scripts": [["ReadableStreamDefaultReader.read.then", 6, "otro"], ["ReadableStreamDefaultReader.read.then", 38, "otro"], ["Window.fetch.then", 6, "otro"], ["FrameRequestCallback", 7, "fondo"]]}
+{"vuelta": 1, "desdeArrastre": 347, "duracion": 105, "render": 5, "scripts": [["Window.fetch.then", 8, "otro"], ["ReadableStreamDefaultReader.read.then", 34, "otro"], ["ReadableStreamDefaultReader.read.then", 16, "otro"], ["FrameRequestCallback", 5, "fondo"]]}
+{"vuelta": 2, "desdeArrastre": 384, "duracion": 59, "render": 9, "scripts": [["Window.fetch.then", 13, "otro"], ["ReadableStreamDefaultReader.read.then", 13, "otro"], ["ReadableStreamDefaultReader.read.then", 10, "otro"], ["FrameRequestCallback", 8, "fondo"]]}
+{"vuelta": 3, "desdeArrastre": 7, "duracion": 65, "render": 6, "scripts": [["ReadableStreamDefaultReader.read.then", 11, "otro"], ["ReadableStreamDefaultReader.read.then", 11, "otro"], ["ReadableStreamDefaultReader.read.then", 16, "otro"], ["ReadableStreamDefaultReader.read.then", 11, "otro"], ["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 3, "desdeArrastre": 343, "duracion": 65, "render": 6, "scripts": [["ReadableStreamDefaultReader.read.then", 21, "otro"], ["ReadableStreamDefaultReader.read.then", 9, "otro"], ["ReadableStreamDefaultReader.read.then", 14, "otro"], ["FrameRequestCallback", 5, "fondo"]]}
+{"vuelta": 3, "desdeArrastre": 762, "duracion": 113, "render": 6, "scripts": [["http://localhost:3153/_next/static/chunk", 6, "fondo"], ["ReadableStreamDefaultReader.read.then", 15, "otro"], ["ReadableStreamDefaultReader.read.then", 20, "otro"], ["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 3, "desdeArrastre": 1328, "duracion": 79, "render": 9, "scripts": [["http://localhost:3153/_next/static/chunk", 6, "otro"], ["ReadableStreamDefaultReader.read.then", 8, "otro"], ["FrameRequestCallback", 9, "fondo"]]}
+{"vuelta": 4, "desdeArrastre": -139, "duracion": 100, "render": 5, "scripts": [["Promise.resolve", 17, "otro"], ["Promise.resolve", 12, "otro"], ["Promise.resolve", 8, "otro"], ["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 4, "desdeArrastre": 414, "duracion": 106, "render": 7, "scripts": [["ReadableStreamDefaultReader.read.then", 34, "otro"], ["ReadableStreamDefaultReader.read.then", 17, "otro"], ["ReadableStreamDefaultReader.read.then", 13, "otro"], ["FrameRequestCallback", 7, "fondo"]]}
+{"vuelta": 4, "desdeArrastre": 520, "duracion": 101, "render": 1, "scripts": [["http://localhost:3153/_next/static/chunk", 5, "fondo"], ["ReadableStreamDefaultReader.read.then", 18, "otro"]]}
+{"vuelta": 4, "desdeArrastre": 748, "duracion": 56, "render": 5, "scripts": [["ReadableStreamDefaultReader.read.then", 19, "otro"], ["FrameRequestCallback", 5, "fondo"]]}
+{"vuelta": 5, "desdeArrastre": 973, "duracion": 109, "render": 6, "scripts": [["PerformanceObserverCallback", 5, "otro"], ["Window.fetch.then", 5, "otro"], ["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 6, "desdeArrastre": -154, "duracion": 75, "render": 6, "scripts": [["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 6, "desdeArrastre": 474, "duracion": 120, "render": 5, "scripts": [["ReadableStreamDefaultReader.read.then", 37, "otro"], ["ReadableStreamDefaultReader.read.then", 18, "otro"], ["ReadableStreamDefaultReader.read.then", 18, "otro"], ["FrameRequestCallback", 5, "fondo"]]}
+{"vuelta": 6, "desdeArrastre": 796, "duracion": 109, "render": 6, "scripts": [["ReadableStreamDefaultReader.read.then", 14, "otro"], ["ReadableStreamDefaultReader.read.then", 21, "otro"], ["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 6, "desdeArrastre": 1091, "duracion": 62, "render": 6, "scripts": [["ReadableStreamDefaultReader.read.then", 30, "otro"], ["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 7, "desdeArrastre": 138, "duracion": 112, "render": 6, "scripts": [["ReadableStreamDefaultReader.read.then", 15, "otro"], ["ReadableStreamDefaultReader.read.then", 11, "otro"], ["ReadableStreamDefaultReader.read.then", 10, "otro"], ["ReadableStreamDefaultReader.read.then", 49, "otro"], ["FrameRequestCallback", 6, "fondo"]]}
+{"vuelta": 7, "desdeArrastre": 2742, "duracion": 64, "render": 5, "scripts": [["FrameRequestCallback", 5, "fondo"]]}
+cuadros largos con script del fondo: 58 · ms del fondo en esos cuadros: mín 5 máx 12

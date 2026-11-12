@@ -1,0 +1,14 @@
+#!/bin/zsh
+# swift.sh <vieja|nueva> <vueltas> <grep>: con WebGL por software en el navegador propio de las pruebas de GPU emulada
+R=<scratchpad>/r66/fondo
+S=<scratchpad>
+cd <raíz del repo>
+cp $R/fondo-pruebas.$1-swift.ts tests/e2e/fondo-pruebas.ts
+export PATH=/opt/homebrew/opt/postgresql@17/bin:$PATH
+LC_ALL=C pg_ctl -D $S/pg5553 -l $S/pg5553.log -o "-p 5553 -c unix_socket_directories=''" start -w >/dev/null 2>&1
+cpid=""; if [ "${5:-0}" -gt 0 ]; then $R/carga.sh $5 3000 & cpid=$!; fi
+E2E_SWIFT=1 E2E_ADMIN_URL=postgres://postgres@127.0.0.1:5553/postgres E2E_PUERTO=3153 E2E_BLOB_PUERTO=4896 npm run test:e2e -- tests/e2e/optica-retina.spec.ts tests/e2e/brillo-del-fondo.spec.ts tests/e2e/velocidad-del-fondo.spec.ts -g "$3" --repeat-each=$2 > $R/swift-$1-$4.log 2>&1
+echo "salida=$?" >> $R/swift-$1-$4.log
+[ -n "$cpid" ] && kill -TERM $cpid 2>/dev/null; wait $cpid 2>/dev/null
+LC_ALL=C pg_ctl -D $S/pg5553 stop -w >/dev/null 2>&1
+cp $R/fondo-pruebas.nueva.ts tests/e2e/fondo-pruebas.ts

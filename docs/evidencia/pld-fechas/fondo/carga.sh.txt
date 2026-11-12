@@ -1,0 +1,4 @@
+#!/bin/bash
+# carga.sh <procesos> <segundos>: N bucles de CPU en su propio grupo, con tope de tiempo y trap que los mata al salir.
+N=$1; T=$2
+exec timeout --kill-after=5 "$T" bash -c "trap 'kill 0' EXIT INT TERM; for i in \$(seq $N); do (while :; do :; done) & done; wait"

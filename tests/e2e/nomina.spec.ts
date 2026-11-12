@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { hoyEnMexico } from "../../src/dominio/personas";
 import { CLAVE, altamar, codigoTotp, consultar, contar, dobleClic, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 
@@ -13,7 +14,9 @@ import { CORREOS } from "./siembra";
 test.describe.configure({ mode: "serial" });
 
 const en = (ruta: string) => `/c/${altamar()}${ruta}`;
-const hoy = () => process.env.E2E_TODAY ?? new Date().toISOString().slice(0, 10);
+// La fecha de México al momento de usarla, la misma que calcula el servidor en esa petición. No el E2E_TODAY de la
+// siembra: una corrida que cruza la medianoche de México vería dos días distintos.
+const hoy = () => hoyEnMexico(new Date());
 const LUIS = "Luis Ramos";
 
 /** CLABE de 18 dígitos con el dígito de control de ponderación 3, 7, 1. */

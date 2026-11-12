@@ -1,0 +1,179 @@
+import sys, re
+s, raiz = sys.argv[1], sys.argv[2]
+def reemplazar(ruta, viejo, nuevo):
+    p = f"{raiz}/{ruta}"; t = open(p, encoding="utf8").read()
+    assert t.count(viejo) == 1, (ruta, viejo[:60]); open(p, "w", encoding="utf8").write(t.replace(viejo, nuevo))
+M, F, P = "src/components/apariencia/motor.ts", "src/components/apariencia/fondo-escena.tsx", "tests/e2e/fondo-pruebas.ts"
+if s == "S1":  # reasignar el búfer (WebGL y 2D) en cada dibujo
+    reemplazar(M, """        if (lienzo.width < ancho || lienzo.height < alto) {
+          lienzo.width = Math.max(lienzo.width, ancho);
+          lienzo.height = Math.max(lienzo.height, alto);
+        }""", """        lienzo.width = Math.max(lienzo.width, ancho);
+        lienzo.height = Math.max(lienzo.height, alto);""")
+    reemplazar(F, """      if (lienzo.width !== ancho || lienzo.height !== alto) {
+        lienzo.width = ancho;
+        lienzo.height = alto;
+      }""", """      lienzo.width = ancho;
+      lienzo.height = alto;""")
+elif s == "S2":  # dibujar a DPR completo (sin tope de 2 ni escala de 85 %)
+    reemplazar(F, "const dpr = Math.min(window.devicePixelRatio || 1, DPR_MAXIMO) * ESCALA;", "const dpr = (window.devicePixelRatio || 1) * 1;")
+elif s == "S4":  # el motor pinta la pantalla completa a DPR completo: el costo cae en la GPU, no en JS
+    reemplazar(M, """        if (lienzo.width < ancho || lienzo.height < alto) {
+          lienzo.width = Math.max(lienzo.width, ancho);
+          lienzo.height = Math.max(lienzo.height, alto);
+        }
+        gl.viewport(0, 0, ancho, alto);""", """        const W = Math.round(screen.width * devicePixelRatio), H = Math.round(screen.height * devicePixelRatio);
+        if (lienzo.width !== W || lienzo.height !== H) {
+          lienzo.width = W;
+          lienzo.height = H;
+        }
+        gl.viewport(0, 0, W, H);""")
+    reemplazar(M, "gl.uniform2f(u.uRes, ancho, alto);", "gl.uniform2f(u.uRes, W, H);")
+elif s == "P2a":  # sin GPU: el fondo nunca se detiene por un dibujo bloqueante ni por la ventana
+    reemplazar(F, "if (medido && ms > DIBUJO_BLOQUEANTE_MS) {", "if (false && medido && ms > DIBUJO_BLOQUEANTE_MS) {")
+    reemplazar(F, "if (motivo) {\n        quedarQuieto", "if (false && motivo) {\n        quedarQuieto")
+elif s == "P2b":  # sin GPU: solo se detiene por la ventana (sin el corte del dibujo bloqueante)
+    reemplazar(F, "if (medido && ms > DIBUJO_BLOQUEANTE_MS) {", "if (false && medido && ms > DIBUJO_BLOQUEANTE_MS) {")
+elif s == "VIEJO":  # criterio de antes: cualquier script del fondo en un cuadro largo
+    reemplazar(P, "const MS_DEL_FONDO_POR_CUADRO = 25;", "const MS_DEL_FONDO_POR_CUADRO = -1;")
+elif s == "S5":  # la escena reasigna en cada dibujo con un valor distinto (alterna +0/+1 px): evita «mismo valor»
+    reemplazar(F, """      if (lienzo.width !== ancho || lienzo.height !== alto) {
+        lienzo.width = ancho;
+        lienzo.height = alto;
+      }""", """      { const extra = cuadros % 2;
+        lienzo.width = ancho + extra;
+        lienzo.height = alto + extra; }""")
+elif s == "S5m":  # el motor reasigna en cada dibujo alternando +0/+1 px
+    reemplazar(M, """        if (lienzo.width < ancho || lienzo.height < alto) {
+          lienzo.width = Math.max(lienzo.width, ancho);
+          lienzo.height = Math.max(lienzo.height, alto);
+        }""", """        { const extra = (lienzo.width === ancho) ? 1 : 0;
+          lienzo.width = ancho + extra;
+          lienzo.height = alto + extra; }""")
+elif s == "S6":  # el motor ignora el tamaño pedido y pinta la ventana × 0.85 × min(DPR,2) (sin pasar de la pantalla completa)
+    reemplazar(M, """        if (lienzo.width < ancho || lienzo.height < alto) {
+          lienzo.width = Math.max(lienzo.width, ancho);
+          lienzo.height = Math.max(lienzo.height, alto);
+        }
+        gl.viewport(0, 0, ancho, alto);""", """        const W = Math.round(innerWidth * Math.min(devicePixelRatio, 2) * 0.85), H = Math.round(innerHeight * Math.min(devicePixelRatio, 2) * 0.85);
+        if (lienzo.width !== W || lienzo.height !== H) {
+          lienzo.width = W;
+          lienzo.height = H;
+        }
+        gl.viewport(0, 0, W, H);""")
+    reemplazar(M, "gl.uniform2f(u.uRes, ancho, alto);", "gl.uniform2f(u.uRes, W, H);")
+elif s == "S7":  # la escena reasigna en cada dibujo un valor fraccionario que el canvas trunca al mismo entero
+    reemplazar(F, """      if (lienzo.width !== ancho || lienzo.height !== alto) {
+        lienzo.width = ancho;
+        lienzo.height = alto;
+      }""", """      lienzo.width = ancho + 0.25;
+      lienzo.height = alto + 0.25;""")
+elif s == "S8":  # el motor limpia en cada dibujo un búfer WebGL de pantalla completa × DPR que nunca se copia
+    reemplazar(M, """        gl.viewport(0, 0, ancho, alto);""", """        gl.viewport(0, 0, ancho, alto);
+        { const w = window as unknown as { __sombra?: WebGL2RenderingContext | null };
+          if (w.__sombra === undefined) { const c = document.createElement("canvas"); c.width = Math.round(screen.width * devicePixelRatio); c.height = Math.round(screen.height * devicePixelRatio); w.__sombra = c.getContext("webgl2", { preserveDrawingBuffer: true }); }
+          if (w.__sombra) { w.__sombra.clearColor(Math.random(), 0, 0, 1); w.__sombra.clear(w.__sombra.COLOR_BUFFER_BIT); } }""")
+elif s == "SONDA":  # imprime los tamaños que ve la prueba (para el máximo de la escena en la base)
+    reemplazar(P, """                const largos = await cuadrosLargosDelFondo(page);""", """                console.log("SONDA-TAMANOS", dpr, escenario.nombre, JSON.stringify(tamanos));
+                const largos = await cuadrosLargosDelFondo(page);""")
+elif s == "ARREGLO":  # prototipo de -10 (no es código para el PR): cuenta toda asignación tras fijar el tamaño, compara tras la coerción y vigila todo canvas con contexto
+    reemplazar(P, """    const repetidas = new WeakMap<HTMLCanvasElement, number>();""", """    const repetidas = new WeakMap<HTMLCanvasElement, number>();
+    let asignaciones = new WeakMap<HTMLCanvasElement, number>();
+    const conContexto = new Set<HTMLCanvasElement>();
+    const obtener = HTMLCanvasElement.prototype.getContext;
+    (HTMLCanvasElement.prototype as unknown as { getContext: unknown }).getContext = function (this: HTMLCanvasElement, ...a: unknown[]) {
+      conContexto.add(this);
+      return (obtener as unknown as (...b: unknown[]) => unknown).apply(this, a);
+    };
+    (window as unknown as { reiniciarAsignaciones: () => void }).reiniciarAsignaciones = () => { asignaciones = new WeakMap(); };""")
+    reemplazar(P, """          if (Number(valor) === propio.get!.call(this)) repetidas.set(this, (repetidas.get(this) ?? 0) + 1);
+          propio.set!.call(this, valor);""", """          const antes = propio.get!.call(this);
+          propio.set!.call(this, valor);
+          if (propio.get!.call(this) === antes) repetidas.set(this, (repetidas.get(this) ?? 0) + 1);
+          asignaciones.set(this, (asignaciones.get(this) ?? 0) + 1);""")
+    reemplazar(P, """        repetidas: { escena: escena ? (repetidas.get(escena) ?? 0) : -1, motor: buferDelMotor ? (repetidas.get(buferDelMotor) ?? 0) : -1 },""", """        repetidas: { escena: escena ? (repetidas.get(escena) ?? 0) : -1, motor: buferDelMotor ? (repetidas.get(buferDelMotor) ?? 0) : -1 },
+        asignaciones: { escena: escena ? (asignaciones.get(escena) ?? 0) : -1, motor: buferDelMotor ? (asignaciones.get(buferDelMotor) ?? 0) : -1 },
+        mayor: [...conContexto].reduce((m, c) => [Math.max(m[0]!, c.width), Math.max(m[1]!, c.height)], [0, 0]),""")
+    reemplazar(P, """                  .toEqual([buferEsperado, buferEsperado]);
+                await escenario.hacer(page);""", """                  .toEqual([buferEsperado, buferEsperado]);
+                await page.evaluate(() => (window as unknown as { reiniciarAsignaciones: () => void }).reiniciarAsignaciones());
+                await escenario.hacer(page);""")
+    reemplazar(P, """                ).toBe(true);
+                const largos = await cuadrosLargosDelFondo(page);""", """                ).toBe(true);
+                const extra = tamanos as unknown as { asignaciones: { escena: number; motor: number }; mayor: number[] };
+                if (escenario.nombre === "estable" || escenario.nombre === "una tarea ajena de 800 ms")
+                  expect(extra.asignaciones, `asignaciones a width/height con el tamaño ya fijado: ${JSON.stringify(tamanos)}`).toEqual({ escena: 0, motor: 0 });
+                expect(extra.mayor.every((m, i) => m <= (tamanos.maximo.escena[i] ?? 0)), `ningún canvas con contexto pasa de la escena: ${JSON.stringify(tamanos)}`).toBe(true);
+                const largos = await cuadrosLargosDelFondo(page);""")
+elif s == "S9":  # sin WebGL: un 2D oculto pinta a pantalla×DPR en cada cuadro y luego se escala a la escena
+    reemplazar(M, """  const c = coloresDe(tonoDeEscena(cuadro.escena, cuadro.tema, cuadro.tono), cuadro.colorPropio).colores;
+  const degradado = destino.createRadialGradient(""", """  const c = coloresDe(tonoDeEscena(cuadro.escena, cuadro.tema, cuadro.tono), cuadro.colorPropio).colores;
+  const respaldo = document.createElement("canvas");
+  respaldo.width = Math.round(screen.width * devicePixelRatio);
+  respaldo.height = Math.round(screen.height * devicePixelRatio);
+  const oculto = respaldo.getContext("2d")!;
+  oculto.fillStyle = c[1];
+  oculto.fillRect(0, 0, respaldo.width, respaldo.height);
+  destino.drawImage(respaldo, 0, 0, ancho, alto);
+  const degradado = destino.createRadialGradient(""")
+elif s == "C2D":  # control: una gráfica 2D cualquiera, visible y colgada de la página, más grande que la escena
+    reemplazar(F, """    const observadorTamano = new ResizeObserver(() => {""", """    if (!document.getElementById("grafica-de-control")) {
+      const grafica = document.createElement("canvas");
+      grafica.id = "grafica-de-control";
+      grafica.width = 600;
+      grafica.height = 300;
+      document.body.append(grafica);
+      const g = grafica.getContext("2d")!;
+      g.fillStyle = "#3a6";
+      g.fillRect(0, 0, 600, 300);
+    }
+    const observadorTamano = new ResizeObserver(() => {""")
+elif s == "S10":  # capa de grano a pantalla completa: un segundo canvas 2D colgado del DOM, junto a la escena, repintado en cada dibujo
+    reemplazar(F, """      const inicio = performance.now();
+      motor.pintar(contexto, ancho, alto, { ...apariencia.current, luz, tiempo });""", """      {
+        const w = window as unknown as { __capa?: HTMLCanvasElement };
+        if (!w.__capa) {
+          w.__capa = document.createElement("canvas");
+          w.__capa.className = "escena-capa";
+          w.__capa.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;opacity:0.04";
+          lienzo.parentElement?.append(w.__capa);
+        }
+        const k = Math.min(window.devicePixelRatio || 1, 2);
+        const cw = Math.round(w.__capa.offsetWidth * k), ch = Math.round(w.__capa.offsetHeight * k);
+        if (w.__capa.width !== cw || w.__capa.height !== ch) { w.__capa.width = cw; w.__capa.height = ch; }
+        const cc = w.__capa.getContext("2d")!;
+        cc.fillStyle = `rgb(${(tiempo | 0) % 255},0,0)`;
+        cc.fillRect(0, 0, cw, ch);
+      }
+      const inicio = performance.now();
+      motor.pintar(contexto, ancho, alto, { ...apariencia.current, luz, tiempo });""")
+elif s == "OFF":  # refactor legítimo: el búfer del motor pasa a OffscreenCanvas (debe seguir en verde)
+    reemplazar(M, """    const lienzo = document.createElement("canvas");
+    lienzo.width = 8;
+    lienzo.height = 8;""", """    const lienzo = new OffscreenCanvas(8, 8) as unknown as HTMLCanvasElement;""")
+elif s == "S1m":  # solo la mitad del motor de S1: reasigna el búfer en cada dibujo
+    reemplazar(M, """        if (lienzo.width < ancho || lienzo.height < alto) {
+          lienzo.width = Math.max(lienzo.width, ancho);
+          lienzo.height = Math.max(lienzo.height, alto);
+        }""", """        lienzo.width = Math.max(lienzo.width, ancho);
+        lienzo.height = Math.max(lienzo.height, alto);""")
+elif s == "S11":  # S8 con OffscreenCanvas: búfer WebGL2 de pantalla×DPR que se limpia en cada dibujo y nunca se copia
+    reemplazar(M, """        gl.viewport(0, 0, ancho, alto);""", """        gl.viewport(0, 0, ancho, alto);
+        { const w = window as unknown as { __sombra?: WebGL2RenderingContext | null };
+          if (w.__sombra === undefined) w.__sombra = new OffscreenCanvas(Math.round(screen.width * devicePixelRatio), Math.round(screen.height * devicePixelRatio)).getContext("webgl2", { preserveDrawingBuffer: true }) as WebGL2RenderingContext | null;
+          if (w.__sombra) { w.__sombra.clearColor(Math.random(), 0, 0, 1); w.__sombra.clear(w.__sombra.COLOR_BUFFER_BIT); } }""")
+elif s == "C2Dg":  # control de -10: una gráfica 2D ajena de 1440×900 colgada del body (debe seguir en verde)
+    reemplazar(P, """    let buferDelMotor: Lienzo | null = null;""", """    let buferDelMotor: Lienzo | null = null;
+    document.addEventListener("DOMContentLoaded", () => {
+      const grafica = document.createElement("canvas");
+      grafica.width = 1440;
+      grafica.height = 900;
+      grafica.style.cssText = "position:absolute;left:0;top:2000px;width:720px;height:450px";
+      document.body.append(grafica);
+      const g = grafica.getContext("2d");
+      if (g) { g.fillStyle = "#123"; g.fillRect(0, 0, 1440, 900); }
+    });""")
+elif s == "S2d":  # S2 solo en el camino 2D (sin WebGL2) y a DPR >= 2: la escena se dibuja a DPR completo, sin la escala
+    reemplazar(F, "const dpr = Math.min(window.devicePixelRatio || 1, DPR_MAXIMO) * ESCALA;", "const dpr = bufer.sinWebGl && (window.devicePixelRatio || 1) >= 2 ? window.devicePixelRatio : Math.min(window.devicePixelRatio || 1, DPR_MAXIMO) * ESCALA;")
+else: raise SystemExit("sabotaje desconocido " + s)
+print("aplicado", s)

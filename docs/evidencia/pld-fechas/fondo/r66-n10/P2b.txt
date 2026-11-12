@@ -1,0 +1,114 @@
+  ✘   1 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (7.1s)
+  ✘   2 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (3.2s)
+  ✘   3 tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (3.8s)
+  ✘   4 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (8.1s)
+  ✘   5 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (5.7s)
+  ✘   6 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (3.1s)
+  ✘   7 tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (16.0s)
+  ✓   8 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (2.3s)
+  ✓   9 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (2.7s)
+  ✓  10 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (3.5s)
+  ✓  11 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (3.5s)
+  ✘  12 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (6.7s)
+  ✘  13 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (6.0s)
+  ✓  14 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (2.3s)
+  ✓  15 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (4.8s)
+  ✘  16 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (4.2s)
+  ✘  17 tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.3s)
+  ✘  18 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (14.0s)
+  ✘  19 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (4.3s)
+  ✓  20 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (4.1s)
+  ✓  21 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (2.7s)
+  ✓  22 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (4.1s)
+  ✓  23 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (4.3s)
+
+  1) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro
+    Error: cuadros largos del fondo después de su primera pintura: 75 ms (fondo 60, estilo, layout y pintado 0); 77 ms (fondo 60, estilo, layout y pintado 0); 77 ms (fondo 60, estilo, layout y pintado 0); 62 ms (fondo 60, estilo, layout y pintado 0); 61 ms (fondo 60, estilo, layout y pintado 0); 62 ms (fondo 60, estilo, layout y pintado 0); 61 ms (fondo 60, estilo, layout y pintado 0); 62 ms (fondo 60, estilo, layout y pintado 0); 61 ms (fondo 60, estilo, layout y pintado 0); 64 ms (fondo 60, estilo, layout y pintado 0); 61 ms (fondo 60, estilo, layout y pintado 0); 65 ms (fondo 60, estilo, la
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 2
+    Received:    76
+
+  2) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez
+    Error: cuadros largos del fondo después de su primera pintura: 71 ms (fondo 60, estilo, layout y pintado 0); 77 ms (fondo 60, estilo, layout y pintado 0); 117 ms (fondo 101, estilo, layout y pintado 0); 77 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 75 ms (fondo 60, estilo, layout y pintado 0); 77 ms (fondo 60, estilo, layout y pintado 0); 75 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, 
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 2
+    Received:    21
+
+  3) tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar
+    Error: cuadros largos del fondo después de su primera pintura
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 1
+    Received:    23
+
+  4) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana
+    Error: cuadros largos del fondo después de su primera pintura: 153 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 167 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 165 ms (fondo 150, estilo, layout y pintado 0); 152 ms (fondo 150, estilo, layout y pintado 0); 162 ms (fondo 150, estilo, layout y pintado 0); 152 ms (fondo 150, estilo, layout y pintado 0); 152 ms (fondo 150, estilo, layout y pintado 0); 152 ms (fondo 150, estilo, layout y pintado 0); 165 ms (fondo 150, estilo, layout y pintado 0); 151 m
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 2
+    Received:    41
+
+  5) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › estable ─────────
+    Error: cuadros largos del fondo después de su primera pintura: 157 ms (fondo 150, estilo, layout y pintado 0); 164 ms (fondo 150, estilo, layout y pintado 0); 163 ms (fondo 150, estilo, layout y pintado 0); 167 ms (fondo 150, estilo, layout y pintado 0); 159 ms (fondo 150, estilo, layout y pintado 0); 164 ms (fondo 150, estilo, layout y pintado 0); 167 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 m
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 1
+    Received:    17
+
+  6) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › estable ─────────
+    Error: cuadros largos del fondo después de su primera pintura: 73 ms (fondo 60, estilo, layout y pintado 0); 77 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 74 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 74 ms (fondo 60, estilo, layout y pintado 0); 74 ms (fondo 60, estilo, layout y pintado 0); 74 ms (fondo 60, estilo, layout y pintado 0); 70 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 63 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, la
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 1
+    Received:    27
+
+  7) tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros
+    Error: pinturas hasta quedarse quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('canvas.escena-lienzo')
+    Expected: "2"
+    Received: "29"
+    Timeout:  15000ms
+    Call log:
+      - pinturas hasta quedarse quieto locator('canvas.escena-lienzo') with timeout 15000ms
+      - waiting for locator('canvas.escena-lienzo')
+        - locator resolved to <canvas width="7" height="7" data-gpu="si" data-cuadros="5" data-ms="107.80" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "5"
+        - locator resolved to <canvas width="7" height="7" data-gpu="si" data-ms="96.70" data-cuadros="6" data-estado="vivo" class="escena-lienzo"></canvas>
+        - unexpected value "6"
+        - locator resolved to <canvas width="7" height="7" data-gpu="si" data-ms="88.73" data-cuadros="7" data-estado="vivo" class="escena-lienzo"></canvas>
+
+  8) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms
+    Error: cuadros largos del fondo después de su primera pintura: 151 ms (fondo 150, estilo, layout y pintado 0); 164 ms (fondo 150, estilo, layout y pintado 0); 167 ms (fondo 150, estilo, layout y pintado 0); 160 ms (fondo 150, estilo, layout y pintado 0); 152 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 m
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 1
+    Received:    19
+
+  9) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez
+    Error: cuadros largos del fondo después de su primera pintura: 168 ms (fondo 150, estilo, layout y pintado 0); 167 ms (fondo 150, estilo, layout y pintado 0); 202 ms (fondo 191, estilo, layout y pintado 0); 165 ms (fondo 150, estilo, layout y pintado 0); 155 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0)
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 2
+    Received:    10
+
+  10) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana
+    Error: cuadros largos del fondo después de su primera pintura: 75 ms (fondo 60, estilo, layout y pintado 0); 77 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 75 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 74 ms (fondo 60, estilo, layout y pintado 0); 77 ms (fondo 60, estilo, layout y pintado 0); 66 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 66 ms (fondo 60, estilo, layout y pintado 0); 61 ms (fondo 60, estilo, layout y pintado 0); 65 ms (fondo 60, estilo, la
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 2
+    Received:    40
+
+  11) tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar
+    Error: cuadros largos del fondo después de su primera pintura
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 1
+    Received:    11
+
+  12) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro
+    Error: cuadros largos del fondo después de su primera pintura: 160 ms (fondo 150, estilo, layout y pintado 0); 167 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 152 ms (fondo 150, estilo, layout y pintado 0); 151 ms (fondo 150, estilo, layout y pintado 0); 153 ms (fondo 150, estilo, layout y pintado 0); 151 ms (fondo 150, estilo, layout y pintado 0); 153 ms (fondo 150, estilo, layout y pintado 0); 151 ms (fondo 150, estilo, layout y pintado 0); 154 ms (fondo 150, estilo, layout y pintado 0); 151 ms (fondo 150, estilo, layout y pintado 0); 153 m
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 2
+    Received:    76
+
+  13) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms
+    Error: cuadros largos del fondo después de su primera pintura: 71 ms (fondo 60, estilo, layout y pintado 0); 73 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 75 ms (fondo 60, estilo, layout y pintado 0); 61 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, la
+    expect(received).toBeLessThanOrEqual(expected)
+    Expected: <= 1
+    Received:    28
+  13 failed
+  10 passed (2.2m)
+[e2e] recorridos terminados con estado 1 · 23 pruebas corridas · 139 s

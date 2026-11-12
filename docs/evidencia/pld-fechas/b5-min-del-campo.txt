@@ -1,0 +1,27 @@
+# B5 (pld.spec.ts:747) y ahoraParaCampo: «ahora − 1 min» por debajo del min del campo (dictaminadoEl T00:00).
+# Sonda en Chromium sin JavaScript (sonda-b5.mjs, abajo):
+valor 2026-11-10T23:59 con min 2026-11-11T00:00 → el navegador NO lo envió (rangeUnderflow): enviarPost esperaría hasta agotar la prueba
+valor 2026-11-11T00:00 con min 2026-11-11T00:00 → se envió
+
+# pld.spec.ts completo en vivo a las 00:12 reales del 11-nov con main: pasa (la ventana de B5 es solo de 00:00 a 00:01).
+  19 passed (50.6s)
+
+## sonda-b5.mjs
+// Sonda: sin JavaScript, ¿el navegador envía un datetime-local por debajo de su min?
+import http from "node:http";
+import { chromium } from "@playwright/test";
+let posts = 0;
+const html = (v) => `<!doctype html><form method="post" action="/"><input id="r" name="recibidoEn" type="datetime-local" required min="2026-11-11T00:00" max="2026-11-11T00:00" value="${v}"><button>Registrar acuse</button></form>`;
+const srv = http.createServer((req, res) => { if (req.method === "POST") posts++; res.end(html("")); }).listen(4813, "127.0.0.1");
+const nav = await chromium.launch();
+const ctx = await nav.newContext({ javaScriptEnabled: false });
+const page = await ctx.newPage();
+for (const valor of ["2026-11-10T23:59", "2026-11-11T00:00"]) {
+  await page.goto("http://127.0.0.1:4813/");
+  await page.locator("#r").fill(valor);
+  const antes = posts;
+  await page.getByRole("button", { name: "Registrar acuse" }).click();
+  await page.waitForTimeout(1500);
+  console.log(`valor ${valor} con min 2026-11-11T00:00 → ${posts - antes ? "se envió" : "el navegador NO lo envió (rangeUnderflow): enviarPost esperaría hasta agotar la prueba"}`);
+}
+await nav.close(); srv.close();

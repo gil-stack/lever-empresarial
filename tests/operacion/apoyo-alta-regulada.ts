@@ -16,7 +16,20 @@ import {
 import { declararPerfil } from "../../src/server/pld/perfil.ts";
 import type { AlmacenConstancia } from "../../src/server/proveedores/constancia.ts";
 
-export const SESION_SOFIPO = { superficie: "sofipo" as const, segundoFactor: { metodo: "totp" as const, en: new Date() } };
+/**
+ * Sesión del personal con su segundo factor recién verificado. El instante se toma en cada uso, no al cargar el módulo
+ * (r66-N3): una suite larga o que espera la medianoche de México no debe toparse con la vigencia de 5 min de
+ * reautenticacion.ts. Va 1 s atrás porque factorReciente lee la hora antes que el factor y exige una edad ≥ 0.
+ */
+export const SESION_SOFIPO = {
+  superficie: "sofipo" as const,
+  segundoFactor: {
+    metodo: "totp" as const,
+    get en(): Date {
+      return new Date(Date.now() - 1_000);
+    },
+  },
+};
 
 /** Contexto del personal con sus roles de plataforma: las capacidades salen de ahí (permisos.ts). */
 export function personal(operadorId: string, userId: string, roles: ContextoDePersonal["personal"]["roles"]): ContextoDePersonal {

@@ -1,0 +1,8 @@
+import sys
+p=sys.argv[1]; s=open(p).read()
+a='''                await escenario.hacer(page);'''
+assert s.count(a)==1, p
+s=s.replace(a,'''                // ESTRÉS TEMPORAL (no se sube): CPU del navegador frenada por CDP.
+                if (Number(process.env.E2E_FRENO_FONDO ?? 0) > 1) await (await page.context().newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.E2E_FRENO_FONDO) });
+                await escenario.hacer(page);''')
+open(p,"w").write(s)

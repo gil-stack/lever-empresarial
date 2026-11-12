@@ -1,0 +1,38 @@
+  ✘   1 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (25.5s)
+  ✘   2 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (17.2s)
+  ✘   3 tests/e2e/fondo-pruebas.ts:317:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (3.1s)
+  ✘   4 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (22.4s)
+  ✘   5 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (18.6s)
+  ✘   6 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (18.1s)
+  ✘   7 tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (15.8s)
+  ✓   8 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (2.0s)
+  ✓   9 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (2.5s)
+  ✓  10 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (3.2s)
+  ✓  11 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (3.1s)
+  ✘  12 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (19.9s)
+  ✘  13 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (17.7s)
+  ✓  14 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (2.1s)
+  ✓  15 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (4.3s)
+  ✘  16 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (19.0s)
+  ✘  17 tests/e2e/fondo-pruebas.ts:317:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (4.2s)
+  ✘  18 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (39.5s)
+  ✘  19 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (19.2s)
+  ✓  20 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓  21 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (2.5s)
+  ✓  22 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓  23 tests/e2e/fondo-pruebas.ts:360:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (4.2s)
+    Error: quieto
+    Error: quieto
+    Error: cuadros largos del fondo después de su primera pintura
+    Error: quieto
+    Error: quieto
+    Error: quieto
+    Error: pinturas hasta quedarse quieto
+    Error: quieto
+    Error: quieto
+    Error: quieto
+    Error: cuadros largos del fondo después de su primera pintura
+    Error: quieto
+    Error: quieto
+  13 failed
+  10 passed (4.7m)
