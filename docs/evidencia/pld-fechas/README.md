@@ -26,7 +26,8 @@ La regla de producción no cambia en ningún punto: no hay migración y no se to
 | `r66-n7/resumen.md` | Sabotajes S1, S2, S4, S5, S5m, S6, S7, S8 y S9, el control con una gráfica 2D en la página y P2a/P2b, contra c9d9e8b y con r66-N7, N8 y N9 |
 | `r66-n7/estres-familia.txt` | Las 23 pruebas del fondo × 30 vueltas con carga, con las guardas de r66-N7, N8 y N9 |
 | `r66-n10/resumen.md` | Sabotajes S1 a S11, S5m, OFF+S1m y S2d, los controles C2D y C2Dg, el refactor OFF y P2a/P2b, contra 858db5c y con r66-N10, N11 y DPR 2 sin WebGL2 |
-| `r66-n10/estres-familia.txt` | Las 23 pruebas del fondo × 30 vueltas con carga, con las guardas de r66-N10 y N11 |
+| `r66-n10/estres-familia.txt` | Las 23 pruebas del fondo × 30 vueltas con carga, con las guardas de r66-N10 y N11: una línea por prueba con sus 30 tiempos, y el resumen |
+| `r66-n10/*.txt` (extractos) | Cada sabotaje, recortado con `r66-n10/extracto.py.txt`: sin códigos ANSI, sin la salida del build de Next ni el reporter JSON; quedan las líneas de lista de cada prueba, el resumen (✓, ✘ y tiempo) y, de cada ✘, su título y el mensaje de error hasta el Call Log (máximo 14 líneas). Los logs completos (18 MB) quedan fuera del repositorio, en el scratchpad de la sesión que los corrió (`r66/n10/sab/` y `r66/n10/estres-familia.txt`) |
 | `fechas-al-cargar.cjs.txt` | Detector por AST de fechas evaluadas al cargar un módulo (r66-N4) |
 | `diagnostico-fondo.spec.ts.txt`, `*.sh.txt` y `*.py.txt` | Las sondas y los parches temporales con que se midió (no se suben como código) |
 
