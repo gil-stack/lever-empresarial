@@ -182,6 +182,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (marca.includes("auth_codigos")) return new ErrorDeDominio("respaldo_duplicado");
     if (marca.includes("auth_retos")) return new ErrorDeDominio("reto_duplicado");
     if (marca.includes("auth_entradas")) return new ErrorDeDominio("entrada_duplicada");
+    if (marca.includes("efevoo_operaciones_asignacion_por_empleado") || marca.includes("efevoo_tarjetas_una_por_activar")) return new ErrorDeDominio("empleado_con_tarjeta_por_activar");
     if (marca.includes("efevoo_operaciones_abierta")) return new ErrorDeDominio("operacion_en_curso");
     if (marca.includes("efevoo_operaciones_reintento_unico")) return new ErrorDeDominio("reintento_ya_hecho");
     if (marca.includes("efevoo_operaciones_intento")) return new ErrorDeDominio("intento_concurrente");
@@ -389,6 +390,8 @@ const CODIGOS_DE_EFEVOO = new Set([
   "operacion_no_encontrada",
   "transicion_no_valida",
   "conciliacion_prematura",
+  "empleado_con_tarjeta_por_activar",
+  "cierre_manual_no_valido",
 ]);
 
 const CODIGOS_DE_CLABE = new Set([

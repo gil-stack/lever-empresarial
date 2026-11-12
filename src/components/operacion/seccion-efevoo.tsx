@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { activarEfevooAccion, altaEfevooAccion, conciliarEfevooAccion, reintentarEfevooAccion } from "@/app/operacion/acciones-efevoo";
+import { activarEfevooAccion, altaEfevooAccion, cerrarEfevooAccion, conciliarEfevooAccion, reintentarEfevooAccion } from "@/app/operacion/acciones-efevoo";
 import { BotonEnviar, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import type { SeccionEfevoo } from "@/server/efevoo/operacion";
@@ -62,9 +62,15 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
           {seccion.expediente ? (
             <>
               <p>
-                Se manda la razón social ({seccion.expediente.razonSocial}), el RFC, el domicilio
-                {seccion.expediente.conDomicilio ? "" : " (el expediente no lo trae)"} y {seccion.expediente.representantes} representante(s) del
-                expediente vigente.{sandbox ? " En pruebas, el correo de la empresa es uno de prueba @lever.test." : ""}
+                {sandbox ? (
+                  <>En pruebas solo se manda la razón social ({seccion.expediente.razonSocial}) y un correo de prueba @lever.test: el ambiente de pruebas de Efevoo es compartido.</>
+                ) : (
+                  <>
+                    Se manda la razón social ({seccion.expediente.razonSocial}), el RFC, el domicilio
+                    {seccion.expediente.conDomicilio ? "" : " (el expediente no lo trae)"} y {seccion.expediente.representantes} representante(s) del
+                    expediente vigente.
+                  </>
+                )}
               </p>
               {seccion.empresaActiva || sandbox ? (
                 <form action={altaEfevooAccion}>
@@ -105,6 +111,15 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
 
           <section aria-labelledby="efevoo-asignar-titulo" className="efevoo-bloque">
             <h3 id="efevoo-asignar-titulo">Asignar una tarjeta</h3>
+            {seccion.empleados.filter((e) => e.porActivar).map((e) => (
+              <form key={e.id} action={activarEfevooAccion} className="efevoo-retomar" data-retomar={e.porActivar!.terminacion}>
+                <input type="hidden" name="companyId" value={companyId} />
+                <input type="hidden" name="llave" value={randomUUID()} />
+                <input type="hidden" name="tarjetaId" value={e.porActivar!.tarjetaId} />
+                <p>{e.nombre} tiene la tarjeta ****{e.porActivar!.terminacion} asignada sin activar: retómala antes de asignarle otra.</p>
+                <div className="acciones"><BotonEnviar>Retomar: activar ****{e.porActivar!.terminacion}</BotonEnviar></div>
+              </form>
+            ))}
             {seccion.inventario.length === 0 ? (
               <Vacio titulo="Sin plásticos en el inventario">{seccion.errorEfevoo ? "No se pudo leer el inventario de Efevoo." : "Efevoo no tiene plásticos disponibles."}</Vacio>
             ) : seccion.empleados.length === 0 ? (
@@ -177,6 +192,21 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
                     <input type="hidden" name="operacionId" value={o.id} />
                     <div className="acciones"><BotonEnviar>Conciliar con Efevoo</BotonEnviar></div>
                   </form>
+                ) : null}
+                {o.cerrable ? (
+                  <details className="efevoo-cancelar">
+                    <summary>Cerrar a mano (la tarjeta está cancelada)</summary>
+                    <form action={cerrarEfevooAccion}>
+                      <input type="hidden" name="companyId" value={companyId} />
+                      <input type="hidden" name="operacionId" value={o.id} />
+                      <p className="pista">Úsalo solo si conciliar ya no puede leer la tarjeta. El resultado en Efevoo queda desconocido y la operación no se podrá reintentar.</p>
+                      <div className="campo">
+                        <label htmlFor={`efevoo-cierre-${o.id}`}>Motivo del cierre</label>
+                        <textarea id={`efevoo-cierre-${o.id}`} name="motivo" minLength={10} maxLength={500} required />
+                      </div>
+                      <div className="acciones"><BotonEnviar>Cerrar a mano</BotonEnviar></div>
+                    </form>
+                  </details>
                 ) : null}
                 {o.reintentable ? (
                   <form action={reintentarEfevooAccion}>

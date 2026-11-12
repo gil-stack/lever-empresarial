@@ -493,4 +493,50 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
   } finally {
     ejecutar(duena, `set session_replication_role = replica; update companies set estado = 'activa' where id = '${E}'; set session_replication_role = origin;`);
   }
+
+  // PC2-2: varias tarjetas por empleado, pero no otra mientras tenga una asignación abierta o una asignada sin activar.
+  const asignar = (c: Cliente, inventario: number, terminacion: string) =>
+    asentar(c, S, P, { tipo: "asignacion", inventario, terminacion, empleado: ids.empleadoTitular, nombre: "PRUEBA LEVER" });
+  await acepta("otra tarjeta al titular que ya tiene una activa", (c) => asignar(c, 564, "3474"), S, P);
+  await rechaza("no otra mientras tenga una asignación abierta", ["empleado_con_tarjeta_por_activar", "efevoo_operaciones_asignacion_por_empleado"], async (c) => {
+    await asignar(c, 564, "3474");
+    await asignar(c, 568, "8182");
+  }, S, P);
+  await rechaza("no otra mientras tenga una asignada sin activar", "empleado_con_tarjeta_por_activar", async (c) => {
+    const id = await asignar(c, 564, "3474");
+    await resolver(c, S, P, id!, "confirmada", "9564");
+    await asignar(c, 568, "8182");
+  }, S, P);
+
+  // PC2-4: cierre manual de una operación abierta sobre una tarjeta CANCELADA, solo por el personal y a los 10 minutos;
+  // queda fallida con «cierre_manual» y no se puede reintentar.
+  const O = ids.tarjetaOtra;
+  const abierta = await acepta("una carga incierta en la otra tarjeta", async (c) => {
+    const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: O, monto: 321 });
+    await resolver(c, C, ids.liberador, id!, "incierta", null, "timeout");
+    return id!;
+  }, C, ids.liberador, E, true);
+  const viva = await acepta("una carga incierta en la tarjeta viva", async (c) => {
+    const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 654 });
+    await resolver(c, C, ids.liberador, id!, "incierta", null, "timeout");
+    return id!;
+  }, C, ids.liberador, E, true);
+  await acepta("el personal cancela la otra tarjeta", async (c) => {
+    const id = await asentar(c, S, P, { tipo: "cancelacion", tarjeta: O, motivo: "Robo de la tarjeta" });
+    await resolver(c, S, P, id!, "confirmada");
+  }, S, P, E, true);
+  const cerrar = (c: Cliente, rol: string, actor: string, id: string) => resolver(c, rol, actor, id, "fallida", null, "cierre_manual");
+  await rechaza("cierre manual antes de 10 minutos", "cierre_manual_no_valido", (c) => cerrar(c, S, P, abierta), S, P);
+  ejecutar(duena, `set session_replication_role = replica; update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id in ('${abierta}', '${viva}'); set session_replication_role = origin;`);
+  await rechaza("la empresa no cierra a mano", "cierre_manual_no_valido", (c) => cerrar(c, C, ids.liberador, abierta), C, ids.liberador);
+  await rechaza("con la tarjeta viva no hay cierre manual: se concilia", "cierre_manual_no_valido", (c) => cerrar(c, S, P, viva), S, P);
+  await acepta("cerrar la viva como no apareció", (c) => resolver(c, C, ids.liberador, viva, "fallida", null, "no_aparecio"), C, ids.liberador, E, true);
+  await acepta("el personal cierra a mano la de la tarjeta cancelada", (c) => cerrar(c, S, P, abierta), S, P, E, true);
+  assert.deepEqual(leer<{ estado: string; codigo_efevoo: string }>(`select estado, codigo_efevoo from efevoo_operaciones where id = '${abierta}'`)[0],
+    { estado: "fallida", codigo_efevoo: "cierre_manual" });
+  // Aunque la tarjeta volviera a estar viva, una cerrada a mano no se reintenta (su resultado en Efevoo es desconocido).
+  ejecutar(duena, `set session_replication_role = replica; update efevoo_tarjetas set estado = 'activa', cancelada_en = null, motivo_cancelacion = null where id = '${O}'; set session_replication_role = origin;`);
+  await rechaza("el reintento de una cerrada a mano", "reintento_no_valido", (c) =>
+    asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: O, monto: 321, reintento: abierta }), C, ids.liberador);
+
 }

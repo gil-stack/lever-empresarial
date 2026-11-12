@@ -220,6 +220,9 @@ const MENSAJES: Record<string, string> = {
   dato_invalido_confirmacion: "Escribe la terminación de la tarjeta para confirmar la cancelación.",
   dato_invalido_employeeId: "Elige al empleado.",
   dato_invalido_inventarioId: "Elige un plástico del inventario.",
+  efevoo_cierre_manual: "Operación cerrada a mano con su motivo. Su resultado en Efevoo queda desconocido y no se puede reintentar.",
+  empleado_con_tarjeta_por_activar: "Esa persona tiene una tarjeta asignada sin activar. Actívala antes de asignarle otra.",
+  cierre_manual_no_valido: "Solo se cierra a mano una operación abierta de una tarjeta cancelada, 10 minutos después de pedirla.",
 };
 
 /** El campo que causó cada error: el aviso se liga a ese campo con aria-describedby. */
@@ -261,6 +264,7 @@ const CAMPO: Record<string, string> = {
   plastico_no_disponible: "inventarioId",
   tarjeta_ya_asignada: "inventarioId",
   empleado_no_activo: "employeeId",
+  empleado_con_tarjeta_por_activar: "employeeId",
   ...CAMPO_PLD,
 };
 

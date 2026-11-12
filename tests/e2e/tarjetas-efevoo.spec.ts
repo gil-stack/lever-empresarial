@@ -1,6 +1,8 @@
 import { mkdirSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 
 import { expect, test, type Page } from "@playwright/test";
+import { Client } from "pg";
 
 import { CLAVE, codigoTotp, consultar, contar, dobleClic, sesionDe } from "./apoyo";
 import { CORREOS } from "./siembra";
@@ -62,7 +64,9 @@ const ops = (tipo: string, estado?: string) =>
 
 /** Llena el formulario de asignación (los datos del titular no vuelven tras un rechazo: se escriben cada vez). */
 async function llenarAsignacion(page: Page, datos: { empleado: string; terminacion: string; ultimos8: string; correo?: string }): Promise<void> {
-  await page.getByLabel("Empleado").selectOption({ label: datos.empleado });
+  // La opción lleva el nombre y cuántas tarjetas tiene («· 1 tarjeta», «· sin tarjeta»).
+  const opcion = page.getByLabel("Empleado").locator("option", { hasText: datos.empleado });
+  await page.getByLabel("Empleado").selectOption((await opcion.getAttribute("value"))!);
   await page.getByLabel("Plástico del inventario").selectOption({ label: `Terminación ${datos.terminacion}` });
   await page.getByLabel("Últimos 8 dígitos del plástico").fill(datos.ultimos8);
   await page.getByLabel("Nombre(s)").fill("PAULA");
@@ -154,10 +158,24 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     await expect(page.locator("li[data-operacion='asignacion'][data-estado='fallida']")).toContainText("Código 401");
     expect((await estadoFalso()).tarjetas.find((t) => t.id === 563)!.email).toBe("");
     await captura(page, "o3-asignacion-401");
+    // PC2-2: el selector dice cuántas tarjetas tiene cada quien.
+    await expect(page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[0] })).toHaveText(`${EMPLEADOS_CEIBA[0]} · 1 tarjeta`);
+    // Ahora la asignación pasa pero la activación cae (401): la tarjeta queda asignada sin activar.
+    await simular({ metodo: "activateCard", falla: "401" });
     await llenarAsignacion(page, { empleado: EMPLEADOS_CEIBA[1], terminacion: "0168", ultimos8: "40000168" });
     await page.getByRole("button", { name: "Asignar y activar la tarjeta" }).click();
+    await page.waitForURL(/aviso=efevoo_tarjeta_asignada_sin_activar/);
+    await expect(page.locator("li[data-tarjeta='0168']")).toContainText("Asignada");
+    // A esa persona no se le ofrece asignar otra: se ofrece retomar la que tiene.
+    const opcionMarco = page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[1] });
+    await expect(opcionMarco).toBeDisabled();
+    await expect(opcionMarco).toContainText("tiene ****0168 sin activar");
+    await captura(page, "o3-asignada-sin-activar");
+    await page.getByRole("button", { name: "Retomar: activar ****0168" }).click();
     await page.waitForURL(/aviso=efevoo_tarjeta_activada/);
     await expect(page.locator("li[data-tarjeta='0168']")).toContainText("Activa");
+    await expect(page.getByRole("button", { name: /Retomar/ })).toHaveCount(0);
+    await expect(page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[1] })).toHaveText(`${EMPLEADOS_CEIBA[1]} · 1 tarjeta`);
   });
 
   test("O4: cancelar pide la terminación escrita y es irreversible", async () => {
@@ -197,6 +215,34 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     await expect(page.locator("li[data-tarjeta='1363']")).toContainText("Cancelada");
     expect(await ops("cancelacion", "confirmada")).toBe(2);
     await captura(page, "timeout-conciliada");
+
+    // PC2-4: una carga que quedó incierta en la tarjeta ya cancelada, de hace 11 minutos (la siembra la pone con la
+    // dueña: las cargas son de la empresa, E2). La conciliación ya no puede leer la tarjeta: se cierra a mano.
+    const duena = new Client({ connectionString: process.env.E2E_OWNER_DATABASE_URL });
+    await duena.connect();
+    try {
+      await duena.query("set session_replication_role = replica");
+      await duena.query(
+        `insert into efevoo_operaciones (id, company_id, operator_id, ambiente, tipo, tarjeta_id, monto_centavos, llave_intento, estado,
+           codigo_efevoo, actor_tipo, creada_por, creada_en, resuelta_en)
+         select $1, t.company_id, t.operator_id, t.ambiente, 'carga', t.id, 4200, $2, 'incierta', 'timeout', 'miembro', t.creada_por,
+                now() - interval '11 minutes', now() - interval '11 minutes'
+           from efevoo_tarjetas t where t.company_id = $3 and t.terminacion = '1363'`,
+        [randomUUID(), randomUUID(), ceiba()]);
+    } finally {
+      await duena.end();
+    }
+    await page.goto(`/operacion/clientes/${ceiba()}`);
+    const abierta = page.locator("li[data-operacion='carga'][data-estado='incierta']");
+    await abierta.getByText("Cerrar a mano (la tarjeta está cancelada)").click();
+    await abierta.getByLabel("Motivo del cierre").fill("La tarjeta se canceló y Efevoo ya no deja leer sus movimientos");
+    await abierta.getByRole("button", { name: "Cerrar a mano" }).click();
+    await page.waitForURL(/aviso=efevoo_cierre_manual/);
+    const cerrada = page.locator("li[data-operacion='carga'][data-estado='fallida']");
+    await expect(cerrada).toContainText("Código cierre_manual");
+    await expect(cerrada.getByRole("button", { name: /Reintentar/ })).toHaveCount(0);
+    expect(await contar("select 1 from audit_log where accion = 'efevoo_cierre_manual' and company_id = $1 and motivo is not null", [ceiba()])).toBe(1);
+    await captura(page, "cierre-manual");
   });
 
   test("901 en el depósito: queda incierto y la conciliación espera los 10 minutos", async () => {

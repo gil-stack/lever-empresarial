@@ -42,7 +42,7 @@ export function FormularioAsignarEfevoo({
   companyId: string;
   llave: string;
   llaveActivacion: string;
-  empleados: { id: string; nombre: string }[];
+  empleados: { id: string; nombre: string; tarjetas: number; porActivar: { tarjetaId: string; terminacion: string } | null }[];
   inventario: { id: number; terminacion: string }[];
   sandbox: boolean;
 }) {
@@ -66,7 +66,15 @@ export function FormularioAsignarEfevoo({
         {mensaje("employeeId")}
         <select id="efevoo-employeeId" name="employeeId" required defaultValue={valor("employeeId")} {...ligado("employeeId")}>
           <option value="">Elige al empleado</option>
-          {empleados.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+          {empleados.map((e) => (
+            // Con una tarjeta asignada sin activar no se le asigna otra: se retoma esa (abajo, «Retomar»).
+            <option key={e.id} value={e.id} disabled={e.porActivar !== null}>
+              {e.nombre}
+              {e.porActivar
+                ? ` · tiene ****${e.porActivar.terminacion} sin activar`
+                : e.tarjetas > 0 ? ` · ${e.tarjetas} tarjeta${e.tarjetas === 1 ? "" : "s"}` : " · sin tarjeta"}
+            </option>
+          ))}
         </select>
       </div>
       <div className="campo">
