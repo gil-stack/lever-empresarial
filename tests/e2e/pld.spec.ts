@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
+import { minutosAtrasDeHoy } from "../pld/momento-en-mexico";
 import { consultar, contar, dobleClic, idDe, llegaSinScript, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 
@@ -440,12 +441,10 @@ test("Comité: un caso con reserva no se vota en la sesión de un caso sin reser
 // (destinos de fragmento con sufijo en la respuesta a un envío sin JavaScript).
 
 /** Fecha y hora de Ciudad de México para un campo datetime-local, un minuto antes de ahora (el máximo es «ahora»). */
+// Un minuto antes de ahora, sin salir de hoy: el campo tiene como mínimo las 00:00 del dictamen (o del cierre) y, entre
+// las 00:00 y las 00:01, restar el minuto lo dejaría en ayer y el navegador no enviaría el formulario.
 function ahoraParaCampo(): string {
-  const partes = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-  }).formatToParts(new Date(Date.now() - 60_000));
-  const de = (tipo: string) => partes.find((parte) => parte.type === tipo)!.value;
-  return `${de("year")}-${de("month")}-${de("day")}T${de("hour")}:${de("minute")}`;
+  return minutosAtrasDeHoy(new Date(), 1);
 }
 
 function mananaEnMexico(): string {

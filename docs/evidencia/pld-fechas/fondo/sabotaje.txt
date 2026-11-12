@@ -1,0 +1,19 @@
+# Sabotaje en src/components/apariencia/fondo-escena.tsx (temporal, no se sube), 10 vueltas, sin freno ni carga
+sabotaje-raf-60-nueva:  10 failed  Error: sigue vivo: {
+sabotaje-raf-30-nueva:  10 passed (37.8s)  
+sabotaje-ro-30-nueva:  10 passed (35.0s)  
+sabotaje-raf-15-nueva:  10 passed (34.6s)  
+sabotaje-ro-60-nueva:  10 failed  Error: sigue vivo: {
+sabotaje-ro-45-nueva:  10 failed  Error: sigue vivo: {
+sabotaje-uno-60-nueva:  10 failed  Error: cuadros largos del fondo: {
+sabotaje-uno-60-vieja:  10 passed (42.3s)  
+sabotaje-uno-20-nueva:  10 passed (33.7s)  
+
+# raf N: N ms en el cuadro que repinta tras cambiar de tamaño (sucio), cada vez · ro N: N ms en el ResizeObserver, cada vez
+# uno N: N ms una sola vez, en el décimo cambio de tamaño (no lo ve la regla del ritmo; solo los cuadros largos)
+# Lectura: la nueva atrapa el cuadro de 60 ms del fondo («67 ms (fondo 60, pintado 60)»); la vieja no lo ve porque su
+# lienzo no cambiaba de tamaño (la hoja sin nonce): el ResizeObserver no se llamaba. 15-30 ms no dejan un cuadro de 50.
+
+# Emulación caída (la hoja sin nonce) con la nueva: falla en 0.4 s, no a los 180 s
+  ✘  1 tests/e2e/fondo-pruebas.ts:250:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (406ms)
+    Error: el lienzo emulado mide 48 px

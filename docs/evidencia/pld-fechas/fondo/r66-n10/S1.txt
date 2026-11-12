@@ -1,0 +1,276 @@
+  ✘   1 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.6s)
+  ✘   2 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (1.9s)
+  ✓   3 tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.0s)
+  ✘   4 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (2.6s)
+  ✘   5 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (3.2s)
+  ✘   6 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (2.9s)
+  ✘   7 tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (3.2s)
+  ✘   8 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (1.9s)
+  ✘   9 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (2.2s)
+  ✘  10 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (2.8s)
+  ✘  11 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (2.8s)
+  ✘  12 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (4.3s)
+  ✘  13 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (2.2s)
+  ✘  14 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (1.9s)
+  ✘  15 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (3.9s)
+  ✘  16 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (2.2s)
+  ✓  17 tests/e2e/fondo-pruebas.ts:325:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.7s)
+  ✘  18 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✘  19 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (4.0s)
+  ✘  20 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.5s)
+  ✘  21 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (2.2s)
+  ✘  22 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.5s)
+  ✘  23 tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (3.9s)
+
+  1) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":4},"asignaciones":{"escena":2,"motor":2},"buferes":[[41,41]],"maximo":{"escena":[41,41],"motor":[41,41]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 4,
+      }
+
+  2) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":2},"asignaciones":{"escena":2,"motor":2},"buferes":[[54,54]],"maximo":{"escena":[54,54],"motor":[54,54]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 2,
+      }
+
+  3) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":4},"asignaciones":{"escena":2,"motor":2},"buferes":[[82,82]],"maximo":{"escena":[82,82],"motor":[82,82]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 4,
+      }
+
+  4) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › estable ─────────
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":2},"asignaciones":{"escena":0,"motor":0},"buferes":[[82,82]],"maximo":{"escena":[82,82],"motor":[82,82]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 2,
+      }
+
+  5) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › estable ─────────
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":2},"asignaciones":{"escena":0,"motor":0},"buferes":[[41,41]],"maximo":{"escena":[41,41],"motor":[41,41]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 2,
+      }
+
+  6) tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":102,"motor":-1},"asignaciones":{"escena":102,"motor":-1},"buferes":[],"maximo":{"escena":[41,41],"motor":[]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 1
+    + Received  + 1
+      Object {
+    -   "escena": 0,
+    +   "escena": 102,
+      }
+
+  7) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":62,"motor":62},"asignaciones":{"escena":62,"motor":62},"buferes":[[54,54]],"maximo":{"escena":[54,54],"motor":[54,54]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 62,
+    +   "motor": 62,
+      }
+
+  8) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":34,"motor":98},"asignaciones":{"escena":96,"motor":96},"buferes":[[41,41]],"maximo":{"escena":[41,41],"motor":[41,41]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 34,
+    +   "motor": 98,
+      }
+
+  9) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable ──
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":102,"motor":102},"asignaciones":{"escena":100,"motor":100},"buferes":[[82,82]],"maximo":{"escena":[82,82],"motor":[82,82]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 102,
+    +   "motor": 102,
+      }
+
+  10) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable ─
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":102,"motor":102},"asignaciones":{"escena":100,"motor":100},"buferes":[[41,41]],"maximo":{"escena":[41,41],"motor":[41,41]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 102,
+    +   "motor": 102,
+      }
+
+  11) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":2},"asignaciones":{"escena":0,"motor":0},"buferes":[[82,82]],"maximo":{"escena":[82,82],"motor":[82,82]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 2,
+      }
+
+  12) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":2},"asignaciones":{"escena":2,"motor":2},"buferes":[[109,109]],"maximo":{"escena":[109,109],"motor":[109,109]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 2,
+      }
+
+  13) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":62,"motor":62},"asignaciones":{"escena":62,"motor":62},"buferes":[[109,109]],"maximo":{"escena":[109,109],"motor":[109,109]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 62,
+    +   "motor": 62,
+      }
+
+  14) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":116,"motor":116},"asignaciones":{"escena":114,"motor":114},"buferes":[[82,82]],"maximo":{"escena":[82,82],"motor":[82,82]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 116,
+    +   "motor": 116,
+      }
+
+  15) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":4},"asignaciones":{"escena":2,"motor":2},"buferes":[[41,41]],"maximo":{"escena":[41,41],"motor":[41,41]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 4,
+      }
+
+  16) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":4},"asignaciones":{"escena":2,"motor":2},"buferes":[[82,82]],"maximo":{"escena":[82,82],"motor":[82,82]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 4,
+      }
+
+  17) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":2,"motor":2},"asignaciones":{"escena":0,"motor":0},"buferes":[[41,41]],"maximo":{"escena":[41,41],"motor":[41,41]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 2,
+    +   "motor": 2,
+      }
+
+  18) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":30,"motor":328},"asignaciones":{"escena":326,"motor":326},"buferes":[[41,41]],"maximo":{"escena":[41,41],"motor":[41,41]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 30,
+    +   "motor": 328,
+      }
+
+  19) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":32,"motor":96},"asignaciones":{"escena":96,"motor":96},"buferes":[[82,82]],"maximo":{"escena":[82,82],"motor":[82,82]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 32,
+    +   "motor": 96,
+      }
+
+  20) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":30,"motor":328},"asignaciones":{"escena":326,"motor":326},"buferes":[[82,82]],"maximo":{"escena":[82,82],"motor":[82,82]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 30,
+    +   "motor": 328,
+      }
+
+  21) tests/e2e/fondo-pruebas.ts:368:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms
+    Error: asignaciones a width/height que dejan el mismo valor: {"repetidas":{"escena":116,"motor":116},"asignaciones":{"escena":114,"motor":114},"buferes":[[41,41]],"maximo":{"escena":[41,41],"motor":[41,41]}}
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 2
+    + Received  + 2
+      Object {
+    -   "escena": 0,
+    -   "motor": 0,
+    +   "escena": 116,
+    +   "motor": 116,
+      }
+  21 failed
+  2 passed (1.4m)
+[e2e] recorridos terminados con estado 1 · 23 pruebas corridas · 86 s

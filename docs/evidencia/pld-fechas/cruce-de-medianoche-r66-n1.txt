@@ -1,0 +1,63 @@
+# r66-N1: pld-postgres.test.ts arrancando 3 s antes de la medianoche de México (libfaketime en Postgres y Node)
+# Guion: el a-la-hora.sh de la revisión, con el puerto y el directorio de esta sesión (abajo).
+# Duración de pld-postgres: 3.7 a 14 s en local (también con carga de 24); test:db completo en el CI, 238 s.
+# Arreglo: si faltan menos de 10 min para la medianoche de México, la suite espera a que pase (esperarSiLlegaLaMedianoche).
+
+## cruce-aa6accf
+TZ=UTC pg.timezone=UTC
+pg now() CDMX: 2026-11-10 23:59:57.274781
+node CDMX 2026-11-10 23:59:57 · local Wed Nov 11 2026 05:59:57 GMT+0000
+ℹ pass 23
+ℹ fail 5
+salida=1
+✖ manifiesto de conservación: conteos y huellas en streaming, con su evento por página (11.300792ms)
+✖ personal (r2-fix-N2): ningún cambio deja un aviso abierto sin quien lo analice; con candado común contra el aviso (20.061209ms)
+✖ sesión con persona excluida (r2-fix2-N2) y sesiones aparte (r2-fix3-N3): un caso entra solo a una sesión con su misma reserva (17.529291ms)
+✖ votos de la sesión oculta (r2-fix3-N2): quien la sesión excluye no ve los votos que registró sobre un caso que sí ve (20.719875ms)
+
+## cruce-arreglo
+TZ=UTC pg.timezone=UTC
+pg now() CDMX: 2026-11-10 23:59:57.256267
+node CDMX 2026-11-10 23:59:57 · local Wed Nov 11 2026 05:59:57 GMT+0000
+  ℹ Esperó 4 s a que pasara la medianoche de México.
+ℹ pass 28
+ℹ fail 0
+salida=0
+
+## cruce-aa6accf-tzmx
+TZ=America/Mexico_City pg.timezone=America/Mexico_City
+pg now() CDMX: 2026-11-10 23:59:57.255402
+node CDMX 2026-11-10 23:59:57 · local Tue Nov 10 2026 23:59:57 GMT-0600
+ℹ pass 23
+ℹ fail 5
+salida=1
+✖ manifiesto de conservación: conteos y huellas en streaming, con su evento por página (11.895125ms)
+✖ personal (r2-fix-N2): ningún cambio deja un aviso abierto sin quien lo analice; con candado común contra el aviso (19.034292ms)
+✖ sesión con persona excluida (r2-fix2-N2) y sesiones aparte (r2-fix3-N3): un caso entra solo a una sesión con su misma reserva (15.635583ms)
+✖ votos de la sesión oculta (r2-fix3-N2): quien la sesión excluye no ve los votos que registró sobre un caso que sí ve (21.606083ms)
+
+## cruce-arreglo-tzmx
+TZ=America/Mexico_City pg.timezone=America/Mexico_City
+pg now() CDMX: 2026-11-10 23:59:57.254806
+node CDMX 2026-11-10 23:59:57 · local Tue Nov 10 2026 23:59:57 GMT-0600
+  ℹ Esperó 4 s a que pasara la medianoche de México.
+ℹ pass 28
+ℹ fail 0
+salida=0
+
+## a-la-hora.sh
+#!/bin/bash
+# Uso: a-la-hora.sh "<UTC YYYY-MM-DD HH:MM:SS>" <salida> <TZ del proceso> <timezone de Postgres> [pruebas...]
+set -u
+S=<scratchpad>
+INSTANTE=$1; SALIDA=$2; export TZ=$3; PGZ=$4; shift 4
+export DYLD_FORCE_FLAT_NAMESPACE=1 DYLD_INSERT_LIBRARIES=/opt/homebrew/lib/faketime/libfaketime.1.dylib FAKETIME="@$INSTANTE" FAKETIME_DONT_RESET=1
+PGB=/opt/homebrew/opt/postgresql@17/bin
+$PGB/postgres -D $S/pg5553 -p 5553 -c unix_socket_directories='' -c listen_addresses=127.0.0.1 -c timezone=$PGZ >> $S/pg5553.log 2>&1 &
+pg=$!
+for i in $(seq 1 50); do $PGB/pg_isready -q -h 127.0.0.1 -p 5553 && break; sleep 0.2; done
+{ echo "TZ=$TZ pg.timezone=$PGZ"; echo "pg now() CDMX: $($PGB/psql -h 127.0.0.1 -p 5553 -U postgres -Atc "select now() at time zone 'America/Mexico_City'")"; /opt/homebrew/bin/node -e 'console.log("node CDMX", new Date().toLocaleString("sv-SE",{timeZone:"America/Mexico_City"}), "· local", new Date().toString().slice(0,33))'; } > "$SALIDA"
+unset DATABASE_URL
+AISLAMIENTO_DATABASE_URL=postgres://postgres@127.0.0.1:5553/postgres /opt/homebrew/bin/node node_modules/tsx/dist/cli.mjs --test --test-concurrency=1 "$@" >> "$SALIDA" 2>&1
+echo "salida=$?" >> "$SALIDA"
+kill -INT $pg; wait $pg 2>/dev/null

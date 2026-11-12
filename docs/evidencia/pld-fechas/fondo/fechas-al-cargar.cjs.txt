@@ -1,0 +1,18 @@
+// Lista cada new Date() sin argumentos, Date.now() o performance.now() que se evalúa al cargar el módulo (fuera de toda función).
+const ts = require(process.cwd() + "/node_modules/typescript");
+const fs = require("fs");
+const archivos = process.argv.slice(2);
+for (const f of archivos) {
+  const src = ts.createSourceFile(f, fs.readFileSync(f, "utf8"), ts.ScriptTarget.Latest, true, f.endsWith(".mjs") ? ts.ScriptKind.JS : ts.ScriptKind.TS);
+  const visitar = (n, enFuncion) => {
+    const esFuncion = ts.isFunctionLike(n) || ts.isGetAccessor(n);
+    const ahora = (ts.isNewExpression(n) && n.expression.getText() === "Date" && (!n.arguments || n.arguments.length === 0))
+      || (ts.isCallExpression(n) && ["Date.now", "performance.now"].includes(n.expression.getText()));
+    if (ahora && !enFuncion) {
+      const { line } = src.getLineAndCharacterOfPosition(n.getStart());
+      console.log(`${f}:${line + 1}: ${src.text.split("\n")[line].trim().slice(0, 140)}`);
+    }
+    ts.forEachChild(n, (h) => visitar(h, enFuncion || esFuncion));
+  };
+  visitar(src, false);
+}

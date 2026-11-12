@@ -1,0 +1,8 @@
+import sys
+p=sys.argv[1]; s=open(p).read()
+a="  if (!remoto) return playwright.chromium.launch(launchOptions);"
+assert s.count(a)==1, p
+s=s.replace(a,'''  // SWIFTSHADER TEMPORAL (no se sube): WebGL por software, como el navegador remoto del CI.
+  if (!remoto && process.env.E2E_SWIFT) return playwright.chromium.launch({ ...launchOptions, args: [...(launchOptions.args ?? []), "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+  if (!remoto) return playwright.chromium.launch(launchOptions);''')
+open(p,"w").write(s)

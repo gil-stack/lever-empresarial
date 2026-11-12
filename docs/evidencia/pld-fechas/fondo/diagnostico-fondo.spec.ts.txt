@@ -1,0 +1,98 @@
+// DIAGNÓSTICO TEMPORAL (no se sube): «con GPU rápida (emulado) a DPR 1 › arrastrar la ventana», con el detalle de cada
+// cuadro largo. Escribe una línea JSON por vuelta en $DIAG_SALIDA.
+import { appendFileSync } from "node:fs";
+
+import { expect, test } from "@playwright/test";
+
+import { INICIO, entrar } from "./marco-apoyo";
+
+test.use({ deviceScaleFactor: 1, viewport: { width: 1440, height: 900 } });
+
+test("diagnóstico: arrastrar la ventana con GPU emulada", async ({ playwright, baseURL, viewport, deviceScaleFactor, launchOptions }, info) => {
+  const propio = await playwright.chromium.launch(process.env.DIAG_SWIFT ? { ...launchOptions, args: [...(launchOptions.args ?? []), "--use-angle=swiftshader", "--use-gl=angle", "--enable-unsafe-swiftshader"] } : launchOptions);
+  try {
+    const page = await (await propio.newContext({ baseURL, viewport, deviceScaleFactor })).newPage();
+    await page.addInitScript(() => {
+      const w = window as unknown as Record<string, unknown>;
+      w.cuadrosLargos = [];
+      new PerformanceObserver((l) => (w.cuadrosLargos as unknown[]).push(...l.getEntries())).observe({ type: "long-animation-frame", buffered: true });
+      new MutationObserver(() => {
+        if (w.primeraPintura === undefined && document.querySelector("canvas.escena-lienzo[data-cuadros]")) w.primeraPintura = performance.now();
+      }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-cuadros"] });
+      const copiar = CanvasRenderingContext2D.prototype.drawImage;
+      CanvasRenderingContext2D.prototype.drawImage = function (this: CanvasRenderingContext2D, ...a: unknown[]) {
+        if (this.canvas.classList.contains("escena-lienzo")) return;
+        return (copiar as (...x: unknown[]) => void).apply(this, a);
+      } as typeof copiar;
+      document.addEventListener("DOMContentLoaded", () => {
+        const e = document.createElement("style");
+        e.textContent = ".escena-lienzo { width: var(--lado, 48px) !important; height: var(--lado, 48px) !important; }";
+        e.nonce = document.querySelector<HTMLElement>("[nonce]")?.nonce ?? "";
+        document.head.append(e);
+      });
+    });
+    await entrar(page);
+    await page.goto(INICIO);
+    const lienzo = page.locator("canvas.escena-lienzo");
+    await expect(lienzo).toHaveAttribute("data-gpu", "si", { timeout: 60_000 });
+    const freno = Number(process.env.DIAG_FRENO ?? 0);
+    if (freno > 1) await (await page.context().newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: freno });
+    const marcas = await page.evaluate(
+      (lados) =>
+        new Promise<{ inicio: number; fin: number }>((listo) => {
+          const l = document.querySelector<HTMLElement>("canvas.escena-lienzo")!;
+          const inicio = performance.now();
+          const anchos: string[] = [];
+          let ro = 0;
+          new ResizeObserver(() => { ro += 1; }).observe(l);
+          let i = 0;
+          const paso = () => {
+            if (i >= lados.length) return listo({ inicio, fin: performance.now(), anchos, ro } as never);
+            l.style.setProperty("--lado", `${lados[i++]}px`);
+            anchos.push(`${l.offsetWidth}x${l.offsetHeight}/${getComputedStyle(l).width}/${(l as HTMLCanvasElement).width}`);
+            setTimeout(paso, 30);
+          };
+          paso();
+        }),
+      Array.from({ length: 36 }, (_, i) => (i <= 20 ? 48 - 2 * i : 8 + 2 * (i - 20))),
+    );
+    await page.waitForTimeout(700);
+    const renderer = await page.evaluate(() => { const g = document.createElement("canvas").getContext("webgl"); const d = g?.getExtension("WEBGL_debug_renderer_info"); return d ? String(g!.getParameter(d.UNMASKED_RENDERER_WEBGL)) : "?"; });
+    const datos = await page.evaluate(async (m) => {
+      const w = window as unknown as { cuadrosLargos: PerformanceEntry[]; primeraPintura?: number };
+      const delFondo = new Set<string>();
+      for (const r of performance.getEntriesByType("resource") as PerformanceResourceTiming[]) {
+        if (r.initiatorType !== "script") continue;
+        if ((await (await fetch(r.name)).text()).includes("No se pudo cargar el fondo animado")) delFondo.add(r.name);
+      }
+      const primera = w.primeraPintura ?? Infinity;
+      const lienzo = document.querySelector<HTMLCanvasElement>("canvas.escena-lienzo")!;
+      return {
+        primera,
+        arrastre: m,
+        cuadros: lienzo.dataset.cuadros,
+        ms: lienzo.dataset.ms,
+        largos: w.cuadrosLargos
+          .map((e) => e as unknown as {
+            startTime: number; duration: number; blockingDuration: number; renderStart: number; styleAndLayoutStart: number;
+            scripts: { sourceURL: string; invoker: string; invokerType: string; duration: number; startTime: number; forcedStyleAndLayoutDuration: number; sourceFunctionName: string }[];
+          })
+          .filter((e) => e.startTime > primera)
+          .map((e) => ({
+            desdePrimera: Math.round(e.startTime - primera),
+            desdeArrastre: Math.round(e.startTime - m.inicio),
+            duracion: Math.round(e.duration),
+            bloqueo: Math.round(e.blockingDuration),
+            render: Math.round(e.renderStart ? e.renderStart - e.startTime : -1),
+            estiloYDiseno: Math.round(e.styleAndLayoutStart ? e.styleAndLayoutStart - e.startTime : -1),
+            delFondo: e.scripts.some((s) => delFondo.has(s.sourceURL)),
+            scripts: e.scripts.map((s) => ({ fondo: delFondo.has(s.sourceURL), invocador: s.invoker, tipo: s.invokerType, ms: Math.round(s.duration), desde: Math.round(s.startTime - e.startTime), forzado: Math.round(s.forcedStyleAndLayoutDuration), fn: s.sourceFunctionName })),
+          })),
+      };
+    }, marcas);
+    const linea = { vuelta: info.repeatEachIndex, carga: process.env.DIAG_CARGA ?? "", freno: process.env.DIAG_FRENO ?? "", renderer, fallaViejo: datos.largos.filter((l) => l.delFondo).length > 0, ...datos };
+    if (process.env.DIAG_SALIDA) appendFileSync(process.env.DIAG_SALIDA, `${JSON.stringify(linea)}\n`);
+  } finally {
+    await propio.close();
+  }
+});

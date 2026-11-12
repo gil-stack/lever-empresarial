@@ -1,0 +1,15 @@
+#!/bin/bash
+# correr.sh <etiqueta> <sabotajes...>: aplica (aplicar.py de -10), corre las 3 specs del fondo, revierte src y verifica.
+W=<raíz del repo>
+R=<scratchpad>/r66/n5
+S=<scratchpad>
+ET=$1; shift; cd $W || exit 1
+cp tests/e2e/fondo-pruebas.ts $R/.fondo-pruebas.respaldo.ts
+for s in "$@"; do python3 $R/aplicar.py $s $W || { git checkout -q -- src; cp $R/.fondo-pruebas.respaldo.ts tests/e2e/fondo-pruebas.ts; exit 1; }; done
+PATH=/opt/homebrew/opt/postgresql@17/bin:$PATH LC_ALL=C pg_ctl -D $S/pg5553 -l $S/pg5553.log -o "-p 5553 -c unix_socket_directories=''" start -w >/dev/null 2>&1
+ini=$(date +%s)
+E2E_ADMIN_URL=postgres://postgres@127.0.0.1:5553/postgres E2E_PUERTO=3153 E2E_BLOB_PUERTO=4896 sh scripts/ci/pruebas-e2e.sh tests/e2e/brillo-del-fondo.spec.ts tests/e2e/optica-retina.spec.ts tests/e2e/velocidad-del-fondo.spec.ts > $R/$ET.txt 2>&1
+est=$?
+PATH=/opt/homebrew/opt/postgresql@17/bin:$PATH LC_ALL=C pg_ctl -D $S/pg5553 stop -w >/dev/null 2>&1
+git checkout -q -- src; cp $R/.fondo-pruebas.respaldo.ts tests/e2e/fondo-pruebas.ts
+echo "$ET ($*): estado $est · $(grep -cE '^  ✓' $R/$ET.txt) ✓ · $(grep -cE '^  ✘' $R/$ET.txt) ✘ · $(( $(date +%s) - ini )) s · src: $(git status --porcelain -- src | wc -l | tr -d ' ') cambios"

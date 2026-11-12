@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { expect, test, type BrowserContext, type Page, type Request } from "@playwright/test";
 import { Client } from "pg";
 
+import { hoyEnMexico } from "../../src/dominio/personas";
 import { arrecife, codigoTotp, consultar, contar, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 
@@ -41,9 +42,9 @@ async function envejecerEstaSesion(contexto: BrowserContext, minutos: number): P
   }
 }
 
-function hoy(): string {
-  return process.env.E2E_TODAY ?? new Date().toISOString().slice(0, 10);
-}
+// La fecha de México al momento de usarla, la misma que calcula el servidor en esa petición. No el E2E_TODAY de la
+// siembra: una corrida que cruza la medianoche de México vería dos días distintos.
+const hoy = () => hoyEnMexico(new Date());
 
 test("Aprobaciones se refresca al volver por el lateral tras una acción en Personas, Política, Proveedores y Flujo", async ({ page, context }) => {
   const errores = vigilarConsola(page);

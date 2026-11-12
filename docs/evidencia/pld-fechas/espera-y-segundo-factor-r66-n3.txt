@@ -1,0 +1,26 @@
+# r66-N3: pld-postgres con libfaketime en Postgres y Node (a-la-hora.sh de la revisión, en cruce-de-medianoche-r66-n1.txt)
+# Columnas: versión · huso del proceso y de Postgres · arranque en México · now() de Postgres al arrancar · espera · resultado · errores
+# 46d5e6d: espera de hasta 10 min y SESION_SOFIPO fechado al cargar. Arreglo: margen de 2 min y factor fechado en cada uso.
+
+46d5e6d · UTC · 2026-11-10 23:54:30 (MX) · 2026-11-10 23:54:30.274893 · Esperó 331 s · ℹ pass 26 ℹ fail 2  ·    2 reautenticacion_requerida 
+arreglo · UTC · 2026-11-10 23:50:01 (MX) · 2026-11-10 23:50:01.283313 ·  · ℹ pass 28 ℹ fail 0  · 
+arreglo · UTC · 2026-11-10 23:54:30 (MX) · 2026-11-10 23:54:30.262245 ·  · ℹ pass 28 ℹ fail 0  · 
+arreglo · UTC · 2026-11-10 23:57:59 (MX) · 2026-11-10 23:57:59.263528 ·  · ℹ pass 28 ℹ fail 0  · 
+arreglo · UTC · 2026-11-10 23:59:57 (MX) · 2026-11-10 23:59:57.26615 · Esperó 4 s · ℹ pass 28 ℹ fail 0  · 
+arreglo · UTC · 2026-11-11 00:00:30 (MX) · 2026-11-11 00:00:30.264654 ·  · ℹ pass 28 ℹ fail 0  · 
+46d5e6d · America/Mexico_City · 2026-11-10 23:54:30 (MX) · 2026-11-10 23:54:30.270855 · Esperó 331 s · ℹ pass 26 ℹ fail 2  ·    2 reautenticacion_requerida 
+arreglo · America/Mexico_City · 2026-11-10 23:50:01 (MX) · 2026-11-10 23:50:01.284618 ·  · ℹ pass 28 ℹ fail 0  · 
+arreglo · America/Mexico_City · 2026-11-10 23:54:30 (MX) · 2026-11-10 23:54:30.272535 ·  · ℹ pass 28 ℹ fail 0  · 
+arreglo · America/Mexico_City · 2026-11-10 23:57:59 (MX) · 2026-11-10 23:57:59.278003 ·  · ℹ pass 28 ℹ fail 0  · 
+arreglo · America/Mexico_City · 2026-11-10 23:59:57 (MX) · 2026-11-10 23:59:57.286928 · Esperó 4 s · ℹ pass 28 ℹ fail 0  · 
+arreglo · America/Mexico_City · 2026-11-11 00:00:30 (MX) · 2026-11-11 00:00:30.294914 ·  · ℹ pass 28 ℹ fail 0  · 
+
+# tests/operacion/sesion-sofipo.test.ts con el apoyo de 46d5e6d y con el arreglo
+## 46d5e6d
+ℹ pass 0
+ℹ fail 2
+✖ 10 minutos después de cargar el módulo, el factor sigue vigente (0.935291ms)
+✖ la edad del factor es de 1 s y nunca negativa, aunque la hora se lea antes que el factor (0.163ms)
+## arreglo
+ℹ pass 2
+ℹ fail 0
