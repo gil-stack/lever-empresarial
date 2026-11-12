@@ -1,0 +1,20 @@
+{
+  "pedido": {
+    "method": "assignCards",
+    "payload": {
+      "idepCliente": 206,
+      "cards": [
+        999999
+      ]
+    }
+  },
+  "http": 200,
+  "ms": 1044,
+  "cuerpo": {
+    "response": "Ha ocurrido un error",
+    "status": {
+      "code": 1,
+      "message": "Error"
+    }
+  }
+}

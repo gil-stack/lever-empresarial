@@ -1,0 +1,20 @@
+{
+  "pedido": {
+    "method": "cardBlocker",
+    "payload": {
+      "email": "<email:16>",
+      "card": 999999,
+      "action": "block"
+    }
+  },
+  "http": 200,
+  "ms": 1102,
+  "cuerpo": {
+    "status": {
+      "code": "115",
+      "message": "ERROR: Cuenta no encontrada.",
+      "mensaje": "ERROR: Cuenta no encontrada."
+    },
+    "response": {}
+  }
+}

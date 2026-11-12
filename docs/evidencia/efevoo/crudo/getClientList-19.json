@@ -1,0 +1,29 @@
+{
+  "pedido": {
+    "method": "getClientList",
+    "payload": {
+      "idepClientes": [
+        19
+      ]
+    }
+  },
+  "http": 200,
+  "ms": 1286,
+  "cuerpo": {
+    "response": {
+      "clients": [
+        {
+          "idepCliente": 19,
+          "name": "<name:21>",
+          "balance": 3201.29,
+          "totalCardBalance": 500,
+          "totalCards": 2
+        }
+      ]
+    },
+    "status": {
+      "code": 0,
+      "message": "Message OK."
+    }
+  }
+}

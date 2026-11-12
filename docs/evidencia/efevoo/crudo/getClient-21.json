@@ -1,0 +1,93 @@
+{
+  "pedido": {
+    "method": "getClient",
+    "payload": {
+      "idepCliente": 21
+    }
+  },
+  "http": 200,
+  "ms": 599,
+  "cuerpo": {
+    "response": {
+      "company": 1,
+      "email": "<email:21>",
+      "estatus": 1,
+      "idepCliente": 21,
+      "balance": 50,
+      "comercio": {
+        "razonSocial": "<razonSocial:9>",
+        "rfc": "",
+        "fechaConst": "",
+        "giroSocial": "",
+        "paisConst": "",
+        "telefono": "",
+        "email": "<email:21>"
+      },
+      "domicilio": {
+        "calle": "",
+        "numInt": "",
+        "numExt": "",
+        "colonia": "",
+        "municipio": "",
+        "codigoPostal": "",
+        "ciudad": "",
+        "estado": "",
+        "pais": ""
+      },
+      "contactos": [
+        {
+          "nombre": "",
+          "telefono": "",
+          "email": ""
+        },
+        {
+          "nombre": "",
+          "telefono": "",
+          "email": ""
+        }
+      ],
+      "representantes": [
+        {
+          "nombre": "",
+          "fechaNacimiento": "",
+          "rfc": "",
+          "curp": "",
+          "pais": "",
+          "acreditacion": "",
+          "numeroAcreditacion": ""
+        },
+        {
+          "nombre": "",
+          "fechaNacimiento": "",
+          "rfc": "",
+          "curp": "",
+          "pais": "",
+          "acreditacion": "",
+          "numeroAcreditacion": ""
+        },
+        {
+          "nombre": "",
+          "fechaNacimiento": "",
+          "rfc": "",
+          "curp": "",
+          "pais": "",
+          "acreditacion": "",
+          "numeroAcreditacion": ""
+        },
+        {
+          "nombre": "",
+          "fechaNacimiento": "",
+          "rfc": "",
+          "curp": "",
+          "pais": "",
+          "acreditacion": "",
+          "numeroAcreditacion": ""
+        }
+      ]
+    },
+    "status": {
+      "code": 0,
+      "message": "Message OK."
+    }
+  }
+}

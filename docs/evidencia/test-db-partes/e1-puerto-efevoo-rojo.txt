@@ -1,0 +1,36 @@
+▶ contenedores del CI
+  ✔ test:db:1 y test:db:2 usan contenedor y puerto propios y solo borran el suyo (854.439792ms)
+  ✔ la e2e usa otro contenedor y otro puerto que las dos partes de test:db (848.000084ms)
+  ✖ los puertos del modo ci de la e2e no son los de ningún laboratorio asignado (HANDOFF y relevo-2026-11-12) (1.069958ms)
+✖ contenedores del CI (1704.299042ms)
+ℹ tests 3
+ℹ suites 1
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1759.719708
+
+✖ failing tests:
+
+test at tests/ci/contenedores-ci.test.ts:59:3
+✖ los puertos del modo ci de la e2e no son los de ningún laboratorio asignado (HANDOFF y relevo-2026-11-12) (1.069958ms)
+  AssertionError [ERR_ASSERTION]: el puerto de efevoo (4897) es de un laboratorio asignado
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/contenedores-ci.test.ts:74:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

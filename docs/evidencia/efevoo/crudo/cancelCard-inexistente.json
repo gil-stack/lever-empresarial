@@ -1,0 +1,19 @@
+{
+  "pedido": {
+    "method": "cancelCard",
+    "payload": {
+      "email": "<email:16>",
+      "card": 999999
+    }
+  },
+  "http": 200,
+  "ms": 1191,
+  "cuerpo": {
+    "status": {
+      "code": "115",
+      "message": "ERROR: Cuenta no encontrada.",
+      "mensaje": "ERROR: Cuenta no encontrada."
+    },
+    "response": {}
+  }
+}

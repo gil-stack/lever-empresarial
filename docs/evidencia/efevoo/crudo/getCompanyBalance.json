@@ -1,0 +1,15 @@
+{
+  "pedido": {
+    "method": "getCompanyBalance"
+  },
+  "http": 200,
+  "ms": 996,
+  "cuerpo": {
+    "status": {
+      "code": "901",
+      "message": "ERROR: PARABILIUM API CONSULTAR TARJETA ERROR",
+      "mensaje": ""
+    },
+    "response": {}
+  }
+}

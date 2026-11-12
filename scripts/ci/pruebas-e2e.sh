@@ -26,6 +26,7 @@ marca() {
 # que una corrida local en modo ci no choque con el laboratorio de nadie. tests/ci/contenedores-ci.test.ts lo revisa.
 export E2E_PUERTO="${E2E_PUERTO:-3263}"
 export E2E_BLOB_PUERTO="${E2E_BLOB_PUERTO:-4926}"
+export E2E_EFEVOO_PUERTO="${E2E_EFEVOO_PUERTO:-4927}"
 puerto_pg=5643
 puerto_navegador=4833
 # Otro contenedor que las partes de test:db (r71-2).

@@ -1,0 +1,17 @@
+{
+  "pedido": {
+    "method": "unfundCard",
+    "payload": {
+      "idCard": 999999,
+      "emailCard": "<emailCard:16>",
+      "amount": 1,
+      "observations": "sonda",
+      "reference": "E1T0002"
+    }
+  },
+  "http": 200,
+  "ms": 588,
+  "cuerpo": {
+    "Reference": "Debe contener exactamente 7 dígitos numéricos."
+  }
+}

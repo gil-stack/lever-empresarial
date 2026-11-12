@@ -30,3 +30,5 @@
 2 tests/firmas/dos-firmas.test.ts
 2 tests/proveedores/historial-clabe.test.ts
 2 tests/autenticacion/postgres.test.ts
+2 tests/efevoo/reglas-postgres.test.ts
+2 tests/efevoo/operaciones-postgres.test.ts

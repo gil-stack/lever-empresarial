@@ -67,6 +67,7 @@ describe("contenedores del CI", () => {
       navegador: /^puerto_navegador=(\d+)$/m.exec(e2e)?.[1],
       next: /E2E_PUERTO="\$\{E2E_PUERTO:-(\d+)\}"/.exec(e2e)?.[1],
       blob: /E2E_BLOB_PUERTO="\$\{E2E_BLOB_PUERTO:-(\d+)\}"/.exec(e2e)?.[1],
+      efevoo: /E2E_EFEVOO_PUERTO="\$\{E2E_EFEVOO_PUERTO:-(\d+)\}"/.exec(e2e)?.[1],
     };
     for (const [nombre, puerto] of Object.entries(puertos)) {
       assert.ok(puerto, `no se encontró el puerto de ${nombre}`);

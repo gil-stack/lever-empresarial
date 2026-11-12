@@ -1,0 +1,72 @@
+{
+  "pedido": {
+    "method": "getTransactionsCard",
+    "payload": {
+      "email": "<email:23>",
+      "card": 560,
+      "descending": true,
+      "card_bin": ""
+    }
+  },
+  "http": 200,
+  "ms": 1231,
+  "cuerpo": {
+    "status": {
+      "code": "0",
+      "message": "Message OK."
+    },
+    "response": {
+      "transactions": [
+        {
+          "MCC": "",
+          "Correo": "<Correo:25>",
+          "IDSpei": null,
+          "Moneda": "MXN",
+          "Nombre": "<Nombre:4>",
+          "Importe": "500.0000",
+          "Tarjeta": "****6509",
+          "company": 1,
+          "Comercio": null,
+          "FechaHora": "2026-08-13 13:26:52",
+          "EnTransito": null,
+          "Referencia": "1234567",
+          "IDOperacion": "0",
+          "IdOperacion": "",
+          "MedioAcceso": "****6509",
+          "Autorizacion": "",
+          "IDMovimiento": "3923",
+          "IdMovimiento": "3923",
+          "Organizacion": "EPCVC",
+          "PaisComercio": "",
+          "EstatusCuenta": null,
+          "Observaciones": "test",
+          "NombreComercio": "",
+          "PrimerApellido": "<PrimerApellido:5>",
+          "ClaveMovimiento": "M09282600MXN484",
+          "DescripcionPais": "",
+          "FechaMovimiento": "2026-08-13 13:26:52",
+          "SegundoApellido": "",
+          "TipoTransaccion": null,
+          "MonedaMovimiento": "MXN",
+          "ReembolsoPremium": null,
+          "ImporteMovimiento": "500.0000",
+          "ConceptoMovimiento": "PAGO A TARJETA",
+          "NumeroAutorizacion": "",
+          "ReferenciaNumerica": "1234567",
+          "DescripcionComercio": "",
+          "IdOperacionOriginal": "",
+          "EstatusPostOperacion": "004",
+          "DescripcionMovimiento": "PAGO A TARJETA",
+          "MontoOrigenCompensado": 500,
+          "MonedaOrigenCompensada": "MXN",
+          "MonedaOrigenMovimiento": "",
+          "SaldoDespuesMovimiento": "",
+          "ImporteOrigenMovimiento": "500.0000",
+          "DescripcionPostOperacion": "EN TRANSITO",
+          "NumeroAfiliacionComercio": "",
+          "TipoMovimientoCargoAbono": "Abono"
+        }
+      ]
+    }
+  }
+}
