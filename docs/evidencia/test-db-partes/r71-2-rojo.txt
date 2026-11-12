@@ -1,0 +1,50 @@
+▶ contenedores del CI
+  ✖ test:db:1 y test:db:2 usan contenedor y puerto propios y solo borran el suyo (1032.418833ms)
+  ✖ la e2e usa otro contenedor y otro puerto que las dos partes de test:db (1018.437417ms)
+✖ contenedores del CI (2051.340041ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2206.210625
+
+✖ failing tests:
+
+test at tests/ci/contenedores-ci.test.ts:40:3
+✖ test:db:1 y test:db:2 usan contenedor y puerto propios y solo borran el suyo (1032.418833ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+  
+  'ci-postgres'
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/contenedores-ci.test.ts:43:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at node:internal/test_runner/test:1887:71
+      at node:internal/per_context/primordials:504:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:478:3)
+      at node:internal/per_context/primordials:504:9
+      at Array.map (<anonymous>) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ci-postgres',
+    expected: 'ci-postgres',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/ci/contenedores-ci.test.ts:49:3
+✖ la e2e usa otro contenedor y otro puerto que las dos partes de test:db (1018.437417ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+  
+  'ci-postgres'
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/contenedores-ci.test.ts:54:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Promise.all (index 0)

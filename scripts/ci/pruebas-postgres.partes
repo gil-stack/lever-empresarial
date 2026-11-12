@@ -1,0 +1,34 @@
+# Las pruebas que migran y borran su propia base de Postgres, repartidas en dos partes que el CI corre en máquinas
+# distintas (test:db:1 y test:db:2). El reparto sale del tiempo máximo de cada archivo en 8 corridas del CI
+# (docs/evidencia/test-db-partes/). Cada archivo va en exactamente una parte: lo exige tests/ci/partes-postgres.test.ts,
+# que también falla si una prueba que usa Postgres (AISLAMIENTO_DATABASE_URL o conBaseDesechable) no está aquí.
+# Dentro de cada parte corren en serie, en este orden.
+# parte archivo
+1 tests/cobranza/retenidos-postgres.test.ts
+1 tests/cobranza/cobranza-postgres.test.ts
+1 tests/autenticacion/enumeracion-tope.test.ts
+1 tests/flujo/flujo-postgres.test.ts
+1 tests/esquema/empresa-suspendida.test.ts
+1 tests/esquema/definer-search-path.test.ts
+1 tests/cobranza/reglas-base.test.ts
+1 tests/flujo/runway-postgres.test.ts
+1 tests/proveedores/pagos-proveedores.test.ts
+1 tests/inicio/resumen-postgres.test.ts
+1 tests/aislamiento/aislamiento.test.ts
+1 tests/operacion/portal-postgres.test.ts
+1 tests/proveedores/relectura-69b.test.ts
+1 tests/esquema/deriva.test.ts
+2 tests/pld/reglas-postgres.test.ts
+2 tests/operacion/alta-regulada-postgres.test.ts
+2 tests/personas/colaboradores-postgres.test.ts
+2 tests/autenticacion/recuperacion-factor-nuevo.test.ts
+2 tests/pld/pld-postgres.test.ts
+2 tests/pld/migracion-postgres.test.ts
+2 tests/flujo/runway-reglas-base.test.ts
+2 tests/autenticacion/seguridad-cuentas.test.ts
+2 tests/aislamiento/telefono.test.ts
+2 tests/firmas/dos-firmas.test.ts
+2 tests/proveedores/historial-clabe.test.ts
+2 tests/autenticacion/postgres.test.ts
+2 tests/efevoo/reglas-postgres.test.ts
+2 tests/efevoo/operaciones-postgres.test.ts

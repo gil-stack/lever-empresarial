@@ -13,7 +13,12 @@
       "outputs": [],
       "tags": ["ci"]
     },
-    "test:db": {
+    "test:db:1": {
+      "cache": false,
+      "outputs": [],
+      "tags": ["ci", "ci:cpus:4"]
+    },
+    "test:db:2": {
       "cache": false,
       "outputs": [],
       "tags": ["ci", "ci:cpus:4"]

@@ -26,6 +26,32 @@ async function falla(p: Promise<unknown>): Promise<ErrorEfevoo> {
 }
 
 describe("Efevoo falso", () => {
+  it("las siembras de tarjetas-efevoo (E1) y tarjetas (E2) en el mismo falso dejan plásticos libres en cero", async () => {
+    // En la parte 8 de la e2e las dos specs comparten el falso: tarjetas-efevoo asigna 1363 (557) y 0168 (563), y la
+    // siembra de tarjetas toma los dos primeros en inventario con saldo cero. El 567 trae saldo de origen. Sin margen,
+    // una prueba más de E1 que tome un plástico rompe la siembra de tarjetas.
+    const MARGEN = 4;
+    const otro = await iniciarEfevooFalso(0);
+    try {
+      const c = clienteHttpEfevoo({ url: `${otro.url}/v1/apiservice`, usuario: otro.usuario, llave: otro.llave, ambiente: "sandbox" });
+      const { idepCliente } = await c.crearCliente({ correo: "margen@lever.test", razonSocial: "Margen" });
+      const asignar = (terminacion: string, correo: string) =>
+        c.asignarTarjeta({ producto: 16, subproducto: 19, idepCliente, ultimos8: ultimos8De(terminacion), titular: { ...titular, correo } });
+      // tarjetas-efevoo: 1363 queda activa; 0168 se asigna y se cancela.
+      await c.activarTarjeta((await asignar("1363", "e1-a@lever.test")).id, "e1-a@lever.test");
+      await c.cancelarTarjeta((await asignar("0168", "e1-b@lever.test")).id, "e1-b@lever.test");
+      // tarjetas: los dos primeros en inventario con saldo cero, como su siembra, y los activa.
+      const enCero = async () => (await c.listarTarjetas({ estados: ["inStock"], pagina: 1, tamano: 50 })).tarjetas.filter((t) => t.saldoCentavos === 0);
+      for (const [i, plastico] of (await enCero()).slice(0, 2).entries()) {
+        await c.activarTarjeta((await asignar(plastico.terminacion, `e2-${i}@lever.test`)).id, `e2-${i}@lever.test`);
+      }
+      const libres = await enCero();
+      assert.ok(libres.length >= MARGEN, `quedan ${libres.length} plásticos libres en cero después de las dos siembras; se piden al menos ${MARGEN}`);
+    } finally {
+      await otro.cerrar();
+    }
+  });
+
   it("un movimiento recién hecho llega sin TipoMovimientoCargoAbono y con el importe como número (como la captura -b)", async () => {
     const otro = await iniciarEfevooFalso(0, undefined, { minutosSinTipo: 3 });
     try {
@@ -63,7 +89,7 @@ describe("Efevoo falso", () => {
     assert.match(mov!.registradoEn, /^\d{1,2}\/\d{1,2}\/\d{4} \d{1,2}:\d{2}:\d{2} (AM|PM)$/);
 
     const inventario = await efevoo.listarTarjetas({ estados: ["inStock"], pagina: 1, tamano: 50 });
-    assert.deepEqual(inventario.tarjetas.map((t) => t.id), [557, 563, 564, 567, 568]);
+    assert.deepEqual(inventario.tarjetas.map((t) => t.id), [557, 563, 564, 567, 568, 801, 802, 803, 804, 805, 806]);
     const asignada = await efevoo.asignarTarjeta({ producto: 16, subproducto: 19, idepCliente, ultimos8: ultimos8De("1363"), titular });
     assert.deepEqual(asignada, { id: 557, terminacion: "1363" });
     await efevoo.activarTarjeta(557, titular.correo);

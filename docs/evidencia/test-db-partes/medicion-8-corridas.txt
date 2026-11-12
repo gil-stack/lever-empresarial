@@ -1,0 +1,37 @@
+   62.8 s máx ·    41.9 s mediana · 7 corridas · tests/cobranza/retenidos-postgres.test.ts
+   54.0 s máx ·    37.6 s mediana · 8 corridas · tests/pld/reglas-postgres.test.ts
+   35.2 s máx ·    22.6 s mediana · 8 corridas · tests/operacion/alta-regulada-postgres.test.ts
+   30.7 s máx ·    16.8 s mediana · 7 corridas · tests/cobranza/cobranza-postgres.test.ts
+   27.8 s máx ·    17.9 s mediana · 8 corridas · tests/personas/colaboradores-postgres.test.ts
+   26.4 s máx ·    23.4 s mediana · 8 corridas · tests/autenticacion/enumeracion-tope.test.ts
+   23.5 s máx ·    15.4 s mediana · 8 corridas · tests/autenticacion/recuperacion-factor-nuevo.test.ts
+   19.5 s máx ·    12.6 s mediana · 8 corridas · tests/flujo/flujo-postgres.test.ts
+   16.9 s máx ·    11.0 s mediana · 7 corridas · tests/esquema/empresa-suspendida.test.ts
+   15.8 s máx ·    10.2 s mediana · 8 corridas · tests/pld/pld-postgres.test.ts
+   15.8 s máx ·     9.9 s mediana · 8 corridas · tests/esquema/definer-search-path.test.ts
+   15.6 s máx ·    10.7 s mediana · 5 corridas · tests/efevoo/reglas-postgres.test.ts
+   15.3 s máx ·    10.7 s mediana · 8 corridas · tests/pld/migracion-postgres.test.ts
+   15.2 s máx ·     8.5 s mediana · 7 corridas · tests/cobranza/reglas-base.test.ts
+   14.1 s máx ·    12.0 s mediana · 4 corridas · tests/efevoo/operaciones-postgres.test.ts
+   13.3 s máx ·     9.1 s mediana · 6 corridas · tests/flujo/runway-postgres.test.ts
+   12.9 s máx ·     8.0 s mediana · 8 corridas · tests/proveedores/pagos-proveedores.test.ts
+   11.4 s máx ·     8.2 s mediana · 6 corridas · tests/flujo/runway-reglas-base.test.ts
+    9.9 s máx ·     5.6 s mediana · 8 corridas · tests/autenticacion/seguridad-cuentas.test.ts
+    8.2 s máx ·     5.6 s mediana · 8 corridas · tests/inicio/resumen-postgres.test.ts
+    8.0 s máx ·     5.1 s mediana · 8 corridas · tests/aislamiento/aislamiento.test.ts
+    7.3 s máx ·     4.9 s mediana · 8 corridas · tests/aislamiento/telefono.test.ts
+    7.0 s máx ·     4.1 s mediana · 8 corridas · tests/operacion/portal-postgres.test.ts
+    6.8 s máx ·     4.2 s mediana · 8 corridas · tests/firmas/dos-firmas.test.ts
+    6.4 s máx ·     4.0 s mediana · 8 corridas · tests/proveedores/relectura-69b.test.ts
+    6.4 s máx ·     3.8 s mediana · 8 corridas · tests/proveedores/historial-clabe.test.ts
+    6.2 s máx ·     3.8 s mediana · 8 corridas · tests/esquema/deriva.test.ts
+    6.1 s máx ·     4.0 s mediana · 8 corridas · tests/autenticacion/postgres.test.ts
+    0.0 s máx ·     0.0 s mediana · 8 corridas · ?
+total máx 498 s · mediana 332 s
+SIN ARCHIVO:
+? lectura segura del CFDI
+? fechas de la obligación
+? el CFDI leído cabe en la base
+? bar-7: el monto escrito de un pago cabe en la base
+? referencias de entidad en el CFDI
+? bar-10: las fechas del pago existen en el calendario

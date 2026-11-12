@@ -7,17 +7,42 @@ set -eu
 
 cd "$(dirname "$0")/../.."
 
-contenedor=ci-postgres
+# La parte (1 o 2) la elige el CI: test:db:1 y test:db:2 corren en máquinas distintas. Sin parte, las dos en serie
+# (npm run test:db, para el laboratorio). El reparto vive en scripts/ci/pruebas-postgres.partes y
+# tests/ci/partes-postgres.test.ts exige que cada prueba de Postgres esté en exactamente una parte.
+parte="${PARTE_POSTGRES:-todas}"
+case "$parte" in
+  1 | 2) lista=$(awk -v p="$parte" '$1 == p { print $2 }' scripts/ci/pruebas-postgres.partes) ;;
+  todas) lista=$(awk '$1 == "1" || $1 == "2" { print $2 }' scripts/ci/pruebas-postgres.partes) ;;
+  *) echo "PARTE_POSTGRES debe ser 1 o 2 (o nada, para las dos)." >&2; exit 2 ;;
+esac
+if [ -z "$lista" ]; then
+  echo "La parte $parte de test:db no tiene pruebas (scripts/ci/pruebas-postgres.partes)." >&2
+  exit 1
+fi
+
+# Contenedor y puerto propios por parte (r71-2): todas empiezan con docker rm -f del suyo, y con el mismo nombre dos
+# en la misma máquina se borrarían entre ellas. La e2e usa ci-postgres-e2e. Postgres escucha dentro del contenedor en
+# el mismo puerto que fuera: el psql de scripts/ci/bin corre dentro con la misma URL.
+case "$parte" in
+  1) contenedor=ci-postgres-db-1; puerto=5441 ;;
+  2) contenedor=ci-postgres-db-2; puerto=5442 ;;
+  *) contenedor=ci-postgres-db; puerto=5440 ;;
+esac
+export CI_POSTGRES_CONTENEDOR="$contenedor"
+
+# Con reintentos: el registro a veces corta con EOF, y docker run la bajaría sin reintentar.
+sh scripts/ci/descargar-imagen.sh postgres:17
 
 if docker inspect "$contenedor" >/dev/null 2>&1; then
   docker rm -f "$contenedor" >/dev/null 2>&1 || true
 fi
 
 docker run -d --name "$contenedor" \
-  -p 127.0.0.1:5432:5432 \
+  -p "127.0.0.1:${puerto}:${puerto}" \
   -v "$PWD:/work:ro" \
   -e POSTGRES_PASSWORD=postgres \
-  postgres:17 >/dev/null
+  postgres:17 -p "$puerto" >/dev/null
 
 limpiar() {
   docker rm -f "$contenedor" >/dev/null 2>&1 || true
@@ -26,7 +51,7 @@ trap limpiar EXIT
 
 i=0
 while [ "$i" -lt 120 ]; do
-  if docker exec "$contenedor" pg_isready -h 127.0.0.1 -U postgres >/dev/null 2>&1; then
+  if docker exec "$contenedor" pg_isready -h 127.0.0.1 -p "$puerto" -U postgres >/dev/null 2>&1; then
     break
   fi
   i=$((i + 1))
@@ -43,40 +68,16 @@ echo "Postgres desechable listo. Corren las pruebas que migran y borran su base.
 export PATH="$PWD/scripts/ci/bin:$PATH"
 usuario_local=postgres
 clave_local=postgres
-export AISLAMIENTO_DATABASE_URL="postgres://${usuario_local}:${clave_local}@127.0.0.1:5432/postgres"
+export AISLAMIENTO_DATABASE_URL="postgres://${usuario_local}:${clave_local}@127.0.0.1:${puerto}/postgres"
 unset DATABASE_URL
+
+echo "test:db, parte $parte: $(echo "$lista" | wc -l | tr -d ' ') archivos."
 
 # En serie: las pruebas alteran el mismo rol temporal y en paralelo chocan
 # con «tuple concurrently updated».
-./node_modules/.bin/tsx --test --test-concurrency=1 \
-  tests/aislamiento/aislamiento.test.ts \
-  tests/aislamiento/telefono.test.ts \
-  tests/esquema/deriva.test.ts \
-  tests/esquema/definer-search-path.test.ts \
-  tests/firmas/dos-firmas.test.ts \
-  tests/proveedores/historial-clabe.test.ts \
-  tests/proveedores/relectura-69b.test.ts \
-  tests/proveedores/pagos-proveedores.test.ts \
-  tests/autenticacion/postgres.test.ts \
-  tests/autenticacion/seguridad-cuentas.test.ts \
-  tests/autenticacion/recuperacion-factor-nuevo.test.ts \
-  tests/autenticacion/enumeracion-tope.test.ts \
-  tests/operacion/portal-postgres.test.ts \
-  tests/operacion/alta-regulada-postgres.test.ts \
-  tests/personas/colaboradores-postgres.test.ts \
-  tests/inicio/resumen-postgres.test.ts \
-  tests/flujo/flujo-postgres.test.ts \
-  tests/cobranza/cobranza-postgres.test.ts \
-  tests/flujo/runway-postgres.test.ts \
-  tests/flujo/runway-reglas-base.test.ts \
-  tests/cobranza/reglas-base.test.ts \
-  tests/cobranza/retenidos-postgres.test.ts \
-  tests/efevoo/reglas-postgres.test.ts \
-  tests/efevoo/operaciones-postgres.test.ts \
-  tests/esquema/empresa-suspendida.test.ts \
-  tests/pld/pld-postgres.test.ts \
-  tests/pld/reglas-postgres.test.ts \
-  tests/pld/migracion-postgres.test.ts
+set +e
+# shellcheck disable=SC2086
+"${TSX:-./node_modules/.bin/tsx}" --test --test-concurrency=1 $lista
 estado=$?
 limpiar
 trap - EXIT
