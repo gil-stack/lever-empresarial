@@ -1,0 +1,30 @@
+  1) tests/e2e/tarjetas.spec.ts:268:5 › T6: un timeout con efecto deja la carga sin confirmar; «Conciliar» la encuentra por su referencia y la confirma 
+
+    Test timeout of 120000ms exceeded.
+
+    Error: locator.click: Test timeout of 120000ms exceeded.
+    Call log:
+      - waiting for locator('[data-operacion="1000001"]').getByRole('button', { name: 'Conciliar' })
+
+
+      283 |   await page.reload();
+      284 |   const pendiente = page.locator(`[data-operacion="${op!.referencia}"]`);
+    > 285 |   await pendiente.getByRole("button", { name: "Conciliar" }).click();
+          |                                                              ^
+      286 |   await page.getByRole("dialog").getByRole("button", { name: "Buscar en el emisor" }).click();
+      287 |   await expect(page.getByText(`La operación ${op!.referencia} sí se hizo en el emisor. Quedó confirmada.`)).toBeVisible();
+      288 |   expect((await operaciones(tito.id)).slice(-1).map((o) => o.estado)).toEqual(["confirmada"]);
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/efevoo-tarjetas/tests/e2e/tarjetas.spec.ts:285:62
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/e2e/tarjetas-T6-un-timeout-con-d796f-su-referencia-y-la-confirma/error-context.md
+
+    test-results/e2e/tarjetas-T6-un-timeout-con-d796f-su-referencia-y-la-confirma/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/tarjetas-T6-un-timeout-con-d796f-su-referencia-y-la-confirma/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed

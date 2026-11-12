@@ -1,0 +1,6 @@
+  ✓  1 tests/e2e/zz-efevoo-sandbox.spec.ts:75:5 › 1. ver las tarjetas con el saldo real del emisor (2.3s)
+  ✓  2 tests/e2e/zz-efevoo-sandbox.spec.ts:83:5 › 2 y 3. cargar $100.00 y retirarlos; cargar $25.50 y retirarlos (cada uno se revierte en el acto) (25.0s)
+  ✓  3 tests/e2e/zz-efevoo-sandbox.spec.ts:99:5 › 4. bloquear y desbloquear (8.0s)
+  ✓  4 tests/e2e/zz-efevoo-sandbox.spec.ts:111:5 › 5. ver los movimientos en el emisor, con las referencias de Lever (2.8s)
+  ✓  5 tests/e2e/zz-efevoo-sandbox.spec.ts:120:5 › 6. el titular ve solo la suya en el teléfono (3.1s)
+  5 passed (49.7s)

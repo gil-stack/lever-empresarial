@@ -1,0 +1,29 @@
+// Uso: node llamar.mjs <nombre-salida> '<json {method,payload}>'
+// Carga credenciales del entorno (EFEVOO_API_USER/KEY); nunca las imprime.
+// Guarda la respuesta redactada (sin PII; tarjetas solo terminación) en crudo/<nombre>.json y la imprime.
+import { writeFileSync } from "node:fs";
+const [, , nombre, cuerpo] = process.argv;
+const user = process.env.EFEVOO_API_USER, key = process.env.EFEVOO_API_KEY;
+if (!user || !key) { console.error("sin credenciales"); process.exit(2); }
+const URL = "https://test-intgapi.efevoopay.com/v1/apiservice";
+const PII = /^(name|lastName1|lastName2|phone|email|client_address|alias|Correo|Nombre|PrimerApellido|SegundoApellido|client_email|client_fname|client_lname1|client_lname2|clientName|nombre|primerApellido|segundoApellido|nombreEmbozar|telefono|correo|address|whatsapp|razonSocial|rfc|curp|calle|numExt|numInt|colonia|municipio|codigoPostal|fechaNacimiento|emailCard|subclient_name|company_name|CuentaInterna|NombreComercio)$/;
+function red(v, k) {
+  if (Array.isArray(v)) return v.map((x) => red(x, k));
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([kk, vv]) => [kk, red(vv, kk)]));
+  if (typeof v === "string") {
+    if (k && PII.test(k) && v !== "") return `<${k}:${v.length}>`;
+    return v.replace(/\d[\d*]{11,18}\d/g, (m) => `****${m.slice(-4)}`);
+  }
+  return v;
+}
+const t0 = Date.now();
+let estado, texto;
+try {
+  const r = await fetch(URL, { method: "POST", headers: { "Content-Type": "application/json", "X-API-USER": user, "X-API-KEY": key, ...JSON.parse(process.env.EXTRA ?? "{}") }, body: cuerpo, signal: AbortSignal.timeout(20000) });
+  estado = r.status; texto = await r.text();
+} catch (e) { estado = "error"; texto = String(e.name); }
+let json; try { json = JSON.parse(texto); } catch { json = { _no_json: texto.slice(0, 300).replace(/\d{12,19}/g, "<dig>") }; }
+const pedido = red(JSON.parse(cuerpo));
+const salida = { pedido, http: estado, ms: Date.now() - t0, cuerpo: red(json) };
+writeFileSync(`crudo/${nombre}.json`, JSON.stringify(salida, null, 2));
+console.log(JSON.stringify(salida, null, 1).slice(0, Number(process.env.TOPE ?? 4000)));

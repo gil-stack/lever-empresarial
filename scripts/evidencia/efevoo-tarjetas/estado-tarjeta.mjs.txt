@@ -1,0 +1,23 @@
+// node estado-tarjeta.mjs <idTarjeta> : el estado de UNA tarjeta en el sandbox, sin datos personales.
+// Credenciales del entorno (set -a; . ~/.config/lever/efevoo-sandbox.env; set +a); nunca se imprimen.
+// Recorre getCardsList por páginas y deja solo id, estado, terminación y saldo de esa tarjeta.
+const [, , id] = process.argv;
+const user = process.env.EFEVOO_API_USER, key = process.env.EFEVOO_API_KEY;
+if (!user || !key || !/^[0-9]+$/.test(id ?? "")) { console.error("uso: node estado-tarjeta.mjs <id> (con credenciales en el entorno)"); process.exit(2); }
+for (let page = 1; page <= 40; page++) {
+  const r = await fetch("https://test-intgapi.efevoopay.com/v1/apiservice", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-USER": user, "X-API-KEY": key },
+    body: JSON.stringify({ method: "getCardsList", payload: { status: [], size: 50, page, currency: "MXN", card_bin: "" } }),
+    signal: AbortSignal.timeout(20000),
+  });
+  const j = await r.json();
+  const t = (j.response?.cards ?? []).find((c) => String(c.id) === id);
+  if (t) {
+    console.log(JSON.stringify({ leidoEn: new Date().toISOString(), metodo: "getCardsList", http: r.status, id: t.id, status: t.status, terminacion: String(t.bin ?? "").slice(-4), balance: t.balance ?? null }, null, 2));
+    process.exit(0);
+  }
+  if (page >= Number(j.response?.final_page ?? 1)) break;
+}
+console.error("no hallada");
+process.exit(1);

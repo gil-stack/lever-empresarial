@@ -29,8 +29,9 @@ describe("capacidades por superficie", () => {
       "cliente.flujo.editar",
       "cliente.flujo.ver",
       "cliente.resumen.ver",
+      "cliente.tarjetas.ver",
     ]);
-    for (const telefono of ["telefono.inicio.ver", "telefono.topes.ver", "telefono.facturacion.ver"] as const) {
+    for (const telefono of ["telefono.inicio.ver", "telefono.topes.ver", "telefono.facturacion.ver", "telefono.tarjetas.ver"] as const) {
       assert.equal(tiene(capacidades, telefono), false, telefono);
     }
   });
@@ -40,7 +41,7 @@ describe("capacidades por superficie", () => {
     const conFinanzas = capacidadesDe({ rolesCliente: ["contador", "finanzas"], rolesPlataforma: [] });
     assert.deepEqual(
       conFinanzas.filter((capacidad) => !contador.includes(capacidad)),
-      ["cliente.resumen.ver", "cliente.flujo.editar"],
+      ["cliente.resumen.ver", "cliente.flujo.editar", "cliente.tarjetas.ver"],
     );
     assert.equal(tieneRolDeTrabajo(["finanzas"]), false);
     assert.equal(tieneRolDeTrabajo(["tarjetahabiente", "finanzas"]), true);
@@ -72,7 +73,7 @@ describe("capacidades por superficie", () => {
     assert.deepEqual(abre("administrador"), DEMO);
     assert.deepEqual(abre("tarjetahabiente", "finanzas"), ["gastos", "tarjetas", "movimientos", "cuenta", "credito", "inversion", "ahorro"]);
     assert.deepEqual(abre("contador"), ["conciliacion", "gastos", "movimientos", "internacional", "viajes", "gasolina", "ahorro"]);
-    assert.deepEqual(abre("liberador"), ["internacional", "viajes", "gasolina"]);
+    assert.deepEqual(abre("liberador"), ["tarjetas", "internacional", "viajes", "gasolina"]);
     assert.deepEqual(abre("solicitante"), ["internacional", "viajes", "gasolina"]);
     assert.deepEqual(abre("tarjetahabiente"), []);
     const abreFiscal = (rol: RolCliente) => {
@@ -81,6 +82,22 @@ describe("capacidades por superficie", () => {
       return acceso?.tipo === "capacidad" && acceso.alguna.some((capacidad) => tiene(capacidades, capacidad));
     };
     assert.deepEqual(ROLES_CLIENTE.filter(abreFiscal), ["administrador", "solicitante", "liberador", "contador"]);
+  });
+
+  it("Tarjetas con Efevoo: administración, liberación y finanzas la abren; operan administración y liberación; el titular, en el teléfono", () => {
+    const de = (...roles: RolCliente[]) => capacidadesDe({ rolesCliente: roles, rolesPlataforma: [] });
+    const abreTarjetas = (...roles: RolCliente[]) => {
+      const acceso = rutaDe("/consola/tarjetas")?.acceso;
+      return acceso?.tipo === "capacidad" && acceso.alguna.some((capacidad) => tiene(de(...roles), capacidad));
+    };
+    assert.deepEqual(ROLES_CLIENTE.filter((rol) => abreTarjetas(rol)), ["administrador", "liberador", "finanzas"]);
+    assert.deepEqual(ROLES_CLIENTE.filter((rol) => tiene(de(rol), "cliente.tarjetas.operar")), ["administrador", "liberador"]);
+    assert.equal(abreTarjetas("contador"), false);
+    assert.equal(abreTarjetas("tarjetahabiente"), false);
+    const telefono = rutaDe("/telefono/tarjetas");
+    assert.equal(telefono?.superficie, "telefono");
+    assert.equal(telefono?.acceso.tipo === "capacidad" && telefono.acceso.alguna.some((c) => tiene(de("tarjetahabiente"), c)), true);
+    assert.equal(tiene(de("finanzas"), "telefono.tarjetas.ver"), false, "finanzas no es rol de trabajo: sin teléfono");
   });
 
   it("solicitante sigue leyéndose en membresías históricas", () => {

@@ -1,0 +1,35 @@
+▶ Tarjetas con Efevoo: la vista
+  ✔ el monto se lee en centavos exactos, mayor que cero (0.79075ms)
+  ✔ si no alcanza el saldo, lo dice antes de intentarlo; si el saldo no se conoce, deja pasar (0.06175ms)
+  ✔ solo se pinta una terminación de 4 dígitos, nunca un número más largo (0.076334ms)
+  ✔ cifras: activas, bloqueadas, saldo de la empresa y repartido; las canceladas no cuentan (0.0855ms)
+  ✔ se operan las activas y las bloqueadas; ni las por activar ni las canceladas (0.056833ms)
+✔ Tarjetas con Efevoo: la vista (1.489542ms)
+▶ el concepto de un movimiento del emisor
+  ✔ no deja pasar ninguna secuencia de 13 a 19 dígitos (ni con espacios o guiones); el resto se queda (1.248ms)
+✔ el concepto de un movimiento del emisor (1.292375ms)
+▶ el importe de un movimiento
+  ✔ lleva el signo de su tipo: «+» un abono, «−» un cargo y sin signo si el emisor no lo dice (7.7505ms)
+✔ el importe de un movimiento (7.818083ms)
+▶ el tono del importe en el teléfono (r-e2-9)
+  ✖ abono y cargo con su tono; sin tipo, neutro (0.197875ms)
+✖ el tono del importe en el teléfono (r-e2-9) (0.266917ms)
+ℹ tests 8
+ℹ suites 4
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 213.57975
+
+✖ failing tests:
+
+test at src/dominio/tarjetas/vista.test.ts:76:3
+✖ abono y cargo con su tono; sin tipo, neutro (0.197875ms)
+  TypeError: claseDeImporte is not a function
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/efevoo-tarjetas/src/dominio/tarjetas/vista.test.ts:78:18)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1889:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7)

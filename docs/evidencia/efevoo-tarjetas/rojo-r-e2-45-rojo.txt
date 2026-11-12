@@ -1,0 +1,60 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 3 s
+
+Running 2 tests using 1 worker
+
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"createClient","ms":10}
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"clientBalance","ms":3}
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"getCardsList","ms":1}
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"assignCard","ms":6}
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"activateCard","ms":0}
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"assignCards","ms":0}
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"assignCard","ms":22}
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"activateCard","ms":1}
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"assignCards","ms":0}
+{"nivel":"info","origen":"efevoo","evento":"efevoo_ok","metodo":"fundCard","ms":54}
+  ✘  1 tests/e2e/tarjetas.spec.ts:83:5 › T1: administración ve el saldo para tarjetas, cada tarjeta con su terminación, titular y saldo, y las acciones (805ms)
+  -  2 tests/e2e/tarjetas.spec.ts:145:5 › T5: el titular ve solo su tarjeta en el teléfono, con saldo y movimientos, y no abre la consola de Tarjetas
+
+
+  1) tests/e2e/tarjetas.spec.ts:83:5 › T1: administración ve el saldo para tarjetas, cada tarjeta con su terminación, titular y saldo, y las acciones 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "none"
+    Received: "underline"
+
+       97 |   await expect(filaTito.getByRole("button", { name: "Bloquear" })).toBeEnabled();
