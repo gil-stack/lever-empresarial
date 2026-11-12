@@ -28,7 +28,7 @@ export default async function PaginaTarjetas({ searchParams }: { searchParams: P
     <Marco actual="/consola/tarjetas" vista={vistaDeMarco(ctx)}>
       <ModuloDiseno titulo="Tarjetas">
         {reales ? (
-          <VistaTarjetasEfevoo datos={reales} empresaId={ctx?.empresa?.id ?? null} puedeOperar={puede(ctx, "cliente.tarjetas.operar")} />
+          <VistaTarjetasEfevoo datos={reales} empresaId={ctx?.empresa?.id ?? null} puedeOperar={puede(ctx, "cliente.tarjetas.operar")} ahora={new Date()} />
         ) : (
           <VistaDemo carga={leerDemo(apertura.tipo === "abierta" ? ctx : null, "tarjetas")} empresaId={ctx?.empresa?.id ?? null} params={params} />
         )}

@@ -47,8 +47,8 @@ export type TarjetaEmpresa = {
 export type MovimientoTarjeta = {
   readonly fecha: string;
   readonly concepto: string;
-  /** Con signo: negativo es un cargo. */
-  readonly montoCentavos: number;
+  /** Con signo como lo da el emisor; nulo si no se pudo leer el importe. */
+  readonly montoCentavos: number | null;
 };
 
 /** El saldo de la empresa en Efevoo, del que salen las cargas a tarjetas. */
@@ -137,4 +137,13 @@ export function cifrasTarjetas(datos: Pick<TarjetasEmpresa, "saldo" | "tarjetas"
  */
 export function conceptoSeguro(texto: string): string {
   return texto.replace(/\d(?:[ -]?\d){12,}/g, (secuencia) => `••${secuencia.replace(/\D/g, "").slice(-4)}`);
+}
+
+/** Una incierta solo puede quedar como «no apareció» 10 minutos después de la llamada (el emisor puede tardar en reflejarla). */
+export const ESPERA_CONCILIACION_MS = 10 * 60 * 1000;
+
+/** Minutos que faltan para que una incierta se pueda dar por no aparecida; 0 si ya se puede. */
+export function minutosParaConciliar(creadaEn: string, ahora: Date): number {
+  const falta = new Date(creadaEn).getTime() + ESPERA_CONCILIACION_MS - ahora.getTime();
+  return falta > 0 ? Math.ceil(falta / 60_000) : 0;
 }

@@ -9,6 +9,7 @@ import {
   ETIQUETA_ESTADO_OPERACION,
   ETIQUETA_ESTADO_TARJETA,
   ETIQUETA_TIPO_OPERACION,
+  minutosParaConciliar,
   operable,
   terminacionSegura,
   TONO_ESTADO_TARJETA,
@@ -24,7 +25,7 @@ const SIN_DATO = "—";
  * Tarjetas de la empresa con Efevoo Pay, con el diseño de la demostración: cifras arriba y la tabla de todas las
  * tarjetas. Solo la terminación; el número completo no llega aquí. Quien no opera ve lo mismo, sin botones.
  */
-export function VistaTarjetasEfevoo({ datos, empresaId, puedeOperar }: { datos: TarjetasEmpresa; empresaId: string | null; puedeOperar: boolean }) {
+export function VistaTarjetasEfevoo({ datos, empresaId, puedeOperar, ahora }: { datos: TarjetasEmpresa; empresaId: string | null; puedeOperar: boolean; ahora: Date }) {
   const cifras = cifrasTarjetas(datos);
   const saldoEmpresa = cifras.saldoEmpresaCentavos;
   return (
@@ -60,7 +61,9 @@ export function VistaTarjetasEfevoo({ datos, empresaId, puedeOperar }: { datos: 
                     {op.buscadaSinEncontrar ? " · no apareció en el emisor" : null}
                   </small>
                 </div>
-                {puedeOperar && op.estado === "incierta" ? <ResolverOperacion id={op.id} referencia={op.referencia} conciliada={op.buscadaSinEncontrar} /> : null}
+                {puedeOperar && (op.estado === "incierta" || op.buscadaSinEncontrar) ? (
+                  <ResolverOperacion id={op.id} referencia={op.referencia} incierta={op.estado === "incierta"} conciliada={op.buscadaSinEncontrar} esperaMin={minutosParaConciliar(op.creadaEn, ahora)} />
+                ) : null}
               </li>
             ))}
           </ul>

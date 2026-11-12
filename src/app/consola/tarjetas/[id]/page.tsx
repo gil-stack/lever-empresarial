@@ -22,7 +22,7 @@ export default async function PaginaTarjeta({ params }: { params: Promise<{ id: 
   return (
     <Marco actual="/consola/tarjetas" vista={vistaDeMarco(apertura.ctx)}>
       <ModuloDiseno titulo="Tarjetas">
-        <VistaDetalleTarjeta detalle={detalle} empresaId={apertura.ctx.empresa?.id ?? null} puedeOperar={puede(apertura.ctx, "cliente.tarjetas.operar")} />
+        <VistaDetalleTarjeta detalle={detalle} empresaId={apertura.ctx.empresa?.id ?? null} puedeOperar={puede(apertura.ctx, "cliente.tarjetas.operar")} ahora={new Date()} />
       </ModuloDiseno>
     </Marco>
   );

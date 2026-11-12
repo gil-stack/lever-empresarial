@@ -114,7 +114,20 @@ export function AccionesTarjeta({
 }
 
 /** Una operación incierta: «Conciliar» la busca en el emisor; si no apareció, «Reintentar» crea otra, ligada. */
-export function ResolverOperacion({ id, referencia, conciliada }: { id: string; referencia: string; conciliada: boolean }) {
+export function ResolverOperacion({
+  id,
+  referencia,
+  incierta,
+  conciliada,
+  esperaMin,
+}: {
+  id: string;
+  referencia: string;
+  incierta: boolean;
+  conciliada: boolean;
+  /** Minutos para que, si no aparece, se pueda reintentar; 0 si ya se puede. */
+  esperaMin: number;
+}) {
   const [abierto, setAbierto] = useState<"conciliar" | "reintentar" | null>(null);
   const intento = useIntento();
   const cerrar = () => {
@@ -125,7 +138,8 @@ export function ResolverOperacion({ id, referencia, conciliada }: { id: string; 
   const reintentar = useAccionDeFila(enviarReintento, `reintentar-${id}`, cerrar);
   return (
     <div className="flujo-acciones-fila">
-      <button type="button" className="boton-texto boton-chico" onClick={() => setAbierto("conciliar")}>Conciliar</button>
+      {incierta ? <button type="button" className="boton-texto boton-chico" onClick={() => setAbierto("conciliar")}>Conciliar</button> : null}
+      {incierta && esperaMin > 0 ? <small className="demo-tenue">Si no aparece, vuelve a conciliar en {esperaMin} min.</small> : null}
       {conciliada ? (
         <button type="button" className="boton-fantasma boton-chico" onClick={() => { intento.nuevo(); setAbierto("reintentar"); }}>Reintentar</button>
       ) : null}

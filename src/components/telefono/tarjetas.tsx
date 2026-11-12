@@ -29,7 +29,7 @@ export function TarjetasTitular({ tarjetas }: { tarjetas: readonly TarjetaDelTit
                   {movimientos.map((m, i) => (
                     <li key={`${m.fecha}-${i}`}>
                       <span>{conceptoSeguro(m.concepto)}<small>{m.fecha}</small></span>
-                      <span className={m.montoCentavos < 0 ? "monto-cargo" : "monto-abono"}>{formatoPesos(m.montoCentavos)}</span>
+                      <span className={m.montoCentavos !== null && m.montoCentavos < 0 ? "monto-cargo" : "monto-abono"}>{m.montoCentavos === null ? "—" : formatoPesos(m.montoCentavos)}</span>
                     </li>
                   ))}
                 </ul>

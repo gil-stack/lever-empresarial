@@ -8,6 +8,7 @@ import {
   conceptoSeguro,
   ETIQUETA_ESTADO_TARJETA,
   ETIQUETA_TIPO_OPERACION,
+  minutosParaConciliar,
   operable,
   terminacionSegura,
   TONO_ESTADO_TARJETA,
@@ -18,7 +19,7 @@ import type { DetalleTarjeta } from "@/server/tarjetas";
 import { AccionesTarjeta, ResolverOperacion } from "./formularios";
 
 /** El detalle de una tarjeta: estado, saldo, sus movimientos en el emisor y lo que Lever le pidió. */
-export function VistaDetalleTarjeta({ detalle, empresaId, puedeOperar }: { detalle: DetalleTarjeta; empresaId: string | null; puedeOperar: boolean }) {
+export function VistaDetalleTarjeta({ detalle, empresaId, puedeOperar, ahora }: { detalle: DetalleTarjeta; empresaId: string | null; puedeOperar: boolean; ahora: Date }) {
   const { tarjeta, movimientos, operaciones } = detalle;
   const terminacion = terminacionSegura(tarjeta.terminacion);
   return (
@@ -49,7 +50,7 @@ export function VistaDetalleTarjeta({ detalle, empresaId, puedeOperar }: { detal
               <thead><tr><th scope="col">Fecha</th><th scope="col">Concepto</th><th scope="col" className="derecha">Importe</th></tr></thead>
               <tbody>
                 {movimientos.map((m, i) => (
-                  <tr key={`${m.fecha}-${i}`}><td>{m.fecha}</td><td>{conceptoSeguro(m.concepto)}</td><td className="derecha">{pesos(m.montoCentavos, true)}</td></tr>
+                  <tr key={`${m.fecha}-${i}`}><td>{m.fecha}</td><td>{conceptoSeguro(m.concepto)}</td><td className="derecha">{m.montoCentavos === null ? "—" : pesos(m.montoCentavos, true)}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -71,7 +72,9 @@ export function VistaDetalleTarjeta({ detalle, empresaId, puedeOperar }: { detal
                     {op.reintentoDe ? " · reintento" : null}
                   </small>
                 </div>
-                {puedeOperar && op.estado === "incierta" ? <ResolverOperacion id={op.id} referencia={op.referencia} conciliada={op.buscadaSinEncontrar} /> : null}
+                {puedeOperar && (op.estado === "incierta" || op.buscadaSinEncontrar) ? (
+                  <ResolverOperacion id={op.id} referencia={op.referencia} incierta={op.estado === "incierta"} conciliada={op.buscadaSinEncontrar} esperaMin={minutosParaConciliar(op.creadaEn, ahora)} />
+                ) : null}
               </li>
             ))}
           </ul>
