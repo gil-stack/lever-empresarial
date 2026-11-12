@@ -6,11 +6,12 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { cerrarConexion } from "../../src/nucleo/db.ts";
-import type { ContextoDeTenant } from "../../src/nucleo/contexto.ts";
+import type { ContextoDePersonal, ContextoDeTenant } from "../../src/nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { clienteHttpEfevoo, type ClienteEfevoo } from "../../src/server/efevoo/cliente.ts";
 import type { ConfigEfevoo } from "../../src/server/efevoo/config.ts";
+import { asignarTarjetaEnEfevoo, darDeAltaEnEfevoo, reintentarEnEfevoo } from "../../src/server/efevoo/operacion.ts";
 import {
   cerrarOperacionManualEfevoo,
   conciliarOperacionEfevoo,
@@ -44,30 +45,40 @@ const TITULAR = {
 
 describe("Efevoo: el ciclo de una operación (servicio + 0033 + Efevoo falso)", { skip: urlAdmin.length === 0 }, () => {
   it("asienta, llama, resuelve y concilia con cada regla de dinero", async () => {
-    exigirBaseDesechable();
-    const falso = await iniciarEfevooFalso(0);
-    try {
-      await conBaseDesechable(urlAdmin, async (url) => {
-        const dir = join(dirname(fileURLToPath(import.meta.url)), "../../db/migrations");
-        for (const archivo of readdirSync(dir).sort()) {
-          if (archivo.endsWith(".sql")) aplicarArchivo(url, join(dir, archivo));
-        }
-        await cerrarConexion();
-        const previo = process.env.DATABASE_URL;
-        process.env.DATABASE_URL = urlDeAplicacion(url);
-        try {
-          await ciclo(url, falso);
-        } finally {
-          await cerrarConexion();
-          if (previo === undefined) delete process.env.DATABASE_URL;
-          else process.env.DATABASE_URL = previo;
-        }
-      });
-    } finally {
-      await falso.cerrar();
-    }
+    await escenario(ciclo);
+  });
+  it("exige aprobación para alta, asignación y reintento en producción, conservando sandbox", async () => {
+    await escenario(async (url, falso) => {
+      sembrarPersonal(url);
+      await activacionEnProduccion(url, await contextoDePersonal("personal-cobranza@ejemplo.mx"), falso);
+    });
   });
 });
+
+async function escenario(probar: (url: string, falso: EfevooFalso) => Promise<void>) {
+  exigirBaseDesechable();
+  const falso = await iniciarEfevooFalso(0);
+  try {
+    await conBaseDesechable(urlAdmin, async (url) => {
+      const dir = join(dirname(fileURLToPath(import.meta.url)), "../../db/migrations");
+      for (const archivo of readdirSync(dir).sort()) {
+        if (archivo.endsWith(".sql")) aplicarArchivo(url, join(dir, archivo));
+      }
+      await cerrarConexion();
+      const previo = process.env.DATABASE_URL;
+      process.env.DATABASE_URL = urlDeAplicacion(url);
+      try {
+        await probar(url, falso);
+      } finally {
+        await cerrarConexion();
+        if (previo === undefined) delete process.env.DATABASE_URL;
+        else process.env.DATABASE_URL = previo;
+      }
+    });
+  } finally {
+    await falso.cerrar();
+  }
+}
 
 async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
   sembrarPersonal(url);
@@ -336,6 +347,66 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
   const ops = uno<{ n: number }>("select count(*)::int as n from efevoo_operaciones")[0]!.n;
   assert.equal(eventos.filter((e) => !["efevoo_confirmada", "efevoo_fallida", "efevoo_incierta", "efevoo_cierre_manual"].includes(e.accion)).length, ops);
   assert.doesNotMatch(JSON.stringify(eventos), /@|\d{13,19}/);
+}
+
+async function activacionEnProduccion(url: string, personal: ContextoDePersonal, falso: EfevooFalso) {
+  const empresa = await darDeAltaComoDuena(url, personal,
+    { rfc: "APR170101AB2", razonSocial: "Pendiente de aprobación", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" },
+    { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  // Expediente enviado, sin aprobación: reproduce exactamente la precondición del bypass.
+  ejecutar(url, `set session_replication_role = replica;
+    insert into kyb_versiones (id, operator_id, company_id, numero, estado, razon_social, giro, nacionalidad, rfc,
+      serie_efirma, domicilio_calle, domicilio_exterior, domicilio_colonia, domicilio_municipio, domicilio_entidad,
+      domicilio_codigo_postal, domicilio_pais, telefono, correo, fecha_constitucion, volumen_mensual_centavos,
+      creada_por, creada_en, enviada_por, enviada_en, enviada_txid)
+    select '${randomUUID()}', operator_id, id, 1, 'enviada', razon_social, 'Servicios', 'Mexicana', rfc,
+      '12345678901234567890', 'Prueba', '1', 'Centro', 'Cuauhtémoc', 'CDMX', '06600', 'México', '5500000001',
+      'aprobacion@empresa.test', '2017-01-01', 10000, '${personal.persona.id}', now(), '${personal.persona.id}', now(), txid_current()
+    from companies where id = '${empresa.id}';
+    set session_replication_role = origin;`);
+  const estado = (valor: string) => ejecutar(url, `set session_replication_role = replica;
+    update companies set estado = '${valor}' where id = '${empresa.id}'; set session_replication_role = origin;`);
+  const config: ConfigEfevoo = { url: `${falso.url}/v1/apiservice`, usuario: falso.usuario, llave: falso.llave, ambiente: "produccion" };
+  const deps = { config, efevoo: clienteHttpEfevoo(config, fetch, 400) };
+  const rechazar = (p: Promise<unknown>) => assert.rejects(p,
+    (e: unknown) => e instanceof ErrorDeDominio && e.codigo === "empresa_no_activa_efevoo");
+  const clientesAntes = falso.estado().clientes.length;
+  for (const valor of ["prospecto", "en_alta", "suspendida", "baja"]) {
+    estado(valor);
+    await rechazar(darDeAltaEnEfevoo(personal, { companyId: empresa.id, llave: randomUUID() }, deps));
+    // La guarda debe ocurrir incluso antes de consultar el inventario externo.
+    await rechazar(asignarTarjetaEnEfevoo(personal, {
+      ...TITULAR, companyId: empresa.id, llave: randomUUID(), llaveActivacion: randomUUID(),
+      employeeId: randomUUID(), inventarioId: "557", ultimos8: "40001363",
+    }, { config, efevoo: { listarTarjetas: async () => assert.fail("no debe consultar Efevoo") } as unknown as ClienteEfevoo }));
+  }
+  assert.equal(falso.estado().clientes.length, clientesAntes);
+  assert.equal(consultarJson<{ n: number }[]>(url,
+    `select json_agg(x) from (select count(*)::int as n from efevoo_operaciones where company_id = '${empresa.id}') x`)[0]!.n, 0);
+  estado("activa");
+  falso.simular({ metodo: "createClient", falla: "timeout_sin_efecto" });
+  const fallida = await darDeAltaEnEfevoo(personal, { companyId: empresa.id, llave: randomUUID() }, deps);
+  ejecutar(url, `set session_replication_role = replica;
+    update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id = '${fallida.id}';
+    set session_replication_role = origin;`);
+  assert.equal((await conciliarOperacionEfevoo(personal, empresa.id, fallida.id, deps)).resultado, "no_aparecio");
+  estado("en_alta");
+  await rechazar(reintentarEnEfevoo(personal, { companyId: empresa.id, operacionId: fallida.id, llave: randomUUID() }, deps));
+  estado("activa");
+  assert.equal((await reintentarEnEfevoo(personal, { companyId: empresa.id, operacionId: fallida.id, llave: randomUUID() }, deps)).estado, "confirmada");
+  assert.equal(falso.estado().clientes.length, clientesAntes + 1);
+
+  // La excepción sigue disponible solo en sandbox para un expediente aún no aprobado.
+  const sandbox = await darDeAltaComoDuena(url, personal,
+    { rfc: "SAN170101AB2", razonSocial: "Pruebas sin aprobación", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" },
+    { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  ejecutar(url, `set session_replication_role = replica;
+    update companies set estado = 'prospecto' where id = '${sandbox.id}';
+    update kyb_versiones set company_id = '${sandbox.id}' where company_id = '${empresa.id}';
+    set session_replication_role = origin;`);
+  const configSandbox = { ...config, ambiente: "sandbox" as const };
+  assert.equal((await darDeAltaEnEfevoo(personal, { companyId: sandbox.id, llave: randomUUID() },
+    { config: configSandbox, efevoo: clienteHttpEfevoo(configSandbox) })).estado, "confirmada");
 }
 
 function pick(op: { estado: string; codigoEfevoo: string | null }): [string, string | null] {

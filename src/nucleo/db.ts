@@ -373,6 +373,7 @@ const CODIGOS_DE_ALTA_REGULADA = new Set([
 
 /** Reglas de Efevoo (0033). El servicio las muestra por su nombre. */
 const CODIGOS_DE_EFEVOO = new Set([
+  "empresa_no_activa_efevoo",
   "intento_con_otros_datos",
   "sin_permiso_para_efevoo",
   "efevoo_operacion_no_valida",

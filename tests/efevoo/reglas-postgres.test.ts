@@ -199,6 +199,37 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
   assert.equal(leer<{ idep_cliente: number }>(`select idep_cliente from efevoo_clientes where company_id = '${E}'`)[0]?.idep_cliente, 206);
   const T = ids.tarjetaTitular;
 
+  // El estado se comprueba en la base, también al insertar directamente sin pasar por la sección de Operación.
+  // Los datos de cada operación no deben alcanzar ni sus otras validaciones ni una llamada externa.
+  ejecutar(duena, `set session_replication_role = replica;
+    update efevoo_clientes set ambiente = 'produccion' where company_id = '${E}';
+    update efevoo_tarjetas set ambiente = 'produccion' where company_id = '${E}';
+    set session_replication_role = origin;`);
+  for (const estado of ["prospecto", "en_alta", "suspendida", "baja"]) {
+    ejecutar(duena, `set session_replication_role = replica;
+      update companies set estado = '${estado}' where id = '${E}'; set session_replication_role = origin;`);
+    for (const tipo of ["alta_cliente", "deposito_prueba", "asignacion", "activacion", "asignacion_cliente"]) {
+      await rechaza(`${estado}: ${tipo} en producción`, "empresa_no_activa_efevoo",
+        (c) => asentar(c, S, P, { tipo, ambiente: "produccion" }), S, P);
+    }
+    if (estado === "prospecto" || estado === "en_alta") {
+      for (const tipo of ["carga", "retiro", "bloqueo", "desbloqueo"]) {
+        await rechaza(`${estado}: ${tipo} desde el portal`, "empresa_no_activa_efevoo",
+          (c) => asentar(c, C, ids.admin, { tipo, ambiente: "produccion" }), C, ids.admin);
+      }
+      ejecutar(duena, `set session_replication_role = replica;
+        update companies set estado = '${estado}' where id = '${base.beta}'; set session_replication_role = origin;`);
+      await acepta(`${estado}: alta sandbox`, (c) => asentar(c, S, P, { tipo: "alta_cliente", empresa: base.beta }), S, P, base.beta);
+    }
+    await acepta(`${estado}: cancelar en producción`, (c) => asentar(c, S, P,
+      { tipo: "cancelacion", ambiente: "produccion", tarjeta: T, motivo: "Baja preventiva de tarjeta" }), S, P);
+  }
+  ejecutar(duena, `set session_replication_role = replica;
+    update companies set estado = 'activa' where id in ('${E}', '${base.beta}');
+    update efevoo_clientes set ambiente = 'sandbox' where company_id = '${E}';
+    update efevoo_tarjetas set ambiente = 'sandbox' where company_id = '${E}';
+    set session_replication_role = origin;`);
+
   // El camino válido de la empresa: la liberadora carga.
   await acepta("la liberadora carga una tarjeta activa", (c) => asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 100 }), C, ids.liberador);
 

@@ -46,6 +46,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
     );
   }
   const sandbox = seccion.ambiente === "sandbox";
+  const puedeOperar = sandbox || seccion.empresaActiva;
   return (
     <Hoja id="efevoo-titulo" titulo="Tarjetas (Efevoo)">
       <Renglones>
@@ -73,7 +74,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
                   </>
                 )}
               </p>
-              {seccion.empresaActiva || sandbox ? (
+              {puedeOperar ? (
                 <form action={altaEfevooAccion}>
                   <input type="hidden" name="companyId" value={companyId} />
                   <input type="hidden" name="llave" value={randomUUID()} />
@@ -113,13 +114,15 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
           <section aria-labelledby="efevoo-asignar-titulo" className="efevoo-bloque">
             <h3 id="efevoo-asignar-titulo">Asignar una tarjeta</h3>
             {/* Una sola entrada para retomar: el «Activar» de la lista de tarjetas; aquí solo se avisa y se lleva ahí. */}
-            {seccion.empleados.filter((e) => e.porActivar).map((e) => (
+            {seccion.empleados.filter((e) => puedeOperar && e.porActivar).map((e) => (
               <NotaRegla key={e.id}>
                 {e.nombre} tiene la tarjeta ****{e.porActivar!.terminacion} asignada sin activar:{" "}
                 <a href={`#${anclaDeTarjeta({ id: e.porActivar!.tarjetaId, terminacion: e.porActivar!.terminacion })}`}>actívala en la lista de tarjetas</a> antes de asignarle otra.
               </NotaRegla>
             ))}
-            {seccion.inventario.length === 0 ? (
+            {!puedeOperar ? (
+              <NotaRegla>La empresa debe estar activa para asignar o activar tarjetas en producción.</NotaRegla>
+            ) : seccion.inventario.length === 0 ? (
               <Vacio titulo="Sin plásticos en el inventario">{seccion.errorEfevoo ? "No se pudo leer el inventario de Efevoo." : "Efevoo no tiene plásticos disponibles."}</Vacio>
             ) : seccion.empleados.length === 0 ? (
               <Vacio titulo="Sin empleados activos">Da de alta a la persona en la empresa antes de asignarle una tarjeta.</Vacio>
@@ -148,7 +151,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
                   <Insignia tono={t.estado === "activa" ? "sello" : t.estado === "cancelada" ? "aviso" : "neutro"}>{ESTADOS_TARJETA[t.estado]}</Insignia>
                 </div>
                 {t.estado === "cancelada" && t.motivoCancelacion ? <p className="operacion-detalle">{t.motivoCancelacion}</p> : null}
-                {t.estado === "asignada" ? (
+                {puedeOperar && t.estado === "asignada" ? (
                   <form action={activarEfevooAccion}>
                     <input type="hidden" name="companyId" value={companyId} />
                     <input type="hidden" name="llave" value={randomUUID()} />
@@ -207,7 +210,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
                     </form>
                   </details>
                 ) : null}
-                {o.reintentable ? (
+                {o.reintentable && (puedeOperar || o.tipo === "cancelacion") ? (
                   <form action={reintentarEfevooAccion}>
                     <input type="hidden" name="companyId" value={companyId} />
                     <input type="hidden" name="operacionId" value={o.id} />
