@@ -95,6 +95,8 @@ test("T1: administración ve el saldo para tarjetas, cada tarjeta con su termina
   await expect(filaTito).toContainText("Activa");
   await expect(filaTito.getByRole("button", { name: "Cargar" })).toBeEnabled();
   await expect(filaTito.getByRole("button", { name: "Bloquear" })).toBeEnabled();
+  // r-e2-4: el nombre de la tarjeta va en negritas, como la demostración, sin subrayado de enlace.
+  expect(await filaTito.getByRole("link").first().evaluate((a) => getComputedStyle(a).textDecorationLine)).toBe("none");
   await sinNumerosDeTarjeta(context, ruta("/consola/tarjetas"));
   expect(errores).toEqual([]);
 });
@@ -150,6 +152,13 @@ test("T5: el titular ve solo su tarjeta en el teléfono, con saldo y movimientos
   await expect(lista).toContainText("PAGO A TARJETA");
   await expect(page.getByText(`••${sembrado.tere.terminacion}`)).toHaveCount(0);
   await sinNumerosDeTarjeta(context, ruta("/telefono/tarjetas"));
+  // r-e2-5: con «Tarjetas» la barra del teléfono tiene 4 secciones, todas en una fila (390 y 320 px).
+  for (const ancho of [390, 320]) {
+    await page.setViewportSize({ width: ancho, height: 800 });
+    const alturas = await page.getByRole("navigation", { name: "Teléfono" }).getByRole("link").evaluateAll((enlaces) => enlaces.map((a) => (a as HTMLElement).offsetTop));
+    expect(alturas.length, `${ancho} px`).toBe(4);
+    expect(new Set(alturas).size, `${ancho} px: ${alturas.join(", ")}`).toBe(1);
+  }
   for (const direccion of ["/consola/tarjetas", `/consola/tarjetas/${sembrado.tere.id}`, `/consola/tarjetas/${sembrado.tito.id}`]) {
     const respuesta = await page.goto(ruta(direccion));
     expect(respuesta?.status(), direccion).toBe(404);

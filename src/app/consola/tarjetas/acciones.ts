@@ -138,7 +138,7 @@ export async function enviarConciliacion(_previo: EstadoFlujo, datos: FormData):
       case "espera":
         return { tipo: "rechazado", titulo: "Todavía no aparece", mensaje: `El emisor puede tardar en reflejarla. Vuelve a conciliar en ${c.minutos} min.` };
       case "ambigua":
-        return { tipo: "rechazado", titulo: "No se puede concluir", mensaje: `Hay más de un movimiento que coincide con la operación ${ref}; revísalo con Operación.` };
+        return { tipo: "rechazado", titulo: "Todavía no se puede confirmar", mensaje: `La operación ${ref} todavía no se puede confirmar; vuelve a conciliar en unos minutos o revísalo con Operación.` };
       case "ya_resuelta":
         return { tipo: "listo", mensaje: `La operación ${ref} ya estaba resuelta.` };
     }

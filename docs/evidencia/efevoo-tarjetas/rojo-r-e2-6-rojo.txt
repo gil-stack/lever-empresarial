@@ -1,0 +1,45 @@
+{"nivel":"error","origen":"efevoo","evento":"tarjetas_saldo_no_disponible"}
+{"nivel":"error","origen":"efevoo","evento":"tarjetas_saldo_no_disponible"}
+▶ Tarjetas: lecturas del emisor (r-e2-6)
+  ✖ un error de Efevoo deja el saldo como desconocido; uno que no es de Efevoo se vuelve a lanzar (1.197375ms)
+  ✖ sin correo del titular, los movimientos quedan sin leer y se registra el motivo (0.127375ms)
+✖ Tarjetas: lecturas del emisor (r-e2-6) (1.689875ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 158.017959
+
+✖ failing tests:
+
+test at src/server/tarjetas/lecturas.test.ts:15:3
+✖ un error de Efevoo deja el saldo como desconocido; uno que no es de Efevoo se vuelve a lanzar (1.197375ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (TypeError).
+      at async TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/efevoo-tarjetas/src/server/tarjetas/lecturas.test.ts:19:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1889:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/server/tarjetas/lecturas.test.ts:25:3
+✖ sin correo del titular, los movimientos quedan sin leer y se registra el motivo (0.127375ms)
+  AssertionError [ERR_ASSERTION]
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/efevoo-tarjetas/src/server/tarjetas/lecturas.test.ts:34:12)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

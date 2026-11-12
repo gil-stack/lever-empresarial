@@ -17,6 +17,7 @@ import {
 } from "@/dominio/tarjetas/vista";
 import { clienteHttpEfevoo, type ClienteEfevoo } from "@/server/efevoo/cliente";
 import { configEfevoo } from "@/server/efevoo/config";
+import { esErrorEfevoo } from "@/server/efevoo/errores";
 import {
   conciliarOperacionEfevoo,
   ejecutarOperacionEfevoo,
@@ -107,11 +108,13 @@ async function idepDe(consulta: Consulta): Promise<number | null> {
 }
 
 /** El saldo de la empresa en el emisor; si no responde, «no disponible» (la pantalla lo dice y no inventa cifras). */
-async function saldoEmpresa(cliente: ClienteEfevoo, idep: number): Promise<SaldoEmpresa> {
+export async function saldoEmpresa(cliente: ClienteEfevoo, idep: number): Promise<SaldoEmpresa> {
   try {
     const c = await cliente.leerCliente(idep);
     return c.saldoCentavos === null ? { tipo: "no_disponible" } : { tipo: "listo", centavos: c.saldoCentavos };
-  } catch {
+  } catch (error) {
+    // Solo lo que dice el emisor se vuelve «no disponible»; un error del programa se ve (r-e2-6).
+    if (!esErrorEfevoo(error)) throw error;
     registrarEfevoo("error", "tarjetas_saldo_empresa_no_disponible", {});
     return { tipo: "no_disponible" };
   }
@@ -121,7 +124,7 @@ async function saldoEmpresa(cliente: ClienteEfevoo, idep: number): Promise<Saldo
  * El saldo de cada tarjeta (getCardsBalance lo da por terminación). Si dos tarjetas comparten terminación o el emisor
  * no responde, ese saldo queda desconocido: mejor un «—» que la cifra de otra tarjeta.
  */
-async function saldosDeTarjetas(cliente: ClienteEfevoo, tarjetas: readonly FilaTarjeta[]): Promise<Map<string, number | null>> {
+export async function saldosDeTarjetas(cliente: ClienteEfevoo, tarjetas: readonly FilaTarjeta[]): Promise<Map<string, number | null>> {
   const vivas = tarjetas.filter((t) => t.estado !== "cancelada");
   const saldos = new Map<string, number | null>();
   if (vivas.length === 0) return saldos;
@@ -129,7 +132,8 @@ async function saldosDeTarjetas(cliente: ClienteEfevoo, tarjetas: readonly FilaT
     const leidos = await cliente.saldoDeTarjetas(vivas.map((t) => t.id_efevoo));
     const repetidas = new Set(vivas.map((t) => t.terminacion).filter((x, i, todas) => todas.indexOf(x) !== i));
     for (const l of leidos) saldos.set(l.terminacion, repetidas.has(l.terminacion) ? null : l.saldoCentavos);
-  } catch {
+  } catch (error) {
+    if (!esErrorEfevoo(error)) throw error;
     registrarEfevoo("error", "tarjetas_saldo_no_disponible", {});
   }
   return saldos;
@@ -147,13 +151,17 @@ function tarjetaDe(f: FilaTarjeta, saldos: Map<string, number | null>): TarjetaE
 }
 
 /** Los movimientos de una tarjeta: el correo del titular se pide al emisor y solo vive en memoria. Nulo si no responde. */
-async function movimientosDe(cliente: ClienteEfevoo, idEfevoo: number): Promise<readonly MovimientoTarjeta[] | null> {
+export async function movimientosDe(cliente: ClienteEfevoo, idEfevoo: number): Promise<readonly MovimientoTarjeta[] | null> {
   try {
     const correo = await cliente.correoDeTarjeta(idEfevoo);
-    if (!correo) return null;
+    if (!correo) {
+      registrarEfevoo("error", "tarjetas_movimientos_sin_correo", {});
+      return null;
+    }
     const movimientos = await cliente.movimientosDeTarjeta(idEfevoo, correo);
     return movimientos.slice(0, 50).map((m) => ({ fecha: m.fechaHora, concepto: m.concepto, montoCentavos: m.centavos }));
-  } catch {
+  } catch (error) {
+    if (!esErrorEfevoo(error)) throw error;
     registrarEfevoo("error", "tarjetas_movimientos_no_disponibles", {});
     return null;
   }

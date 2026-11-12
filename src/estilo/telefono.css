@@ -272,7 +272,8 @@
 /* La barra de abajo del diseño: ícono sobre el rótulo, en una píldora mate. */
 .navegacion-app {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Inicio, Topes, Tarjetas y Factura. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   margin-top: 30px;
   padding: 6px;
