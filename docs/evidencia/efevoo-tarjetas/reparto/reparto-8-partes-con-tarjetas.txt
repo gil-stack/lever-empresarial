@@ -1,19 +1,20 @@
-parte 1/8:  28 pruebas ·  442 s de pruebas · ~532 s · normales después de GPU: 0 · fondo-pruebas.ts 309, accesibilidad 133
-parte 2/8:  40 pruebas ·  331 s de pruebas · ~421 s · normales después de GPU: 0 · fondo-pruebas.ts 67, animacion-del-fondo 2, aprobaciones 40, claves-repetidas 31, cobranza 190
-parte 3/8:  20 pruebas ·  290 s de pruebas · ~380 s · normales después de GPU: 0 · csp-evidencia 2, csp 252, demostracion 36
-parte 4/8:  31 pruebas ·  300 s de pruebas · ~390 s · normales después de GPU: 0 · demostracion 66, entrada 40, flujo-de-caja 53, invitacion 42, marco 67, nomina 31
-parte 5/8:  24 pruebas ·  281 s de pruebas · ~371 s · normales después de GPU: 0 · operacion 281
-parte 6/8:  42 pruebas ·  406 s de pruebas · ~496 s · normales después de GPU: 0 · operacion 56, pagos-proveedores 98, passkeys 16, personas 26, pld 209
-parte 7/8:  12 pruebas ·  449 s de pruebas · ~539 s · normales después de GPU: 0 · roles 27, fondo-pruebas.ts 422
-parte 8/8:  27 pruebas ·  433 s de pruebas · ~523 s · normales después de GPU: 0 · runway 91, tarjetas 158, fondo-pruebas.ts 184
-peor parte ~539 s · normales después de una con GPU: 0
+parte 1/8:  29 pruebas ·  375 s de pruebas · ~465 s · normales después de GPU: 0 · accesibilidad 133, fondo-pruebas.ts 242
+parte 2/8:  31 pruebas ·  274 s de pruebas · ~364 s · normales después de GPU: 0 · fondo-pruebas.ts 12, aprobaciones 40, claves-repetidas 31, cobranza 190
+parte 3/8:  31 pruebas ·  398 s de pruebas · ~488 s · normales después de GPU: 0 · csp-evidencia 2, csp 252, demostracion 103, entrada 40
+parte 4/8:  29 pruebas ·  291 s de pruebas · ~381 s · normales después de GPU: 0 · flujo-de-caja 53, invitacion 45, marco 68, nomina 31, operacion 95
+parte 5/8:  28 pruebas ·  387 s de pruebas · ~477 s · normales después de GPU: 0 · operacion 243, fondo-pruebas.ts 144
+parte 6/8:  35 pruebas ·  372 s de pruebas · ~462 s · normales después de GPU: 0 · fondo-pruebas.ts 17, optica-retina 5, pagos-proveedores 98, passkeys 16, personas 26, pld 209
+parte 7/8:  21 pruebas ·  444 s de pruebas · ~534 s · normales después de GPU: 0 · roles 27, runway 92, fondo-pruebas.ts 325
+parte 8/8:  28 pruebas ·  428 s de pruebas · ~518 s · normales después de GPU: 0 · tarjetas-efevoo 27, tarjetas 158, fondo-pruebas.ts 243
+peor parte ~534 s · normales después de una con GPU: 0
 
-# Las 8 partes en local (Chromium, 5581/3181/4881/4882)
-parte 1: rc=0 49 s ·  28 passed (45.6s)
-parte 2: rc=0 105 s ·  1 skipped, 39 passed (1.7m)
-parte 3: rc=0 106 s ·  4 skipped, 16 passed (1.7m)
-parte 4: rc=0 99 s ·  31 passed (1.6m)
-parte 5: rc=0 53 s ·  24 passed (51.2s)
-parte 6: rc=0 99 s ·  42 passed (1.6m)
-parte 7: rc=0 37 s ·  12 passed (33.3s)
-parte 8: rc=0 84 s ·  1 skipped, 26 passed (1.4m)
+# Las 8 partes en local con E1 (d90b109) y E2 (5581/3181/4881/4882)
+parte 1: rc=0 51 s ·  29 passed (48.6s)
+parte 2: rc=0 72 s ·  1 skipped, 30 passed (1.1m)
+parte 3: rc=0 159 s ·  4 skipped, 27 passed (2.6m)
+parte 4: rc=0 65 s ·  29 passed (1.0m)
+parte 5: rc=0 64 s ·  28 passed (1.0m)
+parte 6: rc=0 102 s ·  35 passed (1.7m)
+parte 7: rc=0 42 s ·  1 skipped, 20 passed (38.8s)
+parte 8: rc=1 138 s · 2 failed, 26 passed (antes del arreglo de la siembra: el 567 del inventario trae saldo)
+parte 8 (tras el arreglo): rc=0 108 s · 28 passed

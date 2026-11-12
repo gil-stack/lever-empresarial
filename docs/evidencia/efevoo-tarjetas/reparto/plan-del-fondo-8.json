@@ -1,33 +1,33 @@
 {
- "abanico-del-fondo": [
-  "sin:1:est"
- ],
  "animacion-del-fondo": [
-  "gpu:2:lien",
-  "gpu:2:tarea",
-  "sin:2:lien",
-  "real:2",
-  "sin:2:arr",
-  "sin:1:tarea",
-  "sin:1:lien",
-  "cuarenta",
-  "sin:2:est",
-  "real:1",
-  "sin:2:buf",
   "sin:1:arr",
-  "sin:1:buf",
-  "sin:2:tarea"
- ],
- "rueda-del-fondo": [
+  "gpu:2:est",
   "gpu:1:est",
   "gpu:1:tarea",
+  "sin:1:lien",
+  "sin:1:est",
+  "sin:1:tarea"
+ ],
+ "optica-retina": [
+  "gpu:2:tarea",
+  "sin:2:est",
+  "cuarenta",
+  "sin:2:tarea",
+  "sin:2:lien",
+  "sin:2:buf"
+ ],
+ "sombra-del-fondo": [
   "gpu:2:buf",
-  "gpu:1:arr",
   "gpu:1:lien",
-  "gpu:2:arr"
+  "gpu:2:lien"
  ],
  "velocidad-del-fondo": [
+  "sin:2:arr",
+  "real:2",
+  "sin:1:buf",
+  "real:1",
   "gpu:1:buf",
-  "gpu:2:est"
+  "gpu:2:arr",
+  "gpu:1:arr"
  ]
 }

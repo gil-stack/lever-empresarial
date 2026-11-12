@@ -62,8 +62,10 @@ async function vincular(): Promise<Sembrado> {
   const efevoo = clienteHttpEfevoo(leida.config);
   const { idepCliente } = await efevoo.crearCliente({ correo: "tarjetas-e2e@lever.test", razonSocial: "Tarjetas E2E" });
   await efevoo.moverSaldoCliente(idepCliente, SALDO_EMPRESA, "deposit");
-  const inventario = (await efevoo.listarTarjetas({ estados: ["inStock"], pagina: 1, tamano: 50 })).tarjetas;
-  if (inventario.length < 2) throw new Error("El Efevoo falso no tiene dos plásticos en inventario.");
+  // Solo plásticos en cero: la siembra cuenta con los saldos que pone ella. Otras pruebas de la misma parte (la de
+  // Operación, de E1) pueden haber tomado los primeros del inventario, y uno del falso trae saldo de origen.
+  const inventario = (await efevoo.listarTarjetas({ estados: ["inStock"], pagina: 1, tamano: 50 })).tarjetas.filter((t) => t.saldoCentavos === 0);
+  if (inventario.length < 2) throw new Error(`El Efevoo falso no tiene dos plásticos en cero en inventario (hay ${inventario.length}).`);
   const [empresa] = await consultar<{ operator_id: string; tania: string }>(
     "select c.operator_id, (select id from users where correo = $2) as tania from companies c where c.id = $1", [EMPRESA(), CORREOS_TARJETAS.tania]);
   await consultar(

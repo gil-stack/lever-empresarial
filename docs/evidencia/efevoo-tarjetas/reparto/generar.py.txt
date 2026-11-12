@@ -24,10 +24,10 @@ def llamada(c):
 
 
 LUGAR = {
-    "abanico-del-fondo": "abanico-del-fondo.spec.ts (el primer archivo, antes de accesibilidad): una sin GPU que abre la parte 1.",
-    "animacion-del-fondo": "animacion-del-fondo.spec.ts (después de accesibilidad): dos de GPU a DPR 2 cierran la parte 1; las demás, sin GPU, abren la 2.",
-    "rueda-del-fondo": "rueda-del-fondo.spec.ts (entre roles y runway): seis de GPU cierran la parte 7.",
-    "velocidad-del-fondo": "velocidad-del-fondo.spec.ts (después de tarjetas, el último archivo): dos de GPU cierran la parte 8, la última.",
+    "animacion-del-fondo": "animacion-del-fondo.spec.ts (después de accesibilidad): tres de GPU cierran la parte 1; las demás, sin GPU, abren la 2.",
+    "optica-retina": "optica-retina.spec.ts (después de operacion): una de GPU a DPR 2 cierra la parte 5; las demás, sin GPU, abren la 6.",
+    "sombra-del-fondo": "sombra-del-fondo.spec.ts (entre runway y tarjetas-efevoo): tres de GPU cierran la parte 7.",
+    "velocidad-del-fondo": "velocidad-del-fondo.spec.ts (después de tarjetas, el último archivo): cuatro de GPU cierran la parte 8, la última.",
 }
 COMUN_TEXTO = "Las pruebas se definen en fondo-pruebas.ts y se reparten en ARCHIVOS, cuyo nombre los deja en distintos lugares del orden alfabético. El reparto de la e2e corta por número de pruebas, en orden, y las pruebas con GPU emulada tardan en el CI de 34 a 162 s cada una (WebGL por software): el acomodo sale del simulador del reparto con el tiempo máximo observado de cada prueba, comprobado con `playwright test --list --shard=N/8` (tests/e2e/LEEME.md), y deja cada una al final de su parte, sin pruebas normales después (cada una abre y cierra su propio navegador). Si cambia el número de pruebas antes de estos archivos, los cortes se mueven y hay que volver a acomodarlas. Cada prueba entra con su propia cookie y no comparte estado: «parallel» solo para que el reparto pueda partir el archivo (con workers: 1 corren una tras otra)."
 
