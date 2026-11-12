@@ -399,16 +399,18 @@ test("T6: un timeout sin efecto se queda sin confirmar 10 minutos; después no a
   expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 300);
 });
 
-test("empresa suspendida: no se carga ni se bloquea; la base lo impide", async ({ page, context }) => {
+test("empresa suspendida: conserva la consulta y no ofrece operaciones", async ({ page, context }) => {
   const tito = sembrado.tito;
   const previas = (await operaciones(tito.id)).length;
   await consultar("begin; set local session_replication_role = replica; update companies set estado = 'suspendida' where id = $1; commit;".replace("$1", `'${EMPRESA()}'`));
   try {
     await abrir(page, context, CORREOS_TARJETAS.tania, "/consola/tarjetas");
-    const dialogo = await dialogoDe(page, tito.terminacion, "Cargar");
-    await dialogo.getByLabel("Monto en pesos").fill("5.00");
-    await dialogo.getByRole("button", { name: "Cargar", exact: true }).click();
-    await expect(dialogo.getByText(/La empresa está suspendida/)).toBeVisible();
+    await expect(page.getByText(/La operación de .* está suspendida\./)).toBeVisible();
+    const fila = page.getByRole("row").filter({ hasText: `••${tito.terminacion}` });
+    await expect(fila).toContainText("Tito Titular");
+    for (const accion of ["Cargar", "Retirar", "Bloquear", "Desbloquear"]) {
+      await expect(page.getByRole("button", { name: accion, exact: true })).toHaveCount(0);
+    }
     await foto(page, "empresa-suspendida");
     expect((await operaciones(tito.id)).length).toBe(previas);
   } finally {

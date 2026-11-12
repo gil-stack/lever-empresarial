@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { capacidadesDe, ROLES_CLIENTE } from "../../nucleo/capacidades.ts";
 import type { Sesion } from "../session/tipos.ts";
 import { resolverContexto, type MembresiaLeida } from "./resolver.ts";
 
@@ -29,15 +30,32 @@ describe("destino multiempresa con tenencia intacta", () => {
     assert.deepEqual(resuelto.ctx.capacidades, []);
   });
 
-  it("una empresa suspendida conserva las capacidades de sus roles: quien rechaza la escritura es la base", async () => {
-    const resuelto = await resolverContexto(
-      { sesion: sesion(), empresaPedida: ID, peticionId: null, superficie: "cliente" },
-      { repositorio: { async pertenencia() { return { membresias: [{ ...membresia(ID, ["administrador", "liberador"]), estado: "suspendida" }], personal: null }; } } },
-    );
-    assert.equal(resuelto.ctx.empresa?.estado, "suspendida");
-    assert.deepEqual(resuelto.ctx.roles, ["administrador", "liberador"]);
-    for (const capacidad of ["cliente.consola.ver", "cliente.pago.liberar", "cliente.membresias.administrar"] as const) {
-      assert.ok(resuelto.ctx.capacidades.includes(capacidad), capacidad);
+  it("una empresa suspendida conserva los roles y solo las capacidades de consulta en consola y teléfono", async () => {
+    for (const rol of ROLES_CLIENTE) {
+      for (const superficie of ["cliente", "telefono"] as const) {
+        for (const empresaPedida of [ID, null]) {
+          const resuelto = await resolverContexto(
+            { sesion: sesion(), empresaPedida, peticionId: null, superficie },
+            { repositorio: { async pertenencia() { return { membresias: [{ ...membresia(ID, [rol]), estado: "suspendida" }], personal: null }; } } },
+          );
+          assert.equal(resuelto.ctx.empresa?.estado, "suspendida");
+          assert.deepEqual(resuelto.ctx.roles, [rol]);
+          assert.deepEqual(resuelto.ctx.empresas[0]?.roles, [rol]);
+          assert.deepEqual(resuelto.ctx.capacidades, capacidadesDe({ rolesCliente: [rol], rolesPlataforma: [] }).filter((capacidad) => capacidad.endsWith(".ver")));
+        }
+      }
+    }
+  });
+
+  it("activar una empresa devuelve sus capacidades y los demás estados no dan permisos", async () => {
+    for (const estado of ["activa", "prospecto", "en_alta", "baja", "desconocido"]) {
+      const resuelto = await resolverContexto(
+        { sesion: sesion(), empresaPedida: ID, peticionId: null, superficie: "cliente" },
+        { repositorio: { async pertenencia() { return { membresias: [{ ...membresia(ID, ["administrador", "liberador"]), estado }], personal: null }; } } },
+      );
+      const roles = estado === "activa" ? ["administrador", "liberador"] as const : [];
+      assert.deepEqual(resuelto.ctx.roles, roles);
+      assert.deepEqual(resuelto.ctx.capacidades, capacidadesDe({ rolesCliente: roles, rolesPlataforma: [] }));
     }
   });
 });
@@ -45,7 +63,7 @@ describe("destino multiempresa con tenencia intacta", () => {
 describe("el personal actúa como plataforma solo con la sesión SOFIPO", () => {
   const personal = {
     async pertenencia() {
-      return { membresias: [], personal: { operadorId: "55555555-5555-4555-8555-555555555555", roles: ["administracion_plataforma" as const] } };
+      return { membresias: [{ ...membresia(ID, ["administrador"]), estado: "suspendida" }], personal: { operadorId: "55555555-5555-4555-8555-555555555555", roles: ["administracion_plataforma" as const] } };
     },
   };
 
