@@ -104,8 +104,12 @@ export async function sembrarRecorridos(
     const semilla = semillaNueva();
     const totpId = randomUUID();
     const repo = repositorioPg();
-    await repo.guardarTotpPendiente({ id: totpId, userId, secretoCifrado: cifrarSemilla(semilla, userId, llave!), creadoEn: new Date() });
-    await repo.confirmarTotp({ userId, totpId, paso: pasoDe(new Date()) - 2, ahora: new Date() });
+    const ahora = new Date();
+    const venceEn = new Date(ahora.getTime() + 10 * 60 * 1000);
+    const ceremonia = { entradaId: randomUUID(), recuperacionId: null };
+    await repo.crearEntrada({ id: ceremonia.entradaId, userId, tokenHash: createHash("sha256").update(randomUUID()).digest("hex"), creadaEn: ahora, venceEn });
+    await repo.guardarTotpPendiente({ id: totpId, userId, secretoCifrado: cifrarSemilla(semilla, userId, llave!), creadoEn: ahora, venceEn, ceremonia });
+    await repo.confirmarTotp({ userId, totpId, paso: pasoDe(ahora) - 2, ahora, ceremonia });
     semillas[correo] = aBase32(semilla);
   }
 
