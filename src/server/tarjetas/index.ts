@@ -92,9 +92,6 @@ function operacion(f: FilaOperacion): OperacionTarjeta & { terminacion: string }
   };
 }
 
-const COLUMNAS_TARJETA = `t.id, t.id_efevoo, t.terminacion, t.nombre_tarjeta, t.estado, e.nombre as titular`;
-const DESDE_TARJETAS = `efevoo_tarjetas t left join employees e on e.id = t.employee_id and e.company_id = t.company_id`;
-const COLUMNAS_OPERACION = `o.id, o.tipo, o.monto_centavos::text, o.estado, o.referencia, o.creada_en, o.codigo_efevoo, o.reintento_de, t.terminacion`;
 
 async function vinculada(consulta: Consulta): Promise<boolean> {
   const r = await consulta.query("select idep_cliente from efevoo_clientes where company_id = app_empresa()");
@@ -176,12 +173,12 @@ export async function leerTarjetasEmpresa(ctx: ContextoDeTenant | null, deps: De
     const idep = await idepDe(consulta);
     if (idep === null) return null;
     const tarjetas = (await consulta.query(
-      `select ${COLUMNAS_TARJETA} from ${DESDE_TARJETAS} where t.company_id = app_empresa()
+      `select t.id, t.id_efevoo, t.terminacion, t.nombre_tarjeta, t.estado, e.nombre as titular from efevoo_tarjetas t left join employees e on e.id = t.employee_id and e.company_id = t.company_id where t.company_id = app_empresa()
         order by (t.estado = 'cancelada'), t.creada_en, t.id`,
     )).rows as FilaTarjeta[];
     // Por confirmar: pendientes, inciertas y las que no aparecieron en el emisor y todavía no se reintentan.
     const porAtender = (await consulta.query(
-      `select ${COLUMNAS_OPERACION} from efevoo_operaciones o join efevoo_tarjetas t on t.id = o.tarjeta_id and t.company_id = o.company_id
+      `select o.id, o.tipo, o.monto_centavos::text, o.estado, o.referencia, o.creada_en, o.codigo_efevoo, o.reintento_de, t.terminacion from efevoo_operaciones o join efevoo_tarjetas t on t.id = o.tarjeta_id and t.company_id = o.company_id
         where o.company_id = app_empresa() and o.tipo = any($1::text[])
           and (o.estado in ('pendiente', 'incierta')
                or (o.estado = 'fallida' and o.codigo_efevoo = 'no_aparecio'
@@ -211,7 +208,7 @@ export async function leerMisTarjetas(ctx: ContextoDeTenant | null, deps: DepsTa
   const tarjetas = await conContexto(baseCliente(conEmpresa), async (consulta) => {
     if (!(await vinculada(consulta))) return null;
     return (await consulta.query(
-      `select ${COLUMNAS_TARJETA} from ${DESDE_TARJETAS}
+      `select t.id, t.id_efevoo, t.terminacion, t.nombre_tarjeta, t.estado, e.nombre as titular from efevoo_tarjetas t left join employees e on e.id = t.employee_id and e.company_id = t.company_id
         where t.company_id = app_empresa() and e.user_id = app_usuario() and t.estado <> 'cancelada'
         order by t.creada_en, t.id`,
     )).rows as FilaTarjeta[];
@@ -240,11 +237,11 @@ export async function leerDetalleTarjeta(ctx: ContextoDeTenant | null, tarjetaId
   const leido = await conContexto(baseCliente(conEmpresa), async (consulta) => {
     const idep = await idepDe(consulta);
     if (idep === null) return null;
-    const fila = (await consulta.query(`select ${COLUMNAS_TARJETA} from ${DESDE_TARJETAS} where t.id = $1 and t.company_id = app_empresa()`, [tarjetaId]))
+    const fila = (await consulta.query(`select t.id, t.id_efevoo, t.terminacion, t.nombre_tarjeta, t.estado, e.nombre as titular from efevoo_tarjetas t left join employees e on e.id = t.employee_id and e.company_id = t.company_id where t.id = $1 and t.company_id = app_empresa()`, [tarjetaId]))
       .rows[0] as FilaTarjeta | undefined;
     if (!fila) return null;
     const operaciones = (await consulta.query(
-      `select ${COLUMNAS_OPERACION} from efevoo_operaciones o join efevoo_tarjetas t on t.id = o.tarjeta_id and t.company_id = o.company_id
+      `select o.id, o.tipo, o.monto_centavos::text, o.estado, o.referencia, o.creada_en, o.codigo_efevoo, o.reintento_de, t.terminacion from efevoo_operaciones o join efevoo_tarjetas t on t.id = o.tarjeta_id and t.company_id = o.company_id
         where o.tarjeta_id = $1 and o.company_id = app_empresa() and o.tipo = any($2::text[])
         order by o.creada_en desc limit 30`,
       [tarjetaId, TIPOS_DE_LA_EMPRESA],

@@ -157,3 +157,8 @@ export function importeMovimiento(m: Pick<MovimientoTarjeta, "montoCentavos" | "
   const texto = `$${Math.trunc(absoluto / 100).toLocaleString("en-US")}.${String(absoluto % 100).padStart(2, "0")}`;
   return m.tipo === "cargo" ? `−${texto}` : m.tipo === "abono" ? `+${texto}` : texto;
 }
+
+/** El tono del importe en el teléfono: un movimiento sin tipo no se pinta como abono (r-e2-9). */
+export function claseDeImporte(tipo: MovimientoTarjeta["tipo"]): "monto-abono" | "monto-cargo" | "monto-neutro" {
+  return tipo === "abono" ? "monto-abono" : tipo === "cargo" ? "monto-cargo" : "monto-neutro";
+}

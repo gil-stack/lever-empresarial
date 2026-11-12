@@ -440,6 +440,11 @@
   color: var(--tinta-suave);
 }
 
+/* Sin tipo todavía (el emisor tarda unos minutos en decirlo): ni abono ni cargo. */
+.monto-neutro {
+  color: var(--tinta);
+}
+
 @media (max-width: 360px) {
   .navegacion-app a {
     font-size: 0.68rem;

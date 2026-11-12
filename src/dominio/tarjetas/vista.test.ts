@@ -71,3 +71,12 @@ describe("el importe de un movimiento", () => {
     assert.equal(importeMovimiento({ montoCentavos: null, tipo: "abono" }), null);
   });
 });
+
+describe("el tono del importe en el teléfono (r-e2-9)", () => {
+  it("abono y cargo con su tono; sin tipo, neutro", async () => {
+    const { claseDeImporte } = await import("./vista.ts");
+    assert.equal(claseDeImporte("abono"), "monto-abono");
+    assert.equal(claseDeImporte("cargo"), "monto-cargo");
+    assert.equal(claseDeImporte(null), "monto-neutro");
+  });
+});

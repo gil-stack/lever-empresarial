@@ -18,7 +18,12 @@ Las pruebas rojas, medidas antes de cada arreglo o con un sabotaje de un solo ca
 
 ## Contra el sandbox real (cliente 19, tarjeta 560, terminación 6509)
 
-Gil autorizó la excepción porque el sandbox no deja asignarle una tarjeta propia a la empresa de prueba. Cada operación se revirtió en el acto: la tarjeta empezó y terminó con $500.00 y en estado `active` (`antes-saldo560.json`, `despues-saldo560.json`). No se canceló ni se reasignó nada. El correo del titular de la 560 lo pidió la aplicación y solo vivió en memoria.
+Gil autorizó la excepción porque el sandbox no deja asignarle una tarjeta propia a la empresa de prueba. Cada operación se revirtió en el acto. No se canceló ni se reasignó nada. El correo del titular de la 560 lo pidió la aplicación y solo vivió en memoria.
+
+**Lo que se midió en el emisor:**
+- **Saldo:** $500.00 antes y después, con `getCardsBalance` (`antes-saldo560.json` y `despues-saldo560.json`, guardados con `llamar.mjs`). El cliente 19 tenía $3,201.29 antes (`antes-cliente19.json`).
+- **Estado después:** `active`, con `getCardsList` filtrado a la 560 (`despues-estado560.json`, guardado con `estado-tarjeta.mjs`).
+- **Estado antes:** no quedó guardado del emisor; solo se guardó el saldo. Lo único que hay es indirecto: el líder la dio como `active` al autorizar la prueba (lo midió -06). El después sí está medido.
 
 | Paso | Resultado (`sandbox-operaciones.json`) | Captura |
 |---|---|---|
@@ -38,4 +43,4 @@ Gil autorizó la excepción porque el sandbox no deja asignarle una tarjeta prop
 if (process.env.E2E_EFEVOO_SANDBOX === "1") return;
 ```
 
-Esa línea hace que el servidor de la prueba use las credenciales del entorno en lugar de las del falso. En el repositorio, `entorno.ts` sigue garantizando que las llaves reales nunca llegan al servidor de la prueba. Después de la corrida se revirtió el parche y se borró la copia de la spec. Ni la salida (`corrida.txt`) ni los JSON traen la llave ni datos personales: los JSON los redacta `llamar.mjs`.
+Esa línea hace que el servidor de la prueba use las credenciales del entorno en lugar de las del falso. En el repositorio, `entorno.ts` sigue garantizando que las llaves reales nunca llegan al servidor de la prueba. Después de la corrida se revirtió el parche y se borró la copia de la spec. Ni la salida (`corrida.txt`) ni los JSON traen la llave ni datos personales: los JSON los redacta `llamar.mjs` y `estado-tarjeta.mjs` solo deja id, estado, terminación y saldo. Los dos están en `scripts/evidencia/efevoo-tarjetas/` como `.txt`.
