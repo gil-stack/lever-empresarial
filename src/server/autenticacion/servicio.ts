@@ -22,6 +22,7 @@ import type {
   VerificacionIdentidad,
 } from "./tipos";
 import { normalizarCodigoTotp, semillaLegible, semillaNueva, uriOtpauth, verificarTotp } from "./totp";
+import { huella, intentoDetenido } from "./limites";
 import type { Origen } from "./origen";
 import { credencialDeRespuesta, webauthnReal, type AdaptadorWebauthn } from "./webauthn";
 import { CONTROL } from "../../dominio/control";
@@ -32,7 +33,12 @@ import { CONTROL } from "../../dominio/control";
  * coincide, con el mismo encabezado que arma esa capa.
  */
 
-const TOPE_CONTRASENA = 8;
+/**
+ * Tope por persona en cualquier IP, para quien reparte los intentos entre muchas
+ * salidas. Es alto a propósito: el tope fino es por cuenta + IP (limites.ts), así
+ * que nadie deja fuera a otra persona con unas cuantas contraseñas malas.
+ */
+export const TOPE_CONTRASENA = 20;
 const VENTANA_CONTRASENA_MS = 15 * 60 * 1000;
 /**
  * Todo rechazo de contraseña tarda al menos esto desde que llega. El correo sin
@@ -43,7 +49,7 @@ const VENTANA_CONTRASENA_MS = 15 * 60 * 1000;
 export const PISO_RECHAZO_MS = 1_500;
 /** Único texto para cualquier rechazo de contraseña: no dice si el correo existe ni si llegó al tope. */
 export const RECHAZO_DE_CONTRASENA =
-  "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.";
+  "El correo o la contraseña no coinciden. Si fallaste varias veces, espera unos minutos y vuelve a intentar.";
 const TOPE_SEGUNDO_FACTOR = 5;
 /**
  * Tope por persona, por encima del de cada entrada: diez códigos fallidos en quince
@@ -115,7 +121,7 @@ const rellenos = new WeakMap<Hashear, Promise<string>>();
  * base también espera el piso. La entrada correcta no espera.
  */
 export async function iniciarConContrasena(
-  entrada: { correo?: string; contrasena?: string },
+  entrada: { correo?: string; contrasena?: string; ip?: string | null },
   deps?: DependenciasAutenticacion,
 ): Promise<ResultadoContrasena> {
   const listo = resolver(deps);
@@ -134,7 +140,7 @@ export async function iniciarConContrasena(
 }
 
 async function probarContrasena(
-  entrada: { correo?: string; contrasena?: string },
+  entrada: { correo?: string; contrasena?: string; ip?: string | null },
   listo: Listo,
 ): Promise<ResultadoContrasena> {
   const correo = typeof entrada?.correo === "string" ? normalizarCorreo(entrada.correo) : "";
@@ -142,6 +148,14 @@ async function probarContrasena(
   if (!correoValido(correo) || contrasena.length === 0) return { tipo: "rechazo", codigo: "credenciales_invalidas" };
 
   const ahora = listo.ahora();
+  // Cuenta + IP e IP (0045). Sin IP (un comando, una prueba) solo rige el tope por persona.
+  const ip = typeof entrada?.ip === "string" && entrada.ip.length > 0 ? entrada.ip : null;
+  const pareja = ip
+    ? { correoHash: huella("correo", correo, listo.llaveTotp), ipHash: huella("ip", ip, listo.llaveTotp) }
+    : null;
+  const detenido = pareja
+    ? intentoDetenido(await listo.repositorio.estadoIntentosContrasena({ ...pareja, ahora }), ahora)
+    : false;
   const usuario = await listo.repositorio.buscarUsuarioPorCorreo(correo);
   const bloqueada = usuario
     ? (await listo.repositorio.contarFallosContrasena(
@@ -150,15 +164,19 @@ async function probarContrasena(
       )) >= TOPE_CONTRASENA
     : false;
   const coincide = await contrasenaCoincide(contrasena, usuario?.passwordHash ?? null, listo.hashear, listo.verificar);
-  // En el tope el intento no se anota: el bloqueo sigue contando desde los fallos reales.
-  if (bloqueada) return { tipo: "rechazo", codigo: "credenciales_invalidas" };
+  // En el tope o en espera el intento no se anota: la espera sigue contando desde los
+  // fallos reales y quien insiste mientras espera no la alarga.
+  if (bloqueada || detenido) return { tipo: "rechazo", codigo: "credenciales_invalidas" };
   if (!coincide || !usuario) {
     await listo.repositorio.registrarContrasenaFallida(usuario?.id ?? null, ahora);
+    if (pareja) await listo.repositorio.registrarIntentoContrasena({ ...pareja, exito: false, ahora });
     return { tipo: "rechazo", codigo: "credenciales_invalidas" };
   }
   // Con el segundo factor en su tope, la contraseña correcta recibe el mismo rechazo
   // (y el mismo piso) que una mala. No se anota como contraseña fallida.
   if (await segundoFactorEnElTope(usuario.id, listo)) return { tipo: "rechazo", codigo: "credenciales_invalidas" };
+  // La contraseña correcta reinicia la espera de la pareja y deja la IP como conocida.
+  if (pareja) await listo.repositorio.registrarIntentoContrasena({ ...pareja, exito: true, ahora });
 
   const id = listo.ids();
   const token = listo.token();

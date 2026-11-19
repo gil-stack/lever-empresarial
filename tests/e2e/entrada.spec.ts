@@ -7,7 +7,9 @@ import { CORREOS } from "./siembra";
  * Entrada de cliente con contraseña y app autenticadora, y el tope de intentos
  * sin revelar qué correos tienen cuenta (#57): con un correo real y con uno que
  * no existe, el mismo texto, el mismo marcado, la misma dirección y el mismo
- * tiempo del servidor (piso de 1.5 s).
+ * tiempo del servidor (piso de 1.5 s). Desde 0045 el tope fino es por cuenta + IP:
+ * con cinco fallos desde esta salida la pareja espera, y los intentos en espera no
+ * se anotan.
  */
 
 const MALA = "otra-clave-99";
@@ -65,7 +67,7 @@ async function intentar(page: Page, correo: string, contrasena: string): Promise
   };
 }
 
-test("el tope de intentos no revela si el correo tiene cuenta: mismo texto y mismo tiempo", async ({ page }) => {
+test("la espera por intentos no revela si el correo tiene cuenta: mismo texto y mismo tiempo", async ({ page }) => {
   test.setTimeout(240_000);
   const errores = vigilarConsola(page);
   const userId = await idDe(CORREOS.tope);
@@ -78,7 +80,8 @@ test("el tope de intentos no revela si el correo tiene cuenta: mismo texto y mis
   const diferencias: number[] = [];
   await page.goto("/entrar");
   await expect(page.locator('.alerta[role="alert"]')).toHaveCount(0);
-  // Ocho fallos llevan la cuenta real al tope; el noveno intento es con la contraseña correcta.
+  // Cinco fallos ponen a esperar la pareja (correo + esta IP); del sexto al octavo ya esperan y el noveno es con la
+  // contraseña correcta, que tampoco entra mientras la pareja espera. El correo sin cuenta pasa por lo mismo.
   for (let i = 1; i <= 9; i += 1) {
     const contrasena = i <= 8 ? MALA : CLAVE;
     // Se alterna quién va primero para que el orden no sesgue el tiempo.
@@ -88,9 +91,9 @@ test("el tope de intentos no revela si el correo tiene cuenta: mismo texto y mis
         const n = await intentar(page, INEXISTENTE, contrasena);
         return [await intentar(page, CORREOS.tope, contrasena), n];
       })();
-    const donde = `intento ${i}${i === 9 ? " (contraseña correcta, cuenta en el tope)" : ""}`;
+    const donde = `intento ${i}${i === 9 ? " (contraseña correcta, pareja en espera)" : ""}`;
     expect(real.texto, donde).toBe(nadie.texto);
-    expect(real.texto, donde).toContain("Si fallaste varias veces, espera quince minutos.");
+    expect(real.texto, donde).toContain("Si fallaste varias veces, espera unos minutos y vuelve a intentar.");
     expect(real.marcado, donde).toBe(nadie.marcado);
     expect(real.direccion, donde).toBe(nadie.direccion);
     expect(real.servidor, donde).toBeGreaterThanOrEqual(PISO_MS);
@@ -101,8 +104,8 @@ test("el tope de intentos no revela si el correo tiene cuenta: mismo texto y mis
   console.log(`[tope] diferencias en el servidor (ms): ${diferencias.join(", ")} · mediana ${mediana}`);
   expect(Math.max(...diferencias), `diferencias: ${diferencias.join(", ")}`).toBeLessThanOrEqual(250);
   expect(mediana).toBeLessThanOrEqual(60);
-  // La bitácora anota los 8 fallos; el intento en el tope no se anota y la contraseña correcta no abrió entrada.
-  expect(await fallos()).toBe(8);
+  // La bitácora anota los 5 fallos reales; los intentos en espera no se anotan y la contraseña correcta no abrió entrada.
+  expect(await fallos()).toBe(5);
   expect(await entradas()).toBe(entradasAntes);
   expect(errores).toEqual([]);
 });
