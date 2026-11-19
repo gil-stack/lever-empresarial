@@ -576,4 +576,25 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
   await rechaza("el reintento de una cerrada a mano", "reintento_no_valido", (c) =>
     asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: O, monto: 321, reintento: abierta }), C, ids.liberador);
 
+  // 0039: nadie se carga saldo de la empresa a su propia tarjeta. La tarjeta del titular pasa a la liberadora: ella no
+  // se la carga (tampoco como reintento), el administrador sí, y ella puede regresar saldo de su tarjeta a la empresa.
+  const empleadaLiberadora = leer<{ id: string }>(`select e.id from employees e where e.user_id = '${ids.liberador}' and e.company_id = '${E}'`)[0]!.id;
+  ejecutar(duena, `set session_replication_role = replica;
+    update efevoo_tarjetas set employee_id = '${empleadaLiberadora}' where id = '${T}'; set session_replication_role = origin;`);
+  assert.deepEqual(leer<{ estado: string }>(`select estado from efevoo_tarjetas where id = '${T}'`)[0], { estado: "activa" });
+  await rechaza("cargar la tarjeta propia", "carga_a_tarjeta_propia", (c) => asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 500 }), C, ids.liberador);
+  await acepta("otra persona carga esa tarjeta", (c) => asentar(c, C, ids.admin, { tipo: "carga", tarjeta: T, monto: 500 }), C, ids.admin);
+  await acepta("retirar de la tarjeta propia a la empresa", (c) => asentar(c, C, ids.liberador, { tipo: "retiro", tarjeta: T, monto: 500 }), C, ids.liberador);
+  const fallidaAjena = await acepta("una carga del administrador que no apareció", async (c) => {
+    const id = await asentar(c, C, ids.admin, { tipo: "carga", tarjeta: T, monto: 700 });
+    await resolver(c, C, ids.admin, id!, "incierta", null, "timeout");
+    return id!;
+  }, C, ids.admin, E, true);
+  ejecutar(duena, `set session_replication_role = replica; update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id = '${fallidaAjena}'; set session_replication_role = origin;`);
+  await acepta("cerrarla como no apareció", (c) => resolver(c, C, ids.admin, fallidaAjena, "fallida", null, "no_aparecio"), C, ids.admin, E, true);
+  await rechaza("la titular no la reintenta a su tarjeta", "carga_a_tarjeta_propia",
+    (c) => asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 700, reintento: fallidaAjena }), C, ids.liberador);
+  ejecutar(duena, `set session_replication_role = replica;
+    update efevoo_tarjetas set employee_id = '${base.empleadoTitular}' where id = '${T}'; set session_replication_role = origin;`);
+
 }

@@ -37,7 +37,7 @@ Fase 4, base multi-cliente. La SOFIPO es el operador y vive en la tabla `operato
 
 Nadie crea una empresa desde `/`. Las da de alta el personal, con `scripts/plataforma.ts`, y el primer administrador entra por invitación. La invitación guarda solo el SHA-256 del enlace, caduca a las 72 horas y sirve una vez. Quien la acepta fija su propia contraseña.
 
-La contraseña abre la cookie `sesion_parcial`. Ningún portal abre hasta que esa sesión queda marcada con el segundo factor (`sessions.segundo_factor_en`). El proxy exige esa cookie completa. Passkey y TOTP los construye otro frente, en `fase-4/autenticacion`, llamando a `completarSegundoFactor`.
+La contraseña abre la cookie `sesion_parcial`. Ningún portal abre hasta que esa sesión queda marcada con el segundo factor (`sessions.segundo_factor_en`). El proxy exige esa cookie completa. Solo `src/server/autenticacion` marca el segundo factor, después de verificar la passkey o el código TOTP.
 
 Cada petición resuelve un contexto de tenant. Los repositorios reciben ese contexto y Postgres vuelve a filtrar con RLS, con `set_config` local a la transacción. La lista 69-B y el precio los escribe solo el personal de la plataforma.
 

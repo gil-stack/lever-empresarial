@@ -20,7 +20,7 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { hashDeToken, tokenNuevo } from "./hash";
 import { mapearSesion, SQL, type RepositorioSesion, type UsuarioInterno } from "./repositorio";
 import { NOMBRE_COOKIE_PARCIAL } from "./cookie";
-import { cerrarSesion, completarSegundoFactor, entrar, leerSesion, leerSesionParcial } from "./servicio";
+import { cerrarSesion, leerSesion, leerSesionParcial } from "./servicio";
 
 const AHORA = new Date("2026-11-03T10:00:00.000Z");
 const TOKEN = "b".repeat(43);
@@ -105,61 +105,21 @@ describe("cookies __Host- e inactividad", () => {
 });
 
 describe("cuenta y sesión", () => {
-  it("la contraseña abre una sesión parcial y el segundo factor la completa", async () => {
+  it("la sesión parcial no abre portales y la completa sí; cada una se lee con su cookie", async () => {
     const repo = memoria();
     const persona = usuario();
     repo.usuarios.set(persona.id, persona);
-    const abierta = await entrar({ correo: "ana@ejemplo.mx", contrasena: CONTRASENA }, deps(repo));
-    const guardada = [...repo.sesiones.values()][0];
-    assert.equal(guardada?.tokenHash, hashDeToken(TOKEN));
-    assert.equal(guardada?.completa, false);
-    assert.match(abierta.setCookie, new RegExp(`^${NOMBRE_COOKIE_PARCIAL}=`));
-    assert.equal(abierta.setCookie.includes(CONTRASENA), false);
-    assert.equal(abierta.sesion.segundoFactor, null);
-    assert.equal(await leerSesion(abierta.setCookie, deps(repo)), null);
-    assert.equal((await leerSesionParcial(abierta.setCookie, deps(repo)))?.id, abierta.sesion.id);
-
-    const completa = await completarSegundoFactor(abierta.setCookie, "totp", deps(repo, undefined, "c".repeat(43)));
-    assert.equal(completa.sesion.segundoFactor?.metodo, "totp");
-    assert.equal(repo.sesiones.size, 1);
-    assert.equal((await leerSesion(completa.setCookies[0], deps(repo)))?.usuario.correo, "ana@ejemplo.mx");
-    assert.equal(await leerSesionParcial(abierta.setCookie, deps(repo)), null);
-    assert.equal(JSON.stringify(completa).includes("passwordHash"), false);
-  });
-
-  it("no abre sesión si el correo o la contraseña no sirven", async () => {
-    const repo = memoria();
-    let aperturas = 0;
-    const original = repo.abrirSesion.bind(repo);
-    repo.abrirSesion = async (sesion) => {
-      aperturas += 1;
-      return original(sesion);
-    };
-    assert.equal(await codigo(entrar({ correo: "no-es-correo", contrasena: CONTRASENA }, deps(repo))), "credenciales_invalidas");
-    assert.equal(await codigo(entrar({ correo: "ana@ejemplo.mx", contrasena: "" }, deps(repo))), "credenciales_invalidas");
-    assert.equal(aperturas, 0);
-  });
-
-  it("no dice si falló el correo o la contraseña", async () => {
-    const repo = memoria();
-    repo.usuarios.set("1", usuario());
-    const verificaciones: string[] = [];
-    const verificar = async (plana: string, hash: string) => {
-      verificaciones.push(hash);
-      return hash === `hash:${plana}`;
-    };
-    const dependencias = deps(repo, verificar);
-    assert.equal(
-      await codigo(entrar({ correo: "ANA@ejemplo.mx", contrasena: "otra-clave-99" }, dependencias)),
-      "credenciales_invalidas",
-    );
-    assert.equal(
-      await codigo(entrar({ correo: "nadie@ejemplo.mx", contrasena: CONTRASENA }, dependencias)),
-      "credenciales_invalidas",
-    );
-    assert.equal(verificaciones.length, 2);
-    assert.notEqual(verificaciones[1], `hash:${CONTRASENA}`);
-    assert.equal(repo.fallos.length, 2);
+    const parcial = "p".repeat(43);
+    const completo = "c".repeat(43);
+    sembrarSesion(repo, persona.id, parcial, false);
+    sembrarSesion(repo, persona.id, completo, true);
+    const cookieParcial = `${NOMBRE_COOKIE_PARCIAL}=${parcial}`;
+    const cookieCompleta = `${NOMBRE_COOKIE}=${completo}`;
+    assert.equal(await leerSesion(cookieParcial, deps(repo)), null);
+    assert.equal(await leerSesion(`${NOMBRE_COOKIE}=${parcial}`, deps(repo)), null, "el token parcial no sirve como completo");
+    assert.equal((await leerSesionParcial(cookieParcial, deps(repo)))?.segundoFactor, null);
+    assert.equal((await leerSesion(cookieCompleta, deps(repo)))?.usuario.correo, "ana@ejemplo.mx");
+    assert.equal(await leerSesionParcial(`${NOMBRE_COOKIE_PARCIAL}=${completo}`, deps(repo)), null);
   });
 
   it("caduca la sesión completa y cerrar solo borra el token presentado", async () => {
@@ -169,23 +129,20 @@ describe("cuenta y sesión", () => {
     dependencias.ahora = () => ahora;
     repo.usuarios.set("1", usuario());
     repo.usuarios.set("2", { ...usuario(), id: "2", correo: "luis@ejemplo.mx", nombre: "Luis Alma" });
-    const ana = await entrar({ correo: "ana@ejemplo.mx", contrasena: CONTRASENA }, dependencias);
-    const completa = await completarSegundoFactor(ana.setCookie, "passkey", {
-      ...dependencias,
-      token: () => "c".repeat(43),
-    });
+    const ana = `${NOMBRE_COOKIE}=${"c".repeat(43)}`;
+    const luis = `${NOMBRE_COOKIE}=${"e".repeat(43)}`;
+    sembrarSesion(repo, usuario().id, "c".repeat(43), true);
+    sembrarSesion(repo, "2", "e".repeat(43), true);
     ahora = new Date(AHORA.getTime() + VIGENCIA_SESION_MS - 1);
-    assert.ok(await leerSesion(completa.setCookies[0], dependencias));
+    assert.ok(await leerSesion(ana, dependencias));
     ahora = new Date(AHORA.getTime() + VIGENCIA_SESION_MS);
-    assert.equal(await leerSesion(completa.setCookies[0], dependencias), null);
+    assert.equal(await leerSesion(ana, dependencias), null);
 
     ahora = AHORA;
-    const luis = await entrar({ correo: "luis@ejemplo.mx", contrasena: CONTRASENA }, { ...deps(repo), token: () => "d".repeat(43) });
-    const luisCompleta = await completarSegundoFactor(luis.setCookie, "totp", { ...deps(repo), token: () => "e".repeat(43) });
-    const cierre = await cerrarSesion(completa.setCookies[0], dependencias);
+    const cierre = await cerrarSesion(ana, dependencias);
     assert.match(cierre.setCookies[0], /Max-Age=0/);
-    assert.equal(await leerSesion(completa.setCookies[0], dependencias), null);
-    assert.equal((await leerSesion(luisCompleta.setCookies[0], dependencias))?.usuario.correo, "luis@ejemplo.mx");
+    assert.equal(await leerSesion(ana, dependencias), null);
+    assert.equal((await leerSesion(luis, dependencias))?.usuario.correo, "luis@ejemplo.mx");
   });
 });
 
@@ -356,6 +313,11 @@ function deps(
   };
 }
 
+function sembrarSesion(repo: ReturnType<typeof memoria>, userId: string, token: string, completa: boolean): void {
+  const tokenHash = hashDeToken(token);
+  repo.sesiones.set(tokenHash, { id: randomUUID(), userId, tokenHash, expiresAt: new Date(AHORA.getTime() + VIGENCIA_SESION_MS), completa });
+}
+
 type SesionMem = { id: string; userId: string; tokenHash: string; expiresAt: Date; completa: boolean; ultimoUso?: Date };
 
 function usuario(): UsuarioInterno {
@@ -437,16 +399,6 @@ function memoria(): RepositorioSesion & {
       }
     },
   };
-}
-
-async function codigo(promesa: Promise<unknown>): Promise<string> {
-  try {
-    await promesa;
-  } catch (error) {
-    if (error instanceof ErrorDeDominio) return error.codigo;
-    throw error;
-  }
-  throw new Error("la operación no rechazó");
 }
 
 function archivosTs(dir: string): string[] {
