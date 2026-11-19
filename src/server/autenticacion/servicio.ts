@@ -45,6 +45,15 @@ export const PISO_RECHAZO_MS = 1_500;
 export const RECHAZO_DE_CONTRASENA =
   "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.";
 const TOPE_SEGUNDO_FACTOR = 5;
+/**
+ * Tope por persona, por encima del de cada entrada: diez códigos fallidos en quince
+ * minutos, sumando todas sus entradas y las dos puertas (portal y Operación). Sin él,
+ * con la contraseña se abrían entradas sin fin y cada una traía cinco intentos más.
+ * Solo rige a quien tiene app autenticadora: sus seis dígitos son lo único que se
+ * adivina. Una passkey no se adivina y un código de respaldo trae 80 bits de azar.
+ */
+export const TOPE_SEGUNDO_FACTOR_PERSONA = 10;
+const VENTANA_SEGUNDO_FACTOR_MS = 15 * 60 * 1000;
 const VIGENCIA_RETO_MS = 5 * 60 * 1000;
 const VIGENCIA_RECUPERACION_MS = 12 * 60 * 60 * 1000;
 const EMISOR = "Lever";
@@ -147,6 +156,9 @@ async function probarContrasena(
     await listo.repositorio.registrarContrasenaFallida(usuario?.id ?? null, ahora);
     return { tipo: "rechazo", codigo: "credenciales_invalidas" };
   }
+  // Con el segundo factor en su tope, la contraseña correcta recibe el mismo rechazo
+  // (y el mismo piso) que una mala. No se anota como contraseña fallida.
+  if (await segundoFactorEnElTope(usuario.id, listo)) return { tipo: "rechazo", codigo: "credenciales_invalidas" };
 
   const id = listo.ids();
   const token = listo.token();
@@ -173,6 +185,7 @@ export async function entrarConTotp(
 ): Promise<string> {
   const listo = resolver(deps);
   const entrada = await exigirEntrada(token, listo);
+  await exigirBajoElTope(entrada, listo);
   const intentos = await apartarIntento(entrada, listo);
   const normalizado = normalizarCodigoTotp(codigo);
   const factores = await listo.repositorio.factores(entrada.userId);
@@ -190,6 +203,7 @@ export async function entrarConRespaldo(
 ): Promise<string> {
   const listo = resolver(deps);
   const entrada = await exigirEntrada(token, listo);
+  await exigirBajoElTope(entrada, listo);
   const intentos = await apartarIntento(entrada, listo);
   const normalizado = normalizarRespaldo(codigo);
   if (!normalizado) return fallo(entrada, intentos, listo);
@@ -724,7 +738,42 @@ async function fallo(entrada: Entrada, intentos: number, listo: Listo): Promise<
     intentos,
     ahora: listo.ahora(),
   });
+  const fallos = await fallosDeSegundoFactor(entrada.userId, listo);
+  if (fallos >= TOPE_SEGUNDO_FACTOR_PERSONA && (await tieneTotp(entrada.userId, listo))) {
+    // Solo el fallo que llega al tope avisa: los siguientes ya no se verifican.
+    if (fallos === TOPE_SEGUNDO_FACTOR_PERSONA) {
+      await avisarSinDeshacer(listo.avisar, {
+        userId: entrada.userId,
+        cambio: "segundo_factor_bloqueado",
+        cuando: listo.ahora(),
+        persona: () => listo.repositorio.buscarPersona(entrada.userId),
+      });
+    }
+    throw new ErrorDeDominio("entrada_agotada");
+  }
   throw new ErrorDeDominio(intentos >= TOPE_SEGUNDO_FACTOR ? "entrada_agotada" : "segundo_factor_invalido");
+}
+
+function fallosDeSegundoFactor(userId: string, listo: Listo): Promise<number> {
+  return listo.repositorio.contarFallosSegundoFactor(
+    userId,
+    new Date(listo.ahora().getTime() - VENTANA_SEGUNDO_FACTOR_MS),
+  );
+}
+
+async function tieneTotp(userId: string, listo: Listo): Promise<boolean> {
+  return Boolean((await listo.repositorio.factores(userId)).totp?.confirmado);
+}
+
+/** Lee los factores solo cuando ya hay diez fallos: la entrada normal paga una consulta. */
+async function segundoFactorEnElTope(userId: string, listo: Listo): Promise<boolean> {
+  if ((await fallosDeSegundoFactor(userId, listo)) < TOPE_SEGUNDO_FACTOR_PERSONA) return false;
+  return tieneTotp(userId, listo);
+}
+
+/** En el tope, la entrada abierta tampoco prueba códigos: ni aparta intento ni verifica. */
+async function exigirBajoElTope(entrada: Entrada, listo: Listo): Promise<void> {
+  if (await segundoFactorEnElTope(entrada.userId, listo)) throw new ErrorDeDominio("entrada_agotada");
 }
 
 async function altaTotp(userId: string, correo: string, ceremonia: CeremoniaTotp, listo: Listo): Promise<AltaTotp> {

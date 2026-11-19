@@ -7,6 +7,7 @@
 1 tests/cobranza/retenidos-postgres.test.ts
 1 tests/cobranza/cobranza-postgres.test.ts
 1 tests/autenticacion/enumeracion-tope.test.ts
+1 tests/autenticacion/tope-segundo-factor-postgres.test.ts
 1 tests/flujo/flujo-postgres.test.ts
 1 tests/esquema/empresa-suspendida.test.ts
 1 tests/esquema/definer-search-path.test.ts

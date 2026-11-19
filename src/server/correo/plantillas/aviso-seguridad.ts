@@ -9,7 +9,8 @@ export type CambioDeSeguridad =
   | "respaldo_regenerado"
   | "recuperacion_aprobada"
   | "factor_reinscrito"
-  | "contrasena_cambiada";
+  | "contrasena_cambiada"
+  | "segundo_factor_bloqueado";
 
 const TEXTOS: Record<CambioDeSeguridad, { asunto: string; que: string }> = {
   passkey_agregada: { asunto: "Agregaste una passkey", que: "Se agregó una passkey nueva a tu cuenta." },
@@ -31,6 +32,10 @@ const TEXTOS: Record<CambioDeSeguridad, { asunto: string; que: string }> = {
   contrasena_cambiada: {
     asunto: "Cambiaste tu contraseña",
     que: "La contraseña de tu cuenta cambió con el enlace de recuperación. Las sesiones abiertas se cerraron; tu segundo factor no cambió.",
+  },
+  segundo_factor_bloqueado: {
+    asunto: "Pausamos la entrada a tu cuenta",
+    que: "Alguien escribió bien tu contraseña y falló varias veces el código de tu segundo factor. Por quince minutos no se puede entrar a tu cuenta.",
   },
 };
 

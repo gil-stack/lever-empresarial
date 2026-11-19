@@ -320,18 +320,9 @@ describe("recuperación con factores viejos en Postgres", { skip: urlAdmin.lengt
         assert.equal(await intentar(pendienteMario, 300), "recuperacion_vencida");
         assert.deepEqual(await vivos(personas.mario), antes, "la confirmación y la revocación se deshicieron completas");
 
-        // 8. Con la recuperación vencida ya no se inscribe: vuelve a pedir el factor de siempre.
-        const tarde = await entrar("mario", 300);
-        assert.equal((await leerPaso(tarde, deps(300))).paso, "verificar");
-        assert.equal(await codigoDe(prepararTotp(tarde, deps(300))), "ya_tiene_segundo_factor");
-        assert.equal(
-          await codigoDe(inscribirTotp(tarde, codigoDelPaso(SEMILLA_NUEVA, pasoDe(en(300))), deps(300))),
-          "ya_tiene_segundo_factor",
-        );
-        assert.deepEqual(await vivos(personas.mario), { ...antes, eventos: (await vivos(personas.mario))?.eventos });
-
         // 8b. Con la app vieja viva, la base no deja confirmar la nueva: hay que revocar la vieja antes, en la misma
-        // transacción. Pasa por los triggers de auth_totp con una fila pendiente junto a una confirmada.
+        // transacción. Pasa por los triggers de auth_totp con una fila pendiente junto a una confirmada. Va antes del
+        // paso 8: la entrada nueva de ese paso cierra la de Mario (crearEntrada cierra las abiertas) y su pendiente ya no confirma.
         await duena.query("begin");
         await assert.rejects(
           duena.query("update auth_totp set confirmado_en = now(), ultimo_paso = $2 where id = $1", [
@@ -353,6 +344,16 @@ describe("recuperación con factores viejos en Postgres", { skip: urlAdmin.lengt
         ]);
         assert.equal(cabe.rowCount, 1, "control: con la vieja revocada antes, la nueva sí se confirma");
         await duena.query("rollback");
+
+        // 8. Con la recuperación vencida ya no se inscribe: vuelve a pedir el factor de siempre.
+        const tarde = await entrar("mario", 300);
+        assert.equal((await leerPaso(tarde, deps(300))).paso, "verificar");
+        assert.equal(await codigoDe(prepararTotp(tarde, deps(300))), "ya_tiene_segundo_factor");
+        assert.equal(
+          await codigoDe(inscribirTotp(tarde, codigoDelPaso(SEMILLA_NUEVA, pasoDe(en(300))), deps(300))),
+          "ya_tiene_segundo_factor",
+        );
+        assert.deepEqual(await vivos(personas.mario), { ...antes, eventos: (await vivos(personas.mario))?.eventos });
 
         // 9. Sin recuperación, quien tiene factores sigue en verificar y la base no deja inscribir otro.
         await conAppVieja("beto");
@@ -568,7 +569,8 @@ describe("recuperación con factores viejos en Postgres", { skip: urlAdmin.lengt
         const b2 = await entrada(bea);
         const alta2 = await prepararTotp(b2.token, { ...deps, semilla: () => SEMILLA_NUEVA });
         assert.notEqual(alta2.semilla, altas[0].semilla);
-        assert.equal(await codigoDe(inscribirTotp(b1.token, codigoNuevo, deps)), "segundo_factor_invalido");
+        // b2 cerró b1: la entrada vieja ni siquiera llega a probar la semilla de la nueva.
+        assert.equal(await codigoDe(inscribirTotp(b1.token, codigoNuevo, deps)), "entrada_vencida");
         assert.equal(await repo.leerTotpPendiente(ana, { entradaId: b2.id, recuperacionId: null }, ahora), null);
         await assert.rejects(repo.guardarTotpPendiente({ id: randomUUID(), userId: ana,
           secretoCifrado: cifrarSemilla(SEMILLA_VIEJA, ana, LLAVE), creadoEn: ahora, venceEn: despues(600_000),
@@ -645,14 +647,19 @@ describe("recuperación con factores viejos en Postgres", { skip: urlAdmin.lengt
         assert.equal(await repo.leerTotpPendiente(ana, { sesionId: s1.id }, ahora), null, "se descarta la pendiente anterior");
         assert.equal(await codigoDe(inscribirTotp(recuperacion.token, codigoViejo, deps)), "segundo_factor_invalido");
 
-        // Otra entrada de la misma recuperación conserva su propia semilla y no puede consumir la primera.
+        // Otra entrada de la misma recuperación cierra la primera (crearEntrada cierra las abiertas), conserva su
+        // propia semilla y no puede consumir la de la primera.
         const otra = await entrada(ana);
+        assert.equal(await codigoDe(inscribirTotp(recuperacion.token, codigoNuevo, deps)), "entrada_vencida");
         const altaOtra = await prepararTotp(otra.token, deps);
         assert.notEqual(altaOtra.semilla, nueva.semilla);
         assert.equal(await codigoDe(inscribirTotp(otra.token, codigoNuevo, deps)), "segundo_factor_invalido");
         const deRecuperacion = await repo.leerTotpPendiente(ana, { entradaId: recuperacion.id, recuperacionId: solicitud }, ahora);
         assert.ok(deRecuperacion);
         assert.equal(await repo.leerTotpPendiente(ana, { entradaId: recuperacion.id, recuperacionId: randomUUID() }, ahora), null);
+        // La recuperación sigue en una entrada nueva, con la semilla nueva, antes de la pendiente de s2.
+        const vigente = await entrada(ana);
+        await prepararTotp(vigente.token, { ...deps, semilla: () => SEMILLA_NUEVA });
         await prepararTotpDeSesion(s2, deps);
 
         // Dos peticiones del atacante pasan la guarda de servicio y esperan; la recuperación cierra sus sesiones primero.
@@ -677,7 +684,7 @@ describe("recuperación con factores viejos en Postgres", { skip: urlAdmin.lengt
           },
         } }));
         await preparada.promesa;
-        await inscribirTotp(recuperacion.token, codigoNuevo, deps);
+        await inscribirTotp(vigente.token, codigoNuevo, deps);
         continuarConfirmacion.resolver();
         continuarPreparacion.resolver();
         assert.equal(await confirmacion, "reautenticacion_requerida");

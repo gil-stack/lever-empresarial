@@ -750,6 +750,106 @@ describe("el tope de contraseña no revela qué correos tienen cuenta", () => {
   });
 });
 
+describe("el segundo factor tiene tope por persona, no solo por entrada", () => {
+  const RECHAZO = { tipo: "rechazo", codigo: "credenciales_invalidas" };
+  /** Un código de seis dígitos que no es el del paso. */
+  const malo = (ahora: Date) => (codigoDelPaso(SEMILLA, pasoDe(ahora)) === "000000" ? "111111" : "000000");
+
+  async function fallar(token: string, veces: number, deps: ReturnType<typeof base>, ahora: Date): Promise<string[]> {
+    const codigos: string[] = [];
+    for (let i = 0; i < veces; i += 1) codigos.push(await codigoDe(entrarConTotp(token, malo(ahora), deps)));
+    return codigos;
+  }
+
+  it("diez fallos repartidos en varias entradas y en las dos puertas bloquean el siguiente intento", async () => {
+    const repo = anaConTotp();
+    const deps = base(repo, undefined, LUEGO);
+    const operacion = { ...deps, superficie: "sofipo" as const };
+    const correcto = codigoDelPaso(SEMILLA, pasoDe(LUEGO));
+
+    assert.deepEqual(await fallar(await entrarHasta(deps), 5, deps, LUEGO), [
+      ...Array(4).fill("segundo_factor_invalido"),
+      "entrada_agotada",
+    ]);
+    // La puerta de Operación suma a la misma persona; el respaldo también cuenta.
+    const deOperacion = await entrarHasta(operacion);
+    assert.deepEqual(await fallar(deOperacion, 3, operacion, LUEGO), Array(3).fill("segundo_factor_invalido"));
+    assert.equal(await codigoDe(entrarConRespaldo(deOperacion, "ZZZZ-ZZZZ-ZZZZ-ZZZZ", operacion)), "segundo_factor_invalido");
+    const abierta = await entrarHasta(deps);
+    assert.deepEqual(await fallar(abierta, 1, deps, LUEGO), ["entrada_agotada"], "el décimo agota aunque la entrada traía uno");
+    assert.equal(repo.fallosSegundoFactor.length, 10);
+
+    // La entrada abierta ya no prueba códigos, ni el correcto, ni de respaldo, y no aparta intento.
+    const intentos = repo.entradas.find((e) => !e.consumida)?.intentos;
+    assert.equal(await codigoDe(entrarConTotp(abierta, correcto, deps)), "entrada_agotada");
+    assert.equal(await codigoDe(entrarConRespaldo(abierta, "ABCD-EFGH-JKLM-NPQR", deps)), "entrada_agotada");
+    assert.equal(repo.entradas.find((e) => !e.consumida)?.intentos, intentos);
+    assert.deepEqual(repo.sesiones.map((s) => s.id), ["00000000-0000-4000-8000-00000000aa01"], "no nació sesión");
+
+    // Con la contraseña correcta: el mismo rechazo que una mala, sin entrada nueva y sin anotar la contraseña.
+    const entradas = repo.entradas.length;
+    assert.deepEqual(await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, deps), RECHAZO);
+    assert.deepEqual(await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, operacion), RECHAZO);
+    assert.equal(repo.entradas.length, entradas);
+    assert.equal(repo.fallos.length, 0);
+
+    // Un solo aviso, al llegar al tope.
+    assert.deepEqual(repo.avisos.map((a) => [a.cambio, a.para]), [["segundo_factor_bloqueado", "ana@ejemplo.mx"]]);
+  });
+
+  it("el rechazo en el tope tarda el mismo piso que una contraseña mala", async () => {
+    const repo = anaConTotp();
+    for (let i = 0; i < 10; i += 1) repo.fallosSegundoFactor.push({ userId: repo.ana.id, en: AHORA });
+    const esperas: number[] = [];
+    const deps = { ...base(repo), ahoraMs: () => 0, esperar: async (ms: number) => void esperas.push(ms) };
+    assert.deepEqual(await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, deps), RECHAZO);
+    assert.deepEqual(esperas, [PISO_RECHAZO_MS]);
+  });
+
+  it("una entrada nueva deja sin efecto la anterior", async () => {
+    const repo = anaConTotp();
+    const deps = base(repo, undefined, LUEGO);
+    const vieja = await entrarHasta(deps);
+    const nueva = await entrarHasta(deps);
+    assert.equal(await codigoDe(leerPaso(vieja, deps)), "entrada_vencida");
+    assert.equal(await codigoDe(entrarConTotp(vieja, malo(LUEGO), deps)), "entrada_vencida");
+    assert.equal(repo.fallosSegundoFactor.length, 0, "la vieja ya no aparta intentos");
+    assert.match(await entrarConTotp(nueva, codigoDelPaso(SEMILLA, pasoDe(LUEGO)), deps), /sesion=/);
+  });
+
+  it("los fallos de hace más de quince minutos no cuentan", async () => {
+    const repo = anaConTotp();
+    const antes = base(repo, undefined, LUEGO);
+    await fallar(await entrarHasta(antes), 5, antes, LUEGO);
+    await fallar(await entrarHasta(antes), 5, antes, LUEGO);
+
+    const casi = new Date(LUEGO.getTime() + 15 * 60 * 1000 - 1);
+    assert.deepEqual(await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, base(repo, undefined, casi)), RECHAZO);
+
+    const despues = new Date(LUEGO.getTime() + 15 * 60 * 1000 + 1);
+    const deps = base(repo, undefined, despues);
+    const token = await entrarHasta(deps);
+    assert.match(await entrarConTotp(token, codigoDelPaso(SEMILLA, pasoDe(despues)), deps), /sesion=/);
+  });
+
+  it("quien solo tiene passkey no se bloquea aunque falle diez veces", async () => {
+    const repo = memoria();
+    const deps = base(repo);
+    const alta = await entrarHasta(deps);
+    await opcionesParaInscribirPasskey(alta, origen(), deps);
+    await inscribirPasskey(alta, { id: CREDENCIAL }, origen(), "Laptop", deps);
+    for (let e = 0; e < 2; e += 1) {
+      const token = await entrarHasta(deps);
+      for (let i = 0; i < 5; i += 1) await codigoDe(entrarConRespaldo(token, "ZZZZ-ZZZZ-ZZZZ-ZZZZ", deps));
+    }
+    assert.equal(repo.fallosSegundoFactor.length, 10);
+    const token = await entrarHasta(deps);
+    await opcionesParaEntrarConPasskey(token, origen(), deps);
+    assert.match(await entrarConPasskey(token, { id: CREDENCIAL }, origen(), deps), /sesion=/);
+    assert.equal(repo.avisos.some((a) => a.cambio === "segundo_factor_bloqueado"), false);
+  });
+});
+
 async function entrarHasta(deps: ReturnType<typeof base>): Promise<string> {
   const inicio = await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, deps);
   if (inicio.tipo !== "entrada") throw new Error(inicio.codigo);
@@ -852,6 +952,8 @@ class Memoria {
   entradas: EntradaMem[] = [];
   /** Persona de cada contraseña fallida; null cuando el correo no tiene cuenta. */
   fallos: (string | null)[] = [];
+  /** Cada segundo factor fallido en la puerta, con su persona y su instante. */
+  fallosSegundoFactor: { userId: string; en: Date }[] = [];
   passkeys: (PasskeyGuardada & { revocado: boolean })[] = [];
   totp: (TotpGuardado & { revocado: boolean; ceremonia?: CeremoniaTotp; venceEn?: Date })[] = [];
   respaldos: RespaldoMem[] = [];
@@ -876,6 +978,8 @@ class Memoria {
         return null;
       },
       crearEntrada: async (entrada) => {
+        // Como la base: la entrada nueva cierra las abiertas de la persona.
+        for (const abierta of this.entradas) if (abierta.userId === entrada.userId) abierta.consumida = true;
         this.entradas.push({ ...entrada, intentos: 0, consumida: false });
         this.eventos.push("entrada_contrasena");
       },
@@ -898,10 +1002,14 @@ class Memoria {
         entrada.intentos += 1;
         return entrada.intentos;
       },
-      registrarFalloDeEntrada: async ({ entradaId, intentos }) => {
+      registrarFalloDeEntrada: async ({ entradaId, userId, intentos, ahora }) => {
         const entrada = this.entradas.find((e) => e.id === entradaId);
         if (entrada && intentos >= 5) entrada.consumida = true;
+        this.fallosSegundoFactor.push({ userId, en: ahora });
         this.eventos.push("segundo_factor_fallido");
+      },
+      contarFallosSegundoFactor: async (userId, desde) => {
+        return this.fallosSegundoFactor.filter((f) => f.userId === userId && f.en.getTime() >= desde.getTime()).length;
       },
       factores: async (userId) => {
         return this.estado(userId);
