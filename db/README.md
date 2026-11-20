@@ -2,7 +2,7 @@
 
 La fase 1 deja en Neon el cimiento de identidad: la cuenta de una razón social, la persona, la sesión mínima del alta, la membresía y la auditoría de ese alta. Esas migraciones no se reescriben. La fase 2 agrega el maestro, la política, los cajones y el precio, en archivos posteriores a `0006`. El dinero que se mueve y el SPEI quedan para migraciones posteriores.
 
-El servidor de la aplicación lee solo `DATABASE_URL`. Ese valor es el connection string agrupado. El proceso del servidor no migra al arrancar: no hay hook de boot, ni `postinstall`, ni ruta que llame a `db/migrate.sh`.
+El servidor de la aplicación lee solo `DATABASE_URL`. Ese valor es el connection string agrupado. El proceso del servidor no migra al arrancar: no hay hook de boot, ni `postinstall`, ni ruta que llame a `db/migrate.sh`. Quien migra en producción es el build: `npm run build` corre `scripts/migrar.mjs --al-construir` antes de `next build`, solo cuando `VERCEL_ENV=production`. Si falta `DATABASE_URL_UNPOOLED` o una migración falla, el build se detiene. La base esperada es `PGDATABASE` (la publica la integración de Neon) o, si no está, `plataforma`.
 
 ## Comando
 
