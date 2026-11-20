@@ -37,6 +37,7 @@ const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   intento_con_otros_datos: { titulo: "Este formulario ya se envió con otros datos", mensaje: "Cierra el diálogo y ábrelo de nuevo para una operación nueva." },
   operacion_en_curso: { titulo: "Esa tarjeta tiene una operación sin terminar", mensaje: "Espera a que se confirme o concíliala en «Operaciones por confirmar»." },
   tarjeta_en_cancelacion: { titulo: "Esa tarjeta se está cancelando", mensaje: "No se puede operar mientras se cancela." },
+  carga_a_tarjeta_propia: { titulo: "No puedes cargar tu propia tarjeta", mensaje: "El saldo de la empresa no se carga a una tarjeta tuya. Pide a otra persona de administración o liberación que la cargue. No se movió dinero." },
   tarjeta_no_encontrada: { titulo: "No encontramos esa tarjeta", mensaje: "Recarga la página." },
   tarjeta_en_otro_estado: { titulo: "La tarjeta cambió de estado", mensaje: "Recarga la página para ver cómo está ahora." },
   sin_permiso_para_efevoo: { titulo: "Sin permiso para operar tarjetas", mensaje: "Tu rol puede ver las tarjetas; las cargan, retiran y bloquean administración y liberación." },

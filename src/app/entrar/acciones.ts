@@ -28,6 +28,7 @@ import {
   RECHAZO_DE_CONTRASENA,
   rutaDeDestino,
 } from "@/server/autenticacion";
+import { ipDeEncabezados } from "@/server/autenticacion/limites";
 import { leerTokenEntrada, NOMBRE_COOKIE_PORTAL, type CookieEntrada } from "@/server/autenticacion/cookie";
 import { encabezadoDeSesion, NOMBRE_COOKIE, VIGENCIA_SESION_MS } from "@/server/session/cookie";
 import { ErrorDeDominio, leerSesion } from "@/server/session";
@@ -64,6 +65,7 @@ export async function enviarContrasena(previo: EstadoEntrada, formData: FormData
     const resultado = await iniciarConContrasena({
       correo,
       contrasena: String(formData.get("contrasena") ?? ""),
+      ip: ipDeEncabezados(await headers()),
     });
     if (resultado.tipo === "rechazo") return { tipo: "invalido", mensaje: texto(resultado.codigo), correo };
     await ponerEntrada(resultado.cookie);
