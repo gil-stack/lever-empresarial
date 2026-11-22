@@ -393,6 +393,8 @@ const CODIGOS_DE_EFEVOO = new Set([
   "conciliacion_prematura",
   "empleado_con_tarjeta_por_activar",
   "cierre_manual_no_valido",
+  // 0039: nadie se carga saldo de la empresa a su propia tarjeta.
+  "carga_a_tarjeta_propia",
 ]);
 
 const CODIGOS_DE_CLABE = new Set([

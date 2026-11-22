@@ -133,7 +133,9 @@ describe("0037: actualización de PLD ya instalada", { skip: urlAdmin.length ===
                 await lector.end();
               }
             }
-            assert.deepEqual(await pendientes(c), [LA_0037], "0030 registrada se omite; el arreglo debe entrar por 0037");
+            // Las migraciones posteriores a la 0037 (p. ej. la 0039) también quedan pendientes y entran en el mismo despliegue.
+            const desdeLa0037 = readdirSync(MIGRACIONES).filter((f) => f.endsWith(".sql") && f >= LA_0037).sort();
+            assert.deepEqual(await pendientes(c), desdeLa0037, "0030 registrada se omite; el arreglo debe entrar por 0037");
             assert.deepEqual(await conservados(c), antes, "sin reescribir operaciones, alertas, bitácora ni marcas de migraciones anteriores");
             assert.equal((await c.query("select count(*)::int as n from pld_operaciones where instruccion <> 1 or reemplaza is not null")).rows[0].n, 0);
             const actual = await contrato(c);

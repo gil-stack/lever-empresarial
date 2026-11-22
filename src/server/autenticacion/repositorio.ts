@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { aplicarSentencia, conContexto, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { hecho, registrarHechoAutenticacion } from "./auditar";
+import type { EstadoIntentos } from "./limites";
 import { VIGENCIA_FACTORES_MS } from "./reautenticacion";
 import type { MetodoSegundoFactor, RecuperacionPendiente, VerificacionIdentidad } from "./tipos";
 
@@ -116,10 +117,16 @@ export type Efecto =
 export type RepositorioAutenticacion = {
   buscarUsuarioPorCorreo: (correo: string) => Promise<UsuarioAuth | null>;
   buscarPersona: (userId: string) => Promise<Persona | null>;
+  /** Abre la entrada nueva y, en la misma transacción, cierra las abiertas de esa persona: no se usan en paralelo. */
   crearEntrada: (entrada: { id: string; userId: string; tokenHash: string; creadaEn: Date; venceEn: Date }) => Promise<void>;
   registrarContrasenaFallida: (userId: string | null, ahora: Date) => Promise<void>;
   leerEntrada: (tokenHash: string, ahora: Date) => Promise<Entrada | null>;
   contarFallosContrasena: (userId: string, desde: Date) => Promise<number>;
+  /** Intentos de contraseña por cuenta + IP e IP (0045), con correo e IP ya en huella. */
+  estadoIntentosContrasena: (args: { correoHash: string; ipHash: string; ahora: Date }) => Promise<EstadoIntentos>;
+  registrarIntentoContrasena: (args: { correoHash: string; ipHash: string; exito: boolean; ahora: Date }) => Promise<void>;
+  /** Fallos de segundo factor en la puerta (cualquier entrada, cualquier superficie) desde `desde`. */
+  contarFallosSegundoFactor: (userId: string, desde: Date) => Promise<number>;
   /**
    * Aparta un intento de segundo factor en la entrada antes de verificar. Devuelve
    * los intentos apartados, o null si ya hay 5 (o la entrada venció): entonces no
@@ -213,6 +220,13 @@ export const SQL = {
     values ($1, $2, $3, $4, $5)`,
   leerEntrada: "select id, user_id, vence_en, intentos_fallidos from entrada_por_token($1, $2)",
   contarFallosContrasena: "select fallos_de_contrasena($1, $2) as fallos",
+  estadoIntentosContrasena: "select * from estado_intentos_contrasena($1, $2, $3)",
+  registrarIntentoContrasena: "select registrar_intento_contrasena($1, $2, $3, $4)",
+  contarFallosSegundoFactor: "select fallos_de_segundo_factor($1, $2) as fallos",
+  // Una entrada nueva deja sin efecto las anteriores de la persona: el tope de cada
+  // entrada no se multiplica abriendo varias a la vez.
+  cerrarEntradasAbiertas: `update auth_entradas set consumida_en = now()
+    where user_id = $1 and consumida_en is null and vence_en > now()`,
   apartarIntentoDeEntrada: `update auth_entradas
     set intentos_fallidos = intentos_fallidos + 1
     where id = $1 and user_id = $2 and consumida_en is null and intentos_fallidos < 5 and vence_en > now()
@@ -342,6 +356,9 @@ export function repositorioPg(): RepositorioAutenticacion {
     },
     async crearEntrada(entrada) {
       await conTransaccion(entrada.userId, async (consulta) => {
+        // Bajo el candado de la persona: dos contraseñas a la vez dejan una sola entrada abierta.
+        await consulta.query(SQL.bloquearUsuario, [entrada.userId]);
+        await consulta.query(SQL.cerrarEntradasAbiertas, [entrada.userId]);
         await consulta.query(SQL.insertarEntrada, [
           entrada.id,
           entrada.userId,
@@ -377,6 +394,22 @@ export function repositorioPg(): RepositorioAutenticacion {
     },
     async contarFallosContrasena(userId, desde) {
       const fila = primera(await consultarDefinidor(SQL.contarFallosContrasena, [userId, desde]));
+      return Number(fila?.fallos ?? 0);
+    },
+    async estadoIntentosContrasena({ correoHash, ipHash, ahora }) {
+      const fila = primera(await consultarDefinidor(SQL.estadoIntentosContrasena, [correoHash, ipHash, ahora]));
+      return {
+        fallosPareja: Number(fila?.fallos_pareja ?? 0),
+        ultimaFalla: fila?.ultima_falla ? fecha(fila.ultima_falla) : null,
+        cuentasIp: Number(fila?.cuentas_ip ?? 0),
+        ipConocida: fila?.ip_conocida === true,
+      };
+    },
+    async registrarIntentoContrasena({ correoHash, ipHash, exito, ahora }) {
+      await consultarDefinidor(SQL.registrarIntentoContrasena, [correoHash, ipHash, exito, ahora]);
+    },
+    async contarFallosSegundoFactor(userId, desde) {
+      const fila = primera(await consultarDefinidor(SQL.contarFallosSegundoFactor, [userId, desde]));
       return Number(fila?.fallos ?? 0);
     },
     async apartarIntentoDeEntrada(entradaId, userId) {

@@ -9,13 +9,14 @@ import { cerrarConexion } from "../../src/nucleo/db.ts";
 import {
   iniciarConContrasena,
   PISO_RECHAZO_MS,
+  TOPE_CONTRASENA,
   type ResultadoContrasena,
 } from "../../src/server/autenticacion/servicio.ts";
 import { hashearContrasena } from "../../src/server/session/hash.ts";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 
 /**
- * El tope de contraseña (8 fallos en 15 minutos) no revela qué correos tienen
+ * El tope de contraseña por persona (TOPE_CONTRASENA fallos en 15 minutos) no revela qué correos tienen
  * cuenta: la cuenta en el tope, la contraseña mala y el correo inexistente dan
  * el mismo rechazo y tardan lo mismo, con bcrypt y la bitácora reales. El tope
  * sigue bloqueando y el intento en el tope no se anota.
@@ -70,12 +71,12 @@ describe("el tope de contraseña en Postgres", { skip: urlAdmin.length === 0 }, 
             ).rows[0]?.n,
           );
 
-        // 1. Ana llega al tope con ocho contraseñas malas.
-        const ocho = await Promise.all(
-          Array.from({ length: 8 }, () => iniciarConContrasena({ correo: "ana@empresa.mx", contrasena: MALA }, en(0))),
+        // 1. Ana llega al tope de contraseñas malas.
+        const tope = await Promise.all(
+          Array.from({ length: TOPE_CONTRASENA }, () => iniciarConContrasena({ correo: "ana@empresa.mx", contrasena: MALA }, en(0))),
         );
-        for (const resultado of ocho) assert.deepEqual(resultado, RECHAZO);
-        assert.equal(await fallos(ana), 8);
+        for (const resultado of tope) assert.deepEqual(resultado, RECHAZO);
+        assert.equal(await fallos(ana), TOPE_CONTRASENA);
 
         // 2. Mismo resultado en los tres casos, incluida la contraseña correcta de la cuenta en el tope.
         const sinCuentaAntes = await fallos(null);
@@ -87,7 +88,7 @@ describe("el tope de contraseña en Postgres", { skip: urlAdmin.length === 0 }, 
         ]);
         for (const resultado of [topeMala, topeCorrecta, mala, inexistente]) assert.deepEqual(resultado, RECHAZO);
         // El intento en el tope no se anota; la contraseña mala y el correo sin cuenta sí.
-        assert.equal(await fallos(ana), 8);
+        assert.equal(await fallos(ana), TOPE_CONTRASENA);
         assert.equal(await fallos(beto), 1);
         assert.equal(await fallos(null), sinCuentaAntes + 1);
         const entradas = await duena.query("select count(*)::int as n from auth_entradas where user_id = $1", [ana]);
@@ -122,7 +123,7 @@ describe("el tope de contraseña en Postgres", { skip: urlAdmin.length === 0 }, 
           Math.max(...medianas) - Math.min(...medianas) <= DIFERENCIA_MAXIMA_MS,
           `medianas ${medianas.map((ms) => ms.toFixed(1)).join(", ")} ms`,
         );
-        assert.equal(await fallos(ana), 8);
+        assert.equal(await fallos(ana), TOPE_CONTRASENA);
 
         // 4. El tope sigue: dentro de la ventana la contraseña correcta no entra; pasada la ventana, sí.
         assert.deepEqual(await iniciarConContrasena({ correo: "ana@empresa.mx", contrasena: CLAVE }, en(14)), RECHAZO);

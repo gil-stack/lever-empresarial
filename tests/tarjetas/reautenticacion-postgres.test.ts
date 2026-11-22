@@ -121,4 +121,18 @@ async function probar(url: string, falso: EfevooFalso): Promise<void> {
       assert.deepEqual(estado(), despuesReintento, "el reintento también es idempotente");
     }
   }
+
+  // 0039: la tarjeta pasa a ser del liberador. Él no se la carga (ni con MFA reciente); el administrador sí, y el
+  // liberador puede regresar saldo de su tarjeta a la empresa.
+  ejecutar(url, `set session_replication_role = replica;
+    update efevoo_tarjetas set employee_id = (select id from employees where user_id = '${liberadorInicial.persona.id}' and company_id = '${empresa.id}') where id = '${tarjetaId}';
+    set session_replication_role = origin;`);
+  ejecutar(url, `set session_replication_role = replica; update sessions set segundo_factor_en = now() where id in ('${sesionAdmin.id}', '${sesionLiberador.id}'); set session_replication_role = origin;`);
+  const conMfa = <T extends { segundoFactor: unknown }>(s: T) => ({ ...s, segundoFactor: { metodo: "totp" as const, en: ahora } });
+  const antesPropia = estado();
+  await assert.rejects(moverSaldoTarjeta(liberador, conMfa(sesionLiberador), { tarjetaId, tipo: "carga", centavos: 100, intento: randomUUID() }, deps),
+    /carga_a_tarjeta_propia/);
+  assert.deepEqual(estado(), antesPropia, "la carga a la tarjeta propia no asienta nada ni llama al emisor");
+  assert.equal((await moverSaldoTarjeta(admin, conMfa(sesionAdmin), { tarjetaId, tipo: "carga", centavos: 100, intento: randomUUID() }, deps)).operacion.estado, "confirmada");
+  assert.equal((await moverSaldoTarjeta(liberador, conMfa(sesionLiberador), { tarjetaId, tipo: "retiro", centavos: 100, intento: randomUUID() }, deps)).operacion.estado, "confirmada");
 }

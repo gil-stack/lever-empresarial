@@ -286,12 +286,24 @@ function deEjecutada(op: OperacionEfevoo): OperacionTarjeta {
 }
 
 /**
+ * Nadie se carga saldo de la empresa a su propia tarjeta (0039): la base lo rechaza con «carga_a_tarjeta_propia» y aquí
+ * se pregunta antes, con la misma puerta, para no asentar nada. Un id que no es UUID lo rechaza después el ciclo de E1.
+ */
+async function exigirTarjetaAjena(ctx: ContextoConEmpresa, tarjetaId: string): Promise<void> {
+  if (!UUID.test(tarjetaId)) return;
+  const fila = await conContexto(baseCliente(ctx), async (consulta) =>
+    (await consulta.query("select efevoo_tarjeta_es_de_usuario($1, app_usuario()) as propia", [tarjetaId])).rows[0] as { propia: boolean } | undefined);
+  if (fila?.propia === true) throw new ErrorDeDominio("carga_a_tarjeta_propia");
+}
+
+/**
  * Carga o retira saldo de una tarjeta desde (o hacia) el saldo de la empresa en Efevoo, con el ciclo de E1: se asienta
  * antes de llamar, la misma llave regresa la misma operación, y sin saldo queda fallida sin llamar al emisor.
  */
 export async function moverSaldoTarjeta(ctx: ContextoDeTenant | null, sesion: SesionDeOperacion, entrada: EntradaSaldo, deps?: DependenciasOperacion): Promise<ResultadoOperacion> {
   const conEmpresa = exigirOperar(ctx);
   exigirSesionReciente(conEmpresa, sesion, deps);
+  if (entrada.tipo === "carga") await exigirTarjetaAjena(conEmpresa, entrada.tarjetaId);
   const r = await ejecutarOperacionEfevoo(conEmpresa, {
     tipo: entrada.tipo, llave: entrada.intento, companyId: conEmpresa.empresa.id, tarjetaId: entrada.tarjetaId, montoCentavos: entrada.centavos,
   }, llamadaEstandar, deps);
