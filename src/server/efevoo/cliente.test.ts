@@ -232,6 +232,9 @@ describe("Efevoo: configuración", () => {
 
   it("producción solo con produccion; fuera de producción solo sandbox", () => {
     assert.equal(leerConfigEfevoo({ ...base, VERCEL_ENV: "production" }).config, null);
+    // Excepción temporal: sandbox en producción solo con el interruptor explícito, y con el valor exacto.
+    assert.equal(leerConfigEfevoo({ ...base, VERCEL_ENV: "production", EFEVOO_SANDBOX_EN_PRODUCCION: "si" }).config?.ambiente, "sandbox");
+    assert.equal(leerConfigEfevoo({ ...base, VERCEL_ENV: "production", EFEVOO_SANDBOX_EN_PRODUCCION: "true" }).config, null);
     assert.equal(leerConfigEfevoo({ ...base, EFEVOO_AMBIENTE: "produccion" }).config, null);
     assert.equal(leerConfigEfevoo({ ...base, EFEVOO_AMBIENTE: "produccion", VERCEL_ENV: "production" }).config?.ambiente, "produccion");
     assert.equal(leerConfigEfevoo({ ...base, EFEVOO_AMBIENTE: "pruebas" }).config, null);

@@ -6,6 +6,10 @@
  * `sandbox`. El host del sandbox es test-intgapi.efevoopay.com (la variable de
  * la colección, test-test-…, no resuelve). En sandbox también se acepta un
  * http://127.0.0.1 o http://localhost: el Efevoo falso de las pruebas.
+ *
+ * Excepción temporal (decisión del dueño, 23/11/2026, mientras llegan las llaves
+ * reales): producción acepta `sandbox` solo si además EFEVOO_SANDBOX_EN_PRODUCCION
+ * vale exactamente `si`. Sin esa variable, la regla de siempre.
  */
 
 export type AmbienteEfevoo = "sandbox" | "produccion";
@@ -46,7 +50,7 @@ export function leerConfigEfevoo(
     return { config: null, motivo: "url_no_valida" };
   }
   const produccion = env.VERCEL_ENV === "production";
-  if (produccion && ambiente === "sandbox") return { config: null, motivo: "sandbox_en_produccion" };
+  if (produccion && ambiente === "sandbox" && env.EFEVOO_SANDBOX_EN_PRODUCCION?.trim() !== "si") return { config: null, motivo: "sandbox_en_produccion" };
   if (!produccion && ambiente === "produccion") return { config: null, motivo: "produccion_fuera_de_produccion" };
   const base = url.pathname.replace(/\/+$/, "");
   return { config: { url: `${url.origin}${base.endsWith(RUTA) ? base : `${base}${RUTA}`}`, usuario, llave, ambiente } };
