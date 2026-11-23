@@ -18,6 +18,8 @@ import {
   registrarProspecto,
   solicitarActivacion,
   solicitarComision,
+  actualizarPlan,
+  asignarPlan,
 } from "@/server/operacion";
 import { NOMBRE_COOKIE_ENTRADA_OPERACION, NOMBRE_COOKIE_PORTAL_OPERACION } from "@/server/operacion/acceso";
 import { cerrarSesion, ErrorDeDominio } from "@/server/session";
@@ -140,6 +142,33 @@ export async function solicitarComisionAccion(previo: EstadoDelFormulario, formD
   }
   actualizar();
   redirect("/operacion/comisiones?aviso=comision_solicitada");
+}
+
+export async function actualizarPlanAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
+  const ctx = await exigirContextoOperacion();
+  try {
+    await actualizarPlan(ctx, {
+      id: formData.get("id"),
+      nombre: formData.get("nombre"),
+      mensualidad: formData.get("mensualidad"),
+      spei: formData.get("spei"),
+    });
+  } catch (error) {
+    return rechazado(previo, error, formData, ["id", "nombre", "mensualidad", "spei"]);
+  }
+  actualizar();
+  redirect("/operacion/comisiones?aviso=plan_actualizado");
+}
+
+export async function asignarPlanAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
+  const ctx = await exigirContextoOperacion();
+  try {
+    await asignarPlan(ctx, { companyId: formData.get("companyId"), planId: formData.get("planId") });
+  } catch (error) {
+    return rechazado(previo, error, formData, ["companyId", "planId"]);
+  }
+  actualizar();
+  redirect("/operacion/comisiones?aviso=plan_asignado");
 }
 
 export async function decidirComisionAccion(formData: FormData): Promise<void> {

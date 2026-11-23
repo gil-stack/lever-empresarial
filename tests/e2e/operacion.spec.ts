@@ -241,6 +241,60 @@ async function recuperacionesPendientes(personas: readonly string[]): Promise<st
   return ids;
 }
 
+/** Abre el cajón del lateral y espera a que termine de deslizarse (el menú de la persona se coloca al abrir). */
+async function abrirCajon(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Secciones" }).click();
+  await expect(page.locator("#lateral")).toHaveAttribute("data-abierto", "si");
+  await page.waitForFunction(() => document.getElementById("lateral")!.getAnimations().length === 0);
+}
+
+// La persona va al pie del lateral: su menú abre hacia arriba con el perfil, el tema y «Salir». El tema ya no vive suelto
+// en el lateral ni el chip en la barra de arriba.
+test.describe("Operación SOFIPO: menú de la persona al pie del lateral", () => {
+  for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
+    test(`a ${ancho}: el nombre abajo a la izquierda abre el menú; el tema cambia y se recuerda; «Salir» cierra la sesión`, async ({ page, context }) => {
+      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+      await page.setViewportSize({ width: ancho, height: alto });
+      await page.goto("/operacion/clientes");
+      await expect(page.locator(".barra-superior .cuenta")).toHaveCount(0);
+      await expect(page.locator(".lateral .selector-tema")).toHaveCount(0);
+      if (ancho < 960) await abrirCajon(page);
+      const boton = page.locator(".operacion-lateral-pie .cuenta .menu-desplegable-boton");
+      await expect(boton).toBeVisible();
+      await expect(boton.locator(".persona-nombre")).not.toBeEmpty();
+      const caja = (await boton.boundingBox())!;
+      // Abajo a la izquierda: en la mitad inferior de la ventana y pegado al borde izquierdo.
+      expect(caja.x).toBeLessThan(60);
+      expect(caja.y + caja.height).toBeGreaterThan(alto / 2);
+
+      await boton.click();
+      const menu = page.getByRole("menu", { name: "Tu cuenta" });
+      await expect(menu).toBeVisible();
+      const cajaMenu = (await menu.boundingBox())!;
+      expect(cajaMenu.y + cajaMenu.height).toBeLessThanOrEqual(caja.y + 1);
+      expect(cajaMenu.y).toBeGreaterThanOrEqual(0);
+      await expect(menu.getByRole("menuitem", { name: "Mi perfil y seguridad" })).toBeVisible();
+      await expect(menu.getByRole("menuitemradio", { name: "Oscuro" })).toHaveAttribute("aria-checked", "true");
+      await menu.getByRole("menuitemradio", { name: "Claro" }).click();
+      await expect(page.locator("html")).toHaveAttribute("data-tema", "claro");
+      await page.screenshot({ path: test.info().outputPath(`menu-persona-${ancho}.png`) });
+      await page.reload();
+      await expect(page.locator("html")).toHaveAttribute("data-tema", "claro");
+      if (ancho < 960) await abrirCajon(page);
+      await boton.click();
+      await expect(menu.getByRole("menuitemradio", { name: "Claro" })).toHaveAttribute("aria-checked", "true");
+      // Con el teclado: las flechas recorren también las opciones del tema.
+      await page.keyboard.press("ArrowDown");
+      await expect(menu.getByRole("menuitemradio", { name: "Claro" })).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(menu).toBeHidden();
+      await expect(boton).toBeFocused();
+      await boton.click();
+      await Promise.all([page.waitForURL(/\/operacion\/entrar/), menu.getByRole("menuitem", { name: "Salir" }).click()]);
+    });
+  }
+});
+
 async function salirDeOperacion(page: Page): Promise<void> {
   await page.locator(".cuenta .menu-desplegable-boton").click();
   await page.getByRole("menuitem", { name: "Salir" }).click();
@@ -293,7 +347,8 @@ test.describe("doceava sin JavaScript: empresas propias de la siembra", () => {
   });
 
   // Hallazgo del #60: sin JavaScript el menú de la cuenta no abre y no había manera de cerrar sesión en Operación.
-  test("sin JavaScript, «Salir» se ve junto al menú, cierra la sesión y /operacion vuelve a la entrada, a 1440 y 390; el título y el chip no ceden espacio; con JavaScript no se ve", async ({ page, context, browser }) => {
+  // La persona va al pie del lateral (que en el teléfono es un cajón que sin JavaScript no abre): «Salir» queda en la barra.
+  test("sin JavaScript, «Salir» se ve en la barra, cierra la sesión y /operacion vuelve a la entrada, a 1440 y 390; el título no cede espacio; con JavaScript no se ve", async ({ page, context, browser }) => {
     for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
       await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
       await page.setViewportSize({ width: ancho, height: alto });
@@ -301,24 +356,18 @@ test.describe("doceava sin JavaScript: empresas propias de la siembra", () => {
       const salir = page.locator(".barra-superior").getByRole("button", { name: "Salir", exact: true });
       await expect(salir, `a ${ancho}`).toBeVisible();
       await expect(page.locator(".barra-titulo")).toHaveText("Clientes");
-      const [titulo, chip, boton] = [
-        (await page.locator(".barra-titulo").boundingBox())!,
-        (await page.locator(".cuenta .menu-desplegable-boton").boundingBox())!,
-        (await salir.boundingBox())!,
-      ];
+      const [titulo, boton] = [(await page.locator(".barra-titulo").boundingBox())!, (await salir.boundingBox())!];
       const centro = (caja: { y: number; height: number }) => caja.y + caja.height / 2;
-      console.log(`MEDIDA salir ${ancho}: ${JSON.stringify({ titulo, chip, boton })}`);
+      console.log(`MEDIDA salir ${ancho}: ${JSON.stringify({ titulo, boton })}`);
+      expect(boton.x + boton.width).toBeLessThanOrEqual(ancho);
       if (ancho === 1440) {
-        // Junto al chip, en el mismo renglón; el título no se encima con ninguno.
-        expect(Math.abs(centro(boton) - centro(chip))).toBeLessThan(6);
-        expect(boton.x).toBeGreaterThanOrEqual(chip.x + chip.width);
-        expect(titulo.x + titulo.width).toBeLessThanOrEqual(chip.x);
+        // En el renglón del título, a su derecha, sin encimarse; el chip de la persona está al pie del lateral.
+        expect(Math.abs(centro(boton) - centro(titulo))).toBeLessThan(12);
+        expect(titulo.x + titulo.width).toBeLessThanOrEqual(boton.x);
+        await expect(page.locator(".operacion-lateral-pie .cuenta .persona-nombre")).toBeVisible();
       } else {
-        // En su propio renglón, debajo: el título y el chip comparten el primero, como con JavaScript.
-        expect(Math.abs(centro(titulo) - centro(chip))).toBeLessThan(12);
-        expect(boton.y).toBeGreaterThanOrEqual(Math.max(titulo.y + titulo.height, chip.y + chip.height));
-        expect(boton.x + boton.width).toBeLessThanOrEqual(ancho);
-        expect(titulo.x + titulo.width).toBeLessThanOrEqual(chip.x);
+        // A la derecha del título o en su propio renglón, debajo: nunca encima de él.
+        expect(titulo.x + titulo.width <= boton.x || boton.y >= titulo.y + titulo.height).toBe(true);
         await page.screenshot({ path: test.info().outputPath("salir-sin-js-390.png") });
       }
       // Con JavaScript el <noscript> no se ve: ni el botón ni su HTML como texto (la barra lo pintaba con display: contents).
