@@ -806,7 +806,7 @@ test.describe("Operación SOFIPO: alta con activación (Faro)", () => {
 
     // Originación registra el prospecto y pide su activación.
     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-    await page.goto("/operacion/clientes");
+    await page.goto("/operacion/clientes/nuevo");
     await page.getByLabel("Razón social").fill(PROSPECTO.razonSocial);
     await page.getByLabel("RFC").fill(PROSPECTO.rfc);
     await page.getByLabel("Código postal").fill("64000");
@@ -1021,7 +1021,7 @@ async function formulariosConCaptura(page: Page, context: BrowserContext, sinJs:
 
   // Alta de prospecto, con y sin JavaScript. Humo del preview (N4): un RFC sin la forma de un RFC marcaba el RFC y vaciaba
   // razón social, RFC y código postal. Ahora vuelven los cinco datos, con ese RFC y con el genérico.
-  await page.goto("/operacion/clientes");
+  await page.goto("/operacion/clientes/nuevo");
   const prospecto = `Puerto Sur E2E ${sinJs ? "sin" : "con"} JavaScript`;
   await page.getByLabel("Razón social").fill(prospecto);
   await page.getByLabel("Código postal").fill("64000");
@@ -1432,7 +1432,7 @@ test.describe("doceava: coincidencias, datos generales y recuperaciones", () => 
     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
     for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
       await page.setViewportSize({ width: ancho, height: alto });
-      await page.goto("/operacion/clientes");
+      await page.goto("/operacion/clientes/nuevo");
       await page.getByLabel("Razón social").fill("Puerto Nueve E2E");
       await page.getByLabel("RFC").fill("XAXX010101000");
       await page.getByLabel("Código postal").fill("64000");
@@ -1586,7 +1586,7 @@ test.describe("Operación SOFIPO: entrada", () => {
     test("sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo", async ({ page, context }) => {
       const post = () => page.waitForResponse((respuesta) => respuesta.request().method() === "POST");
       await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-      await page.goto("/operacion/clientes");
+      await page.goto("/operacion/clientes/nuevo");
       await page.getByLabel("Razón social").fill("Sin Script\u0085Uno SA de CV");
       await page.getByLabel("RFC").fill("SSU010101AB1");
       await page.getByLabel("Código postal").fill("06600");

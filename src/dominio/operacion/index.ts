@@ -5,4 +5,5 @@ export * from "./expediente";
 export * from "./lpb";
 export * from "./riesgo";
 export * from "./paises";
+export * from "./avance-alta";
 export * from "./planes";

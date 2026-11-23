@@ -8,7 +8,10 @@ import { useFormularioConAviso } from "./formulario-con-aviso";
 
 const ID_AVISO = "aviso-prospecto";
 
-/** Registrar un prospecto con su RFC. Si el servidor lo rechaza, vuelven los cinco datos como se escribieron. */
+/**
+ * Registrar un prospecto con su RFC (el primer paso del alta) y, si ya se sabe, quién será su primer administrador. Si el
+ * servidor lo rechaza, vuelve todo lo capturado como se escribió.
+ */
 export function FormularioProspecto() {
   const { forma, enviar, vuelta, aviso, valor, ligado, mensaje, resumen } = useFormularioConAviso(registrarProspectoAccion, ID_AVISO);
   const opcion = (campo: string, opciones: readonly (readonly [string, string])[], porOmision: string) =>
@@ -72,8 +75,41 @@ export function FormularioProspecto() {
           ))}
         </select>
       </div>
-      <div className="acciones">
+      <div className="operacion-ancho alta-seccion">
+        <p className="alta-seccion-titulo">Primer administrador (opcional)</p>
+        <p className="pista">
+          Quien va a administrar la empresa en Lever. No le da acceso todavía: su invitación sale cuando la empresa esté activa y
+          ya irá con estos datos.
+        </p>
+      </div>
+      <div className="campo">
+        <label htmlFor="contactoNombre">Nombre del administrador</label>
+        {mensaje("contactoNombre")}
+        <input
+          id="contactoNombre"
+          name="contactoNombre"
+          maxLength={200}
+          autoComplete="off"
+          defaultValue={valor("contactoNombre")}
+          {...ligado("contactoNombre")}
+        />
+      </div>
+      <div className="campo">
+        <label htmlFor="contactoCorreo">Correo del administrador</label>
+        {mensaje("contactoCorreo")}
+        <input
+          id="contactoCorreo"
+          name="contactoCorreo"
+          type="email"
+          maxLength={254}
+          autoComplete="off"
+          defaultValue={valor("contactoCorreo")}
+          {...ligado("contactoCorreo")}
+        />
+      </div>
+      <div className="acciones operacion-ancho">
         <BotonEnviar>Registrar prospecto</BotonEnviar>
+        <p>Queda como prospecto. Lo siguiente es el expediente.</p>
       </div>
     </form>
   );

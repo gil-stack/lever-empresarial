@@ -5,6 +5,7 @@ import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { textoOperativo, uuidValido } from "../../dominio/operacion";
 import { emitirEnTransaccion, emitirToken } from "../invitaciones/repositorio";
+import { enlaceDeInvitacion, urlPublica } from "../invitaciones/correo";
 import { entregarInvitacion } from "../invitaciones/servicio";
 import type { InvitacionEmitida } from "../invitaciones/tipos";
 import { correoValido, normalizarCorreo } from "../session/validar";
@@ -16,6 +17,11 @@ export type ResultadoInvitacionOperacion = {
   entrega: "omitida_desarrollo" | "enviada" | "fallida";
   detalle: string | null;
   expiraEn: Date;
+  /**
+   * Solo si el correo no salió: el enlace para que quien la emitió lo copie y se lo haga llegar a la persona. Vive en
+   * la respuesta de este envío; no se guarda ni va en la dirección. Reenviar lo anula, como al enlace del correo.
+   */
+  enlace?: string;
 };
 
 type Dependencias = {
@@ -28,7 +34,8 @@ type Dependencias = {
 const VENTANA_DE_DOBLE_CLIC_MS = 2_000;
 
 /**
- * Emite o reenvía por los servicios existentes. El token nunca sale de este módulo.
+ * Emite o reenvía por los servicios existentes. El token en claro solo sale armado como enlace, y solo cuando el correo
+ * no salió (`enlace`), para quien la emitió.
  *
  * `vista` es la última invitación que la persona tenía en pantalla ("" si no había): solo se emite
  * si sigue siendo la última. Así una pestaña vieja, o dos personas a la vez, no mandan dos correos ni
@@ -120,7 +127,13 @@ export async function invitarPrimerAdministrador(
 
   if (!produccion) {
     await registrarEntrega(ctx, emitida, "omitida_desarrollo", "correo_deshabilitado", ahora);
-    return { invitationId: emitida.invitacionId, entrega: "omitida_desarrollo", detalle: "correo_deshabilitado", expiraEn: emitida.expiraEn };
+    return {
+      invitationId: emitida.invitacionId,
+      entrega: "omitida_desarrollo",
+      detalle: "correo_deshabilitado",
+      expiraEn: emitida.expiraEn,
+      enlace: enlaceParaCopiar(emitida.token),
+    };
   }
 
   const razonSocial = await razonSocialDe(ctx, entrada.companyId);
@@ -128,7 +141,22 @@ export async function invitarPrimerAdministrador(
   const estado = entrega.entregada ? "enviada" : "fallida";
   const detalle = entrega.entregada ? null : entrega.codigo;
   await registrarEntrega(ctx, emitida, estado, detalle, new Date());
-  return { invitationId: emitida.invitacionId, entrega: estado, detalle, expiraEn: emitida.expiraEn };
+  return {
+    invitationId: emitida.invitacionId,
+    entrega: estado,
+    detalle,
+    expiraEn: emitida.expiraEn,
+    ...(entrega.entregada ? {} : { enlace: enlaceParaCopiar(emitida.token) }),
+  };
+}
+
+/** Sin dirección pública configurada no hay enlace que copiar: la invitación sigue emitida y se puede reenviar. */
+function enlaceParaCopiar(token: string): string | undefined {
+  try {
+    return enlaceDeInvitacion(urlPublica(), token);
+  } catch {
+    return undefined;
+  }
 }
 
 async function registrarEntrega(

@@ -52,7 +52,7 @@ async function sinViolaciones(pagina: Page, ruta: string, detalle: string, anota
 test("perfil transaccional: Originación lo declara con doble clic y Aprobación lo ve sin alertas ni casos", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-  await page.goto("/operacion/clientes");
+  await page.goto("/operacion/clientes/nuevo");
   await page.getByLabel("Razón social").fill(CEIBA.razonSocial);
   await page.getByLabel("RFC").fill(CEIBA.rfc);
   await page.getByLabel("Código postal").fill("64000");

@@ -16,6 +16,9 @@ export type ClienteDetalle = ClienteResumen & {
   codigoPostal: string;
   regimen: string;
   usoCfdi: string;
+  /** Quien será el primer administrador, anotado en el alta (puede no haberse anotado). */
+  contactoNombre: string | null;
+  contactoCorreo: string | null;
   historial: Array<{
     id: string;
     estadoAnterior: EstadoCliente | null;

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -35,9 +35,11 @@ export async function registrarProspectoAccion(previo: EstadoDelFormulario, form
       codigoPostal: String(formData.get("codigoPostal") ?? ""),
       regimen: String(formData.get("regimen") ?? ""),
       usoCfdi: String(formData.get("usoCfdi") ?? ""),
+      contactoNombre: formData.get("contactoNombre"),
+      contactoCorreo: formData.get("contactoCorreo"),
     });
   } catch (error) {
-    return rechazado(previo, error, formData, ["razonSocial", "rfc", "codigoPostal", "regimen", "usoCfdi"]);
+    return rechazado(previo, error, formData, ["razonSocial", "rfc", "codigoPostal", "regimen", "usoCfdi", "contactoNombre", "contactoCorreo"]);
   }
   actualizar();
   redirect(`/operacion/clientes/${id}?aviso=prospecto_registrado`);
@@ -87,6 +89,12 @@ export async function invitarAdministradorAccion(previo: EstadoDelFormulario, fo
     return rechazado(previo, error, formData, ["nombre", "correo"]);
   }
   actualizar();
+  // Si el correo no salió, la pantalla muestra el enlace para copiarlo. Va en la respuesta de este envío, nunca en la
+  // dirección; la ficha se vuelve a pintar con la invitación nueva.
+  if (resultado.entrega !== "enviada" && resultado.enlace) {
+    refresh();
+    return { aviso: `invitacion_${resultado.entrega}`, valores: {}, vuelta: previo.vuelta + 1, enlace: resultado.enlace };
+  }
   redirect(`/operacion/clientes/${companyId}?aviso=invitacion_${resultado.entrega}`);
 }
 

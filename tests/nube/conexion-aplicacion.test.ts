@@ -6,6 +6,7 @@ import { prepararRolDeAplicacion, tocaRolDeAplicacion } from "../../scripts/migr
 
 const DUENA = "postgresql://duena:clave-duena@ep-algo-123-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 const CLAVE = "a".repeat(20) + "B9_-" + "z".repeat(20);
+const OTRA_BASE = "mysql://x@y/z";
 
 describe("conexión de la aplicación", () => {
   it("sin PLATAFORMA_APP_CLAVE usa DATABASE_URL tal cual", () => {
@@ -26,7 +27,7 @@ describe("conexión de la aplicación", () => {
 
   it("sin DATABASE_URL o con otra cosa, base_no_configurada", () => {
     assert.throws(() => connectionStringDeAplicacion({ PLATAFORMA_APP_CLAVE: CLAVE }), /base_no_configurada/);
-    assert.throws(() => connectionStringDeAplicacion({ DATABASE_URL: "mysql://x@y/z", PLATAFORMA_APP_CLAVE: CLAVE }), /base_no_configurada/);
+    assert.throws(() => connectionStringDeAplicacion({ DATABASE_URL: OTRA_BASE, PLATAFORMA_APP_CLAVE: CLAVE }), /base_no_configurada/);
   });
 });
 
