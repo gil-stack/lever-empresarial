@@ -57,6 +57,20 @@ export type AlertaOperativa = {
   motivoCierre: string | null;
 };
 
+/** Las alertas que el sistema abre solo, al registrar un prospecto o proponer una comisión. */
+export type CategoriaAutomatica = "activacion" | "comision";
+
+/** Cómo se comporta una alerta automática en este operador. Sin ajuste guardado: prendida y a quien hizo el trámite. */
+export type AjusteDeAlerta = {
+  categoria: CategoriaAutomatica;
+  activa: boolean;
+  /** Vacío: la alerta se asigna a quien hizo el trámite. */
+  responsableId: string | null;
+  responsable: string | null;
+  actualizadoPor: string | null;
+  actualizadoEn: Date | null;
+};
+
 export type Comision = {
   id: string;
   companyId: string;

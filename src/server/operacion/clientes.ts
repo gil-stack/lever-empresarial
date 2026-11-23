@@ -9,7 +9,7 @@ import { validarAlta } from "../company/validar";
 import type { AltaEmpresaEntrada } from "../company/tipos";
 import { correoValido, normalizarCorreo } from "../session/validar";
 import { auditarOperacion } from "./auditar";
-import { crearAlertaEnTransaccion } from "./alertas";
+import { crearAlertaAutomatica } from "./alertas";
 import type { ClienteDetalle, ClienteResumen } from "./tipos";
 import { exigirEnOperacion } from "./permisos";
 
@@ -72,12 +72,11 @@ export async function registrarProspecto(ctx: ContextoDePersonal, entrada: AltaE
       identificador: id,
       ocurridoEn: ahora,
     });
-    await crearAlertaEnTransaccion(consulta, ctx, {
+    await crearAlertaAutomatica(consulta, ctx, {
       companyId: id,
       categoria: "activacion",
       titulo: "Revisar activación para el portal",
       detalle: "La empresa es un prospecto. Solicita la activación y otra persona deberá decidirla.",
-      responsableId: ctx.persona.id,
       ahora,
     });
   });

@@ -13,6 +13,7 @@ export const ENTIDADES = {
   alerta_creada: "operational_alerts",
   alerta_asignada: "operational_alerts",
   alerta_cerrada: "operational_alerts",
+  alerta_configurada: "operational_alert_settings",
   comision_solicitada: "company_commissions",
   comision_aprobada: "company_commissions",
   comision_rechazada: "company_commissions",

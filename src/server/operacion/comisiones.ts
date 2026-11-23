@@ -12,7 +12,7 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
-import { cerrarAlertasDeCategoria, crearAlertaEnTransaccion } from "./alertas";
+import { cerrarAlertasDeCategoria, crearAlertaAutomatica } from "./alertas";
 import type { Comision } from "./tipos";
 import { motivoEscrito } from "./formulario";
 import { exigirEnOperacion } from "./permisos";
@@ -61,12 +61,11 @@ export async function solicitarComision(
       identificador: id,
       ocurridoEn: ahora,
     });
-    await crearAlertaEnTransaccion(consulta, ctx, {
+    await crearAlertaAutomatica(consulta, ctx, {
       companyId: entrada.companyId as string,
       categoria: "comision",
       titulo: `Autorizar comisión ${normalizada.tipo}`,
       detalle: `Versión propuesta con vigencia desde ${normalizada.vigenteDesde}. Requiere otra persona; no genera cargos.`,
-      responsableId: ctx.persona.id,
       ahora,
     });
   });

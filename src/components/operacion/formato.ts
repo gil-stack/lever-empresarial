@@ -103,6 +103,7 @@ export function etiquetaAccion(accion: string): string | null {
     alerta_creada: "Creó una alerta",
     alerta_asignada: "Reasignó una alerta",
     alerta_cerrada: "Cerró una alerta",
+    alerta_configurada: "Configuró una alerta automática",
     publicar_precio: "Publicó el precio",
     rol_personal_asignado: "Asignó un rol del personal",
     rol_personal_retirado: "Quitó un rol del personal",
