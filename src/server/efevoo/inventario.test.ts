@@ -13,7 +13,7 @@ import {
   SIN_EMPRESA,
 } from "../../dominio/tarjetas/inventario.ts";
 import { idDeTarjeta, ordenarMovimientos, resumirMovimientos } from "./detalle-tarjeta";
-import { condicion } from "./inventario";
+import { parametrosDeBusqueda } from "./inventario";
 import { haceFaltaLeer, type EstadoLectura } from "./inventario-copia";
 
 const EMPRESA = "11111111-1111-4111-8111-111111111111";
@@ -48,14 +48,11 @@ describe("buscador de tarjetas", () => {
     assert.deepEqual(busquedaDe("Escuela  Alfa"), { tipo: "texto", texto: "Escuela Alfa" });
   });
 
-  it("arma la condición con parámetros, sin meter el texto en la sentencia", () => {
-    assert.deepEqual(condicion({ q: "", empresa: null }, 2), { sql: "true", params: [] });
-    const terminacion = condicion({ q: "1234", empresa: EMPRESA }, 2);
-    assert.equal(terminacion.sql, "(terminacion like '%' || $2 or id_tarjeta::text = $2) and empresa_clave = $3");
-    assert.deepEqual(terminacion.params, ["1234", EMPRESA]);
-    const texto = condicion({ q: "50%_o'; drop", empresa: null }, 4);
-    assert.equal(texto.sql, "(empresa_nombre ilike $4 or nombre_tarjeta ilike $4)");
-    assert.deepEqual(texto.params, ["%50\\%\\_o'; drop%"]);
+  it("pasa la búsqueda como parámetros fijos, sin meter el texto en la sentencia", () => {
+    assert.deepEqual(parametrosDeBusqueda({ q: "", empresa: null }), [null, null, null]);
+    assert.deepEqual(parametrosDeBusqueda({ q: "1234", empresa: EMPRESA }), ["terminacion", "1234", EMPRESA]);
+    assert.deepEqual(parametrosDeBusqueda({ q: "00557", empresa: null }), ["numero", "557", null]);
+    assert.deepEqual(parametrosDeBusqueda({ q: "50%_o'; drop", empresa: "p4" }), ["texto", "%50\\%\\_o'; drop%", "p4"]);
   });
 
   it("lee los filtros de la dirección solo si tienen forma válida", () => {

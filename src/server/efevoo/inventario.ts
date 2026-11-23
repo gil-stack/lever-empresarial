@@ -105,27 +105,24 @@ const BASE = `
      where i.ambiente = $1
   )`;
 
-/** La condición de la búsqueda y la empresa, con sus parámetros a partir de $desde. Pura: la prueban sin base. */
-export function condicion(filtro: Pick<FiltroTarjetas, "q" | "empresa">, desde: number): { sql: string; params: unknown[] } {
-  const partes: string[] = [];
-  const params: unknown[] = [];
-  const p = (valor: unknown) => {
-    params.push(valor);
-    return `$${desde + params.length - 1}`;
-  };
+/**
+ * La búsqueda y la empresa como parámetros fijos: $2 el tipo de búsqueda (nulo: sin búsqueda), $3 su valor y $4 la
+ * empresa (nula: todas). La sentencia nunca lleva texto de quien busca. Pura: la prueban sin base.
+ */
+export function parametrosDeBusqueda(filtro: Pick<FiltroTarjetas, "q" | "empresa">): [string | null, string | null, string | null] {
   const b = busquedaDe(filtro.q);
-  if (b.tipo === "terminacion") {
-    const d = p(b.digitos);
-    partes.push(`(terminacion like '%' || ${d} or id_tarjeta::text = ${d})`);
-  } else if (b.tipo === "numero") {
-    partes.push(`id_tarjeta::text = ${p(b.digitos)}`);
-  } else if (b.tipo === "texto") {
-    const t = p(`%${b.texto.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
-    partes.push(`(empresa_nombre ilike ${t} or nombre_tarjeta ilike ${t})`);
-  }
-  if (filtro.empresa) partes.push(`empresa_clave = ${p(filtro.empresa)}`);
-  return { sql: partes.length ? partes.join(" and ") : "true", params };
+  const empresa = filtro.empresa ?? null;
+  if (b.tipo === "terminacion" || b.tipo === "numero") return [b.tipo, b.digitos, empresa];
+  if (b.tipo === "texto") return ["texto", `%${b.texto.replace(/[\\%_]/g, (c) => `\\${c}`)}%`, empresa];
+  return [null, null, empresa];
 }
+
+const COINCIDE = `(
+      $2::text is null
+      or ($2 = 'terminacion' and (terminacion like '%' || $3::text or id_tarjeta::text = $3::text))
+      or ($2 = 'numero' and id_tarjeta::text = $3::text)
+      or ($2 = 'texto' and (empresa_nombre ilike $3::text or nombre_tarjeta ilike $3::text))
+    ) and ($4::text is null or empresa_clave = $4::text)`;
 
 function tarjetaDeFila(f: Record<string, unknown>): TarjetaDelInventario {
   const clave = texto(f.empresa_clave);
@@ -143,14 +140,14 @@ function tarjetaDeFila(f: Record<string, unknown>): TarjetaDelInventario {
 const COLUMNAS = "id_tarjeta, terminacion, saldo_centavos, nombre_tarjeta, entregada_en, company_id, empresa_clave, empresa_nombre, clase";
 
 async function consultarVista(consulta: Consulta, ambiente: AmbienteEfevoo, filtro: FiltroTarjetas) {
-  const c = condicion(filtro, 2);
+  const busqueda = parametrosDeBusqueda(filtro);
   const conteos = (await aplicarSentencia(
     consulta,
     `${BASE}
-     select clase, count(*)::int as todas, (count(*) filter (where ${c.sql}))::int as filtradas,
+     select clase, count(*)::int as todas, (count(*) filter (where ${COINCIDE}))::int as filtradas,
             coalesce(sum(saldo_centavos) filter (where clase <> 'cancelada'), 0)::text as saldo
        from base group by clase`,
-    [ambiente, ...c.params],
+    [ambiente, ...busqueda],
   )).rows.map(registro);
   const deClase = (clase: ClaseTarjeta, campo: "todas" | "filtradas") => Number(conteos.find((f) => f.clase === clase)?.[campo] ?? 0);
   const resumen: Resumen = {
@@ -168,16 +165,14 @@ async function consultarVista(consulta: Consulta, ambiente: AmbienteEfevoo, filt
   ) as Record<EstadoFiltro, number>;
   const total = porEstado[filtro.estado];
 
-  const conEstado = filtro.estado === "todas" ? c.sql : `${c.sql} and clase = $${2 + c.params.length}`;
-  const paramsLista = filtro.estado === "todas" ? [ambiente, ...c.params] : [ambiente, ...c.params, CLASE_DEL_ESTADO[filtro.estado]];
-  const n = paramsLista.length;
+  const clase = filtro.estado === "todas" ? null : CLASE_DEL_ESTADO[filtro.estado];
   const tarjetas = (await aplicarSentencia(
     consulta,
     `${BASE}
-     select ${COLUMNAS} from base where ${conEstado}
+     select ${COLUMNAS} from base where ${COINCIDE} and ($5::text is null or clase = $5::text)
       order by saldo_centavos desc nulls last, id_tarjeta
-      limit $${n + 1} offset $${n + 2}`,
-    [...paramsLista, POR_PAGINA, (filtro.pagina - 1) * POR_PAGINA],
+      limit $6 offset $7`,
+    [ambiente, ...busqueda, clase, POR_PAGINA, (filtro.pagina - 1) * POR_PAGINA],
   )).rows.map(registro).map(tarjetaDeFila);
 
   const empresas = (await aplicarSentencia(
