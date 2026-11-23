@@ -3,7 +3,7 @@ import { clienteHttpEfevoo } from "../src/server/efevoo/cliente";
 import { configEfevoo } from "../src/server/efevoo/config";
 import { armarInventario } from "../src/server/efevoo/inventario";
 
-async function sondear() {
+async function sondear(intento = 1): Promise<void> {
   if (process.env.VERCEL_ENV !== "preview") return;
   const config = configEfevoo();
   console.log(`SONDEO_INV config=${config ? config.ambiente : "ninguna"}`);
@@ -20,7 +20,11 @@ async function sondear() {
     console.log(`SONDEO_INV leidas=${todas.length} conteos=${JSON.stringify(inv.conteos)}`);
     console.log(`SONDEO_INV clases=${inv.tarjetas.map((t) => `${t.idEfevoo}:${t.clase}`).join(",")}`);
   } catch (e) {
-    console.log(`SONDEO_INV error=${(e as { codigo?: string })?.codigo ?? (e as Error)?.name}`);
+    console.log(`SONDEO_INV intento=${intento} error=${(e as { codigo?: string })?.codigo ?? (e as Error)?.name}`);
+    if (intento < 4) {
+      await new Promise((r) => setTimeout(r, 5000));
+      return sondear(intento + 1);
+    }
   }
 }
 void sondear();
