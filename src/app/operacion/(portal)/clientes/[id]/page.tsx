@@ -7,14 +7,24 @@ import { notFound } from "next/navigation";
 import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { solicitarActivacionAccion } from "@/app/operacion/acciones";
 import { REGIMENES, USOS_CFDI, conNombre, etiquetaEstado, fechaDia, fechaHora, motivoDeEntrega } from "@/components/operacion/formato";
+import { AvanceDelAlta } from "@/components/operacion/avance-alta";
 import { FormularioInvitacion } from "@/components/operacion/formulario-invitacion";
 import { FormularioSuspension } from "@/components/operacion/formulario-suspension";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SeccionTarjetasEfevoo } from "@/components/operacion/seccion-efevoo";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Renglon, Renglones, Vacio } from "@/components/sistema";
-import { textoComision } from "@/dominio/operacion";
+import { avanceDelAlta, textoComision } from "@/dominio/operacion";
 import { leerSeccionEfevoo } from "@/server/efevoo/operacion";
-import { exigirContextoOperacion, leerCliente, listarComisiones, listarSuspensionesDeEmpresa, puedeEnOperacion } from "@/server/operacion";
+import {
+  exigirContextoOperacion,
+  leerCliente,
+  leerHechosDelAlta,
+  listarComisiones,
+  listarSuspensionesDeEmpresa,
+  puedeEnOperacion,
+} from "@/server/operacion";
+
+import "@/estilo/alta-clientes.css";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Ficha de cliente · Operación" };
@@ -34,14 +44,59 @@ export default async function FichaCliente({ params, searchParams }: { params: P
   const veLista = puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja");
   // Tarjetas (Efevoo): solo Administración de la plataforma.
   const veEfevoo = puedeEnOperacion(ctx, "plataforma.empresa.alta");
-  const [comisiones, suspensiones, efevoo] = await Promise.all([
+  const [comisiones, suspensiones, efevoo, hechos] = await Promise.all([
     listarComisiones(ctx, id),
     veExpediente ? listarSuspensionesDeEmpresa(ctx, id) : Promise.resolve([]),
     veEfevoo ? leerSeccionEfevoo(ctx, cliente.id) : Promise.resolve(null),
+    leerHechosDelAlta(ctx, { companyId: cliente.id }),
   ]);
   const pideActivacion = puedeEnOperacion(ctx, "plataforma.activacion.solicitar");
   const invita = puedeEnOperacion(ctx, "plataforma.invitacion.emitir");
   const pideSuspension = puedeEnOperacion(ctx, "plataforma.suspension.solicitar");
+  const hechosDelAlta = hechos.get(cliente.id);
+  const avance = hechosDelAlta ? avanceDelAlta(hechosDelAlta) : null;
+  const expedienteEn = (ancla: string) => `/operacion/clientes/${cliente.id}/expediente${ancla}`;
+  const pasoActual = avance?.siguiente?.clave ?? null;
+  const solicitarActivacion =
+    cliente.estado === "prospecto" && pideActivacion ? (
+      <form action={solicitarActivacionAccion}>
+        <input type="hidden" name="companyId" value={cliente.id} />
+        <div className="acciones">
+          <BotonEnviar>Solicitar activación</BotonEnviar>
+          <p>Pasa a «En alta» y la decide otra persona. La base solo deja activar con el expediente aprobado y el riesgo vigente.</p>
+        </div>
+      </form>
+    ) : null;
+  const accionesDelAlta = {
+    expediente:
+      veExpediente && (pasoActual === "expediente" || pasoActual === "dictamen") ? (
+        <Link className="enlace-texto" href={expedienteEn("")}>
+          Abrir expediente
+        </Link>
+      ) : null,
+    riesgo:
+      veExpediente && pasoActual === "riesgo" && puedeEnOperacion(ctx, "plataforma.riesgo.calificar") ? (
+        <Link className="enlace-texto" href={expedienteEn("#riesgo-titulo")}>
+          Calificar el riesgo
+        </Link>
+      ) : null,
+    activacion:
+      pasoActual === "activacion" ? (
+        cliente.estado === "en_alta" && puedeEnOperacion(ctx, "plataforma.activacion.aprobar") ? (
+          <Link className="enlace-texto" href="/operacion/aprobaciones">
+            Decidir en Aprobaciones
+          </Link>
+        ) : (
+          solicitarActivacion
+        )
+      ) : null,
+    administrador:
+      pasoActual === "administrador" && cliente.estado === "activa" && invita ? (
+        <a className="enlace-texto" href="#administrador-titulo">
+          Ir a la invitación
+        </a>
+      ) : null,
+  };
   const suspensionPendiente = suspensiones.find((suspension) => suspension.estado === "pendiente");
   const notaPendiente = suspensionPendiente ? (
     <NotaRegla>
@@ -62,22 +117,25 @@ export default async function FichaCliente({ params, searchParams }: { params: P
       <Rejilla
         principal={
           <>
+            {avance ? (
+              <Hoja id="alta-titulo" titulo={avance.siguiente ? `Alta paso a paso · ${avance.hechos} de ${avance.total}` : "Alta completa"}>
+                <AvanceDelAlta avance={avance} acciones={accionesDelAlta} />
+                {pasoActual !== "activacion" ? solicitarActivacion : null}
+              </Hoja>
+            ) : null}
             <Hoja id="datos-titulo" titulo="Datos y activación">
               <Renglones>
                 <Renglon etiqueta="Código postal">{cliente.codigoPostal}</Renglon>
                 <Renglon etiqueta="Régimen fiscal">{conNombre(REGIMENES, cliente.regimen)}</Renglon>
                 <Renglon etiqueta="Uso CFDI">{conNombre(USOS_CFDI, cliente.usoCfdi)}</Renglon>
                 <Renglon etiqueta="Administrador">{cliente.administrador ?? "Todavía no invitado"}</Renglon>
+                {!cliente.administrador && cliente.contactoNombre ? (
+                  <Renglon etiqueta="Anotado en el alta">
+                    {cliente.contactoNombre} · {cliente.contactoCorreo}
+                  </Renglon>
+                ) : null}
               </Renglones>
-              {cliente.estado === "prospecto" && pideActivacion ? (
-                <form action={solicitarActivacionAccion}>
-                  <input type="hidden" name="companyId" value={cliente.id} />
-                  <div className="acciones">
-                    <BotonEnviar>Solicitar activación</BotonEnviar>
-                    <p>Pasa a «En alta» y la decide otra persona. La base solo deja activar con el expediente aprobado y el riesgo vigente.</p>
-                  </div>
-                </form>
-              ) : null}
+              {avance ? null : solicitarActivacion}
               {cliente.estado === "en_alta" ? (
                 <NotaRegla>
                   La activación está pendiente. Se decide en <Link href="/operacion/aprobaciones">Aprobaciones</Link>.
@@ -158,6 +216,8 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                   vista={cliente.ultimaInvitacionId ?? ""}
                   nombre={cliente.administrador}
                   correo={cliente.administradorCorreo}
+                  nombreSugerido={cliente.contactoNombre}
+                  correoSugerido={cliente.contactoCorreo}
                 />
               ) : (
                 <Vacio

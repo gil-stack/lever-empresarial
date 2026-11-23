@@ -12,3 +12,4 @@ export * from "./permisos";
 export * from "./personal";
 export * from "./suspensiones";
 export * from "./tipos";
+export * from "./avance-alta";

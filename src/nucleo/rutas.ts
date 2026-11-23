@@ -283,6 +283,7 @@ export const RUTAS = [
   { patron: "/operacion/continuar", superficie: "sofipo", acceso: { tipo: "segundo_factor" }, conEmpresa: false },
   { patron: "/operacion", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/clientes", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/clientes/nuevo", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/clientes/[id]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/aprobaciones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/alertas", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },

@@ -19,7 +19,7 @@ const MENSAJES: Record<string, string> = {
   decision_registrada: "Decisión registrada en la bitácora.",
   invitacion_omitida_desarrollo: "Invitación emitida. En este entorno el correo no sale; el enlace anterior ya no sirve.",
   invitacion_enviada: "Invitación enviada. El enlace anterior ya no sirve.",
-  invitacion_fallida: "La invitación quedó emitida, pero el correo no salió. Puedes reenviarla.",
+  invitacion_fallida: "La invitación quedó emitida, pero el correo no salió. Copia el enlace de abajo o reenvíala.",
   invitacion_ya_enviada: "Ya se había enviado una invitación más reciente. El enlace vigente es el de ese último correo.",
   alerta_creada: "Alerta creada con su responsable.",
   alerta_asignada: "Responsable actualizado.",
@@ -41,6 +41,8 @@ const MENSAJES: Record<string, string> = {
   // Alta del prospecto: cada rechazo dice qué falla y marca su campo.
   rfc_invalido: "Ese RFC no tiene la forma de un RFC: 12 caracteres si es persona moral o 13 si es física.",
   dato_invalido_correo: "Escribe un correo válido, como nombre@empresa.mx.",
+  dato_invalido_contactoNombre: "Escribe el nombre del administrador, hasta 200 caracteres. Si todavía no lo sabes, deja los dos campos vacíos.",
+  dato_invalido_contactoCorreo: "Escribe el correo del administrador, como nombre@empresa.mx. Si todavía no lo sabes, deja los dos campos vacíos.",
   rfc_generico: "Ese es un RFC genérico (público en general o extranjero). Escribe el RFC de la empresa.",
   razon_social_invalida: "Escribe la razón social con letras o números, hasta 254 caracteres.",
   razon_social_control: "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.",
@@ -326,6 +328,8 @@ const CAMPOS_CON_AVISO = new Set([
   // Tarjetas (Efevoo).
   "monto", "employeeId", "inventarioId", "ultimos8", "primerApellido", "segundoApellido", "nombreEmbozar", "paisNacimiento",
   "domicilio", "confirmacion",
+  // Alta del cliente: el primer administrador anotado.
+  "contactoNombre", "contactoCorreo",
   ...CAMPOS_CON_AVISO_PLD,
 ]);
 

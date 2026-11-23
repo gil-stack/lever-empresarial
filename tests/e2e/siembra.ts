@@ -59,6 +59,8 @@ export const CORREOS = {
   op3: "op3@lever-e2e.mx",
 } as const;
 
+/** Activa y sin administrador: su invitación va a un correo que rebota (alta-clientes.spec.ts). */
+export const ANCLA = { razonSocial: "Ancla E2E", rfc: "ANE210303GH4" } as const;
 /** La empresa en alta con todo en regla que op2 aprueba en operacion.spec.ts. */
 export const FARO = { razonSocial: "Faro E2E", rfc: "FEE170505CD4" } as const;
 /** En alta con la activación pedida y un caso abierto de Cumplimiento: Aprobación no la activa. */
@@ -220,6 +222,11 @@ export async function sembrarRecorridos(
   // ---------- Bahía E2E: empresa activa sin administrador, para la invitación desde Operación ----------
   const bahia = await darDeAltaComoDuena(owner, personal, {
     rfc: "BEE190101CD2", razonSocial: "Bahía E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+
+  // ---------- Ancla E2E: activa sin administrador; alta-clientes.spec ve el enlace de una invitación que no salió ----------
+  await darDeAltaComoDuena(owner, personal, {
+    rfc: ANCLA.rfc, razonSocial: ANCLA.razonSocial, codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
   }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
 
   // ---------- Arrecife E2E: empresa real recién dada de alta, solo con su administradora ----------

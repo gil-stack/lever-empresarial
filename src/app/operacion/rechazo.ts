@@ -8,7 +8,14 @@ import { ErrorDeDominio } from "@/server/session";
  * vuelve a montar los campos con lo capturado). Nada de esto pasa por la dirección. Sin JavaScript, React se lo
  * entrega al mismo formulario en la página que responde al envío. `detalle` es una línea más bajo el aviso.
  */
-export type EstadoDelFormulario = { aviso: string | null; valores: Record<string, string>; vuelta: number; detalle?: string };
+export type EstadoDelFormulario = {
+  aviso: string | null;
+  valores: Record<string, string>;
+  vuelta: number;
+  detalle?: string;
+  /** La invitación emitida cuyo correo no salió: su enlace, para copiarlo (solo en la respuesta de ese envío). */
+  enlace?: string;
+};
 
 /** El código del rechazo, para la página que responde a ese mismo envío (ver `rechazado` y `PaginaOperacion`). */
 export const COOKIE_RECHAZO = "operacion-rechazo";

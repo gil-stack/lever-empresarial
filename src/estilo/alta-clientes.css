@@ -1,0 +1,194 @@
+/*
+ * Alta de clientes en Operación: el recorrido paso a paso (ficha y página de alta), el avance corto de la tabla y el
+ * enlace de una invitación para copiar. Solo tokens del sistema (tokens.css); ningún color suelto.
+ */
+
+.alta-cifra {
+  display: block;
+  margin: 6px 0 2px;
+  font-family: var(--fd);
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 300;
+  color: var(--tx);
+}
+
+/* Pasos del alta: una línea vertical que une las marcas. */
+.alta-pasos {
+  position: relative;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alta-paso {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 14px;
+  padding: 0 0 18px;
+}
+
+.alta-paso:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 30px;
+  bottom: 2px;
+  left: 13.5px;
+  width: 1px;
+  background: var(--line2);
+}
+
+.alta-paso-hecho:not(:last-child)::before {
+  background: var(--acc);
+}
+
+.alta-paso-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line2);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx3);
+  background: var(--panel);
+}
+
+.alta-paso-hecho .alta-paso-marca {
+  border-color: var(--acc);
+  color: var(--ink);
+  background: var(--acc);
+}
+
+.alta-paso-en_curso .alta-paso-marca {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.alta-paso-atencion .alta-paso-marca {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.alta-paso-cuerpo {
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.alta-paso-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.alta-paso-pendiente .alta-paso-titulo {
+  color: var(--tx2);
+}
+
+.alta-paso-estado {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tx3);
+}
+
+.alta-paso-en_curso .alta-paso-estado {
+  color: var(--acc);
+}
+
+.alta-paso-atencion .alta-paso-estado {
+  color: var(--danger);
+}
+
+.alta-paso-detalle {
+  margin: 4px 0 0;
+  color: var(--tx2);
+}
+
+.alta-paso-rol {
+  margin: 4px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--tx3);
+}
+
+.alta-paso-accion {
+  margin-top: 10px;
+}
+
+.alta-paso-accion .acciones {
+  margin-top: 0;
+}
+
+/* Avance corto en la tabla de clientes. */
+.alta-corto {
+  min-width: 140px;
+}
+
+.alta-corto-barra {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--line2);
+}
+
+.alta-corto-barra > i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--acc);
+}
+
+.alta-corto-texto {
+  margin: 6px 0 0;
+}
+
+.alta-corto-atencion {
+  color: var(--danger);
+}
+
+/* El formulario del alta: el bloque del primer administrador ocupa la fila entera. */
+.alta-seccion {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.alta-seccion-titulo {
+  margin: 0 0 4px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+/* El enlace de la invitación cuando el correo no salió. */
+.alta-enlace {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+}
+
+.alta-enlace-titulo {
+  margin: 0 0 4px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.alta-enlace-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.alta-enlace-campo {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-family: var(--fm);
+  font-size: 12px;
+}

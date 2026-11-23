@@ -3,27 +3,44 @@ import { randomUUID } from "node:crypto";
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
-import { uuidValido, type EstadoCliente } from "../../dominio/operacion";
+import { textoOperativo, uuidValido, type EstadoCliente } from "../../dominio/operacion";
 import { auditar, actorDePersonal } from "../bitacora/auditar";
 import { validarAlta } from "../company/validar";
 import type { AltaEmpresaEntrada } from "../company/tipos";
+import { correoValido, normalizarCorreo } from "../session/validar";
 import { auditarOperacion } from "./auditar";
 import { crearAlertaEnTransaccion } from "./alertas";
 import type { ClienteDetalle, ClienteResumen } from "./tipos";
 import { exigirEnOperacion } from "./permisos";
 
-export async function registrarProspecto(ctx: ContextoDePersonal, entrada: AltaEmpresaEntrada): Promise<string> {
+/** Quien será el primer administrador, si ya se sabe en el alta. Solo llena la invitación; no da acceso. */
+export type ContactoDeAlta = { contactoNombre?: unknown; contactoCorreo?: unknown };
+
+/** Los dos van juntos o ninguno. Vacíos los dos: sin contacto. */
+export function validarContactoDeAlta(entrada: ContactoDeAlta): { nombre: string; correo: string } | null {
+  const crudoNombre = typeof entrada.contactoNombre === "string" ? entrada.contactoNombre.trim() : "";
+  const crudoCorreo = typeof entrada.contactoCorreo === "string" ? entrada.contactoCorreo.trim() : "";
+  if (!crudoNombre && !crudoCorreo) return null;
+  const nombre = textoOperativo(crudoNombre, 200);
+  if (!nombre) throw new ErrorDeDominio("dato_invalido_contactoNombre");
+  const correo = normalizarCorreo(crudoCorreo);
+  if (!correoValido(correo)) throw new ErrorDeDominio("dato_invalido_contactoCorreo");
+  return { nombre, correo };
+}
+
+export async function registrarProspecto(ctx: ContextoDePersonal, entrada: AltaEmpresaEntrada & ContactoDeAlta): Promise<string> {
   exigirEnOperacion(ctx, "plataforma.prospecto.registrar");
   const validada = validarAlta(entrada);
   if (!validada.ok) throw new ErrorDeDominio(validada.codigo);
+  const contacto = validarContactoDeAlta(entrada);
   const id = randomUUID();
   const ahora = new Date();
   await conContexto(basePlataforma(ctx, id), async (consulta) => {
     await consulta.query(
       `insert into companies (
         id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, alta_at,
-        operator_id, estado, demostracion, originada_por
-      ) values ($1, $2, $3, $4, $5, $6, $7, $8, 'prospecto', false, $9)`,
+        operator_id, estado, demostracion, originada_por, contacto_nombre, contacto_correo
+      ) values ($1, $2, $3, $4, $5, $6, $7, $8, 'prospecto', false, $9, $10, $11)`,
       [
         id,
         validada.valor.rfc,
@@ -34,6 +51,8 @@ export async function registrarProspecto(ctx: ContextoDePersonal, entrada: AltaE
         ahora,
         ctx.personal.operadorId,
         ctx.persona.id,
+        contacto?.nombre ?? null,
+        contacto?.correo ?? null,
       ],
     );
     await auditar(consulta, actorDePersonal(ctx, id, "operacion"), {
@@ -91,7 +110,7 @@ export async function leerCliente(ctx: ContextoDePersonal, companyId: unknown): 
   return conContexto(basePlataforma(ctx, companyId), async (consulta) => {
     const empresa = await consulta.query(
       `select c.id, c.rfc, c.razon_social, c.codigo_postal, c.regimen, c.uso_cfdi,
-        c.estado, c.alta_at, r.id as solicitud_pendiente_id,
+        c.estado, c.alta_at, r.id as solicitud_pendiente_id, c.contacto_nombre, c.contacto_correo,
         (select u.nombre from memberships m
           join membership_roles mr on mr.company_id = m.company_id and mr.user_id = m.user_id and mr.rol = 'administrador'
           join users u on u.id = m.user_id
@@ -129,6 +148,8 @@ export async function leerCliente(ctx: ContextoDePersonal, companyId: unknown): 
       codigoPostal: String((fila as Record<string, unknown>).codigo_postal),
       regimen: String((fila as Record<string, unknown>).regimen),
       usoCfdi: String((fila as Record<string, unknown>).uso_cfdi),
+      contactoNombre: textoONulo((fila as Record<string, unknown>).contacto_nombre),
+      contactoCorreo: textoONulo((fila as Record<string, unknown>).contacto_correo),
       historial: (historial.rows as Array<Record<string, unknown>>).map((evento) => ({
         id: String(evento.id),
         estadoAnterior: evento.estado_anterior === null ? null : (evento.estado_anterior as EstadoCliente),
@@ -166,6 +187,10 @@ function mapearResumen(valor: unknown): ClienteResumen {
         ? fila.administrador_estado
         : null,
   };
+}
+
+function textoONulo(valor: unknown): string | null {
+  return typeof valor === "string" ? valor : null;
 }
 
 function fecha(valor: unknown): Date {

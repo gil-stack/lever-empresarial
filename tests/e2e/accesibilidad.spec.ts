@@ -222,7 +222,7 @@ test.describe("N19: lo que llega por un ancla queda debajo de las barras", () =>
     expect(portal.desplazado).toBeGreaterThan(0);
     expect(portal.arriba, `portal: título en y=${portal.arriba}, barras hasta y=${portal.barras}`).toBeGreaterThanOrEqual(portal.barras);
     await sesionDe(sinJs, CORREOS.op1, { superficie: "sofipo" });
-    const operacion = await llegadaPorAncla(page, "/operacion/clientes", "prospecto-titulo");
+    const operacion = await llegadaPorAncla(page, "/operacion/clientes/nuevo", "prospecto-titulo");
     expect(operacion.arriba, `Operación: título en y=${operacion.arriba}, barras hasta y=${operacion.barras}`).toBeGreaterThanOrEqual(operacion.barras);
     await sinJs.close();
   });
