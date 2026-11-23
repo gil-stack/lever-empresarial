@@ -104,6 +104,39 @@ export function PanelDetalle({
   );
 }
 
+/** La ventana centrada de detalle: para consultar algo sin salir de la lista. Más ancha que el diálogo y con su propio scroll. */
+export function VentanaDetalle({
+  abierto,
+  alCerrar,
+  titulo,
+  contexto,
+  children,
+}: {
+  abierto: boolean;
+  alCerrar: () => void;
+  titulo: string;
+  /** Línea corta arriba, junto al botón de cerrar. */
+  contexto?: ReactNode;
+  children: ReactNode;
+}) {
+  const props = useDialogo(abierto, alCerrar);
+  return (
+    <dialog className="ventana-detalle" aria-label={titulo} {...props}>
+      <div className="ventana-detalle-cabeza">
+        <div className="ventana-detalle-titulo">
+          <h2>{titulo}</h2>
+          {contexto ? <small className="pista">{contexto}</small> : null}
+        </div>
+        <button type="button" className="boton-texto boton-chico" onClick={alCerrar} autoFocus>
+          <IconoCerrar />
+          Cerrar
+        </button>
+      </div>
+      <div className="ventana-detalle-cuerpo">{children}</div>
+    </dialog>
+  );
+}
+
 /**
  * El aviso de abajo: confirma lo que acaba de pasar y, si se puede, ofrece «Deshacer»
  * durante 5.5 s (2.6 s si no hay nada que deshacer), como el diseño.

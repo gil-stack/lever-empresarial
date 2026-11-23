@@ -2,152 +2,101 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { fechaDelProcesador } from "../../components/operacion/detalle-tarjeta.tsx";
-import { empresaDe, enlaceTablero, porEmpresa, SIN_EMPRESA, tarjetasDeEmpresa, tarjetasDelFiltro } from "../../components/operacion/inventario-tarjetas.tsx";
-import type { TarjetaEfevoo } from "./cliente";
+import {
+  busquedaDe,
+  claseDeTarjeta,
+  empresaDe,
+  enlaceTarjetas,
+  estadoDe,
+  haceCuanto,
+  paginaDe,
+  SIN_EMPRESA,
+} from "../../dominio/tarjetas/inventario.ts";
 import { idDeTarjeta, ordenarMovimientos, resumirMovimientos } from "./detalle-tarjeta";
-import { armarInventario, type FilaLever } from "./inventario";
-
-function efevoo(id: number, estado: TarjetaEfevoo["estado"], extra: Partial<TarjetaEfevoo> = {}): TarjetaEfevoo {
-  return { id, terminacion: String(1000 + id), estado, saldoCentavos: 0, idepCliente: 0, producto: 16, subproducto: 19, conTitular: false, ...extra };
-}
+import { parametrosDeBusqueda } from "./inventario";
+import { haceFaltaLeer, type EstadoLectura } from "./inventario-copia";
 
 const EMPRESA = "11111111-1111-4111-8111-111111111111";
-const lever: FilaLever = {
-  id: "22222222-2222-4222-8222-222222222222",
-  idEfevoo: 3,
-  terminacion: "1003",
-  nombreTarjeta: "ANA LOPEZ",
-  estado: "activa",
-  companyId: EMPRESA,
-  razonSocial: "Ejemplo SA",
-  creadaEn: "2026-11-20T10:00:00.000Z",
-};
+const t = (estado: Parameters<typeof claseDeTarjeta>[0]["estado"], extra: Partial<Parameters<typeof claseDeTarjeta>[0]> = {}) =>
+  ({ estado, saldoCentavos: 0, conTitular: false, idepCliente: 0, ...extra });
 
-describe("inventario de tarjetas", () => {
-  it("cuenta stock, sin asignar, activas con y sin saldo, por activar, bloqueadas y canceladas con lo de Efevoo", () => {
-    const inv = armarInventario({
-      efevoo: [
-        efevoo(1, "inStock"),
-        efevoo(2, "inStock"),
-        efevoo(3, "active", { saldoCentavos: 150_00, idepCliente: 77, conTitular: true }),
-        efevoo(4, "active", { idepCliente: 77, conTitular: true }),
-        efevoo(5, "inStock", { conTitular: true, idepCliente: 900 }),
-        efevoo(6, "blocked", { saldoCentavos: 20_00 }),
-        efevoo(7, "cancelled"),
-      ],
-      lever: [lever],
-      vinculos: [{ idepCliente: 77, companyId: EMPRESA, razonSocial: "Ejemplo SA" }],
-      ambiente: "sandbox",
-      errorEfevoo: null,
-      incompleto: false,
-    });
-    assert.equal(inv.fuente, "efevoo");
-    assert.deepEqual(inv.conteos, {
-      stock: 6,
-      sinAsignar: 2,
-      asignadas: 1,
-      activas: 2,
-      conSaldo: 1,
-      sinSaldo: 1,
-      bloqueadas: 1,
-      canceladas: 1,
-      saldoTotalCentavos: 170_00,
-    });
-    const tres = inv.tarjetas.find((t) => t.idEfevoo === 3)!;
-    assert.equal(tres.nombreTarjeta, "ANA LOPEZ");
-    assert.equal(tres.empresa?.razonSocial, "Ejemplo SA");
-    // La del cliente 77 que Lever no registró va con su empresa por el vínculo; la del 900 es de otro cliente del sandbox.
-    assert.equal(inv.tarjetas.find((t) => t.idEfevoo === 4)!.empresa?.id, EMPRESA);
-    assert.equal(inv.tarjetas.find((t) => t.idEfevoo === 5)!.idepClienteAjeno, 900);
+describe("clase de una tarjeta", () => {
+  it("parte las activas por saldo y deja canceladas, bloqueadas y por activar aparte", () => {
+    assert.equal(claseDeTarjeta(t("active", { saldoCentavos: 1 }), false), "activa_con_saldo");
+    assert.equal(claseDeTarjeta(t("active", { saldoCentavos: null }), false), "activa_sin_saldo");
+    assert.equal(claseDeTarjeta(t("inactive"), false), "asignada");
+    assert.equal(claseDeTarjeta(t("blocked"), false), "bloqueada");
+    assert.equal(claseDeTarjeta(t("cancelled"), true), "cancelada");
   });
 
-  it("una «inactive» de Efevoo (asignada sin activar) cuenta como por activar, no como libre", () => {
-    const inv = armarInventario({ efevoo: [efevoo(1, "inactive", { conTitular: true }), efevoo(2, "inStock")], lever: [], vinculos: [], ambiente: "sandbox", errorEfevoo: null, incompleto: false });
-    assert.equal(inv.conteos.asignadas, 1);
-    assert.equal(inv.conteos.sinAsignar, 1);
-  });
-
-  it("una tarjeta en inventario que Lever ya entregó no cuenta como libre", () => {
-    const inv = armarInventario({
-      efevoo: [efevoo(3, "inStock")],
-      lever: [{ ...lever, estado: "asignada" }],
-      vinculos: [],
-      ambiente: "sandbox",
-      errorEfevoo: null,
-      incompleto: false,
-    });
-    assert.equal(inv.conteos.sinAsignar, 0);
-    assert.equal(inv.conteos.asignadas, 1);
-  });
-
-  it("sin Efevoo pinta lo de Lever, sin saldos", () => {
-    const inv = armarInventario({ efevoo: null, lever: [lever], vinculos: [], ambiente: null, errorEfevoo: null, incompleto: false });
-    assert.equal(inv.fuente, "lever");
-    assert.equal(inv.conteos.stock, 1);
-    assert.equal(inv.conteos.activas, 1);
-    assert.equal(inv.conteos.saldoTotalCentavos, null);
-    assert.equal(inv.tarjetas[0].saldoCentavos, null);
-  });
-
-  it("cada filtro trae solo sus tarjetas y «todas» deja fuera las canceladas", () => {
-    const inv = armarInventario({
-      efevoo: [efevoo(1, "inStock"), efevoo(3, "active", { saldoCentavos: 1 }), efevoo(4, "active"), efevoo(7, "cancelled")],
-      lever: [],
-      vinculos: [],
-      ambiente: "sandbox",
-      errorEfevoo: null,
-      incompleto: false,
-    });
-    assert.deepEqual(tarjetasDelFiltro(inv.tarjetas, "todas").map((t) => t.idEfevoo), [1, 3, 4]);
-    assert.deepEqual(tarjetasDelFiltro(inv.tarjetas, "activa").map((t) => t.idEfevoo), [3, 4]);
-    assert.deepEqual(tarjetasDelFiltro(inv.tarjetas, "con_saldo").map((t) => t.idEfevoo), [3]);
-    assert.deepEqual(tarjetasDelFiltro(inv.tarjetas, "sin_saldo").map((t) => t.idEfevoo), [4]);
-    assert.deepEqual(tarjetasDelFiltro(inv.tarjetas, "cancelada").map((t) => t.idEfevoo), [7]);
+  it("un plástico en inventario solo está disponible si nadie lo tiene", () => {
+    assert.equal(claseDeTarjeta(t("inStock"), false), "sin_asignar");
+    assert.equal(claseDeTarjeta(t("inStock"), true), "asignada");
+    assert.equal(claseDeTarjeta(t("inStock", { idepCliente: 7 }), false), "asignada");
+    assert.equal(claseDeTarjeta(t("inStock", { conTitular: true }), false), "asignada");
   });
 });
 
-describe("tarjetas por empresa", () => {
-  const inv = armarInventario({
-    efevoo: [
-      efevoo(1, "inStock"),
-      efevoo(3, "active", { saldoCentavos: 150_00, idepCliente: 77, conTitular: true }),
-      efevoo(4, "active", { idepCliente: 77, conTitular: true }),
-      efevoo(5, "active", { saldoCentavos: 10_00, idepCliente: 900, conTitular: true }),
-      efevoo(6, "cancelled", { idepCliente: 900 }),
-    ],
-    lever: [lever],
-    vinculos: [{ idepCliente: 77, companyId: EMPRESA, razonSocial: "Ejemplo SA" }],
-    ambiente: "sandbox",
-    errorEfevoo: null,
-    incompleto: false,
-    nombresAjenos: new Map([[900, "Otra Empresa"]]),
+describe("buscador de tarjetas", () => {
+  it("lee dígitos como terminación o número, y lo demás como nombre", () => {
+    assert.deepEqual(busquedaDe("  "), { tipo: "ninguna" });
+    assert.deepEqual(busquedaDe("1234"), { tipo: "terminacion", digitos: "1234" });
+    assert.deepEqual(busquedaDe("•••• 1234"), { tipo: "terminacion", digitos: "1234" });
+    assert.deepEqual(busquedaDe("34"), { tipo: "terminacion", digitos: "34" });
+    assert.deepEqual(busquedaDe("4111 1111 1111 1234"), { tipo: "terminacion", digitos: "1234" });
+    assert.deepEqual(busquedaDe("00557"), { tipo: "numero", digitos: "557" });
+    assert.deepEqual(busquedaDe("Escuela  Alfa"), { tipo: "texto", texto: "Escuela Alfa" });
   });
 
-  it("cada tarjeta lleva la empresa por la que se afilió: la de Lever, la del procesador o ninguna", () => {
-    const de = (id: number) => inv.tarjetas.find((t) => t.idEfevoo === id)!.afiliacion;
-    assert.deepEqual(de(3), { clave: EMPRESA, nombre: "Ejemplo SA", enLever: true, companyId: EMPRESA });
-    assert.deepEqual(de(5), { clave: "p900", nombre: "Otra Empresa", enLever: false, companyId: null });
-    assert.equal(de(1), null);
+  it("pasa la búsqueda como parámetros fijos, sin meter el texto en la sentencia", () => {
+    assert.deepEqual(parametrosDeBusqueda({ q: "", empresa: null }), [null, null, null]);
+    assert.deepEqual(parametrosDeBusqueda({ q: "1234", empresa: EMPRESA }), ["terminacion", "1234", EMPRESA]);
+    assert.deepEqual(parametrosDeBusqueda({ q: "00557", empresa: null }), ["numero", "557", null]);
+    assert.deepEqual(parametrosDeBusqueda({ q: "50%_o'; drop", empresa: "p4" }), ["texto", "%50\\%\\_o'; drop%", "p4"]);
   });
 
-  it("agrupa sin canceladas, de la empresa con más tarjetas a la de menos, con el stock libre al final", () => {
-    assert.deepEqual(
-      porEmpresa(inv).map((f) => [f.clave, f.tarjetas, f.activas, f.conSaldo, f.saldoCentavos]),
-      [[EMPRESA, 2, 2, 1, 150_00], ["p900", 1, 1, 1, 10_00], [SIN_EMPRESA, 1, 0, 0, 0]],
-    );
-  });
-
-  it("filtra por empresa y lee la empresa de la dirección solo si tiene forma válida", () => {
-    assert.deepEqual(tarjetasDeEmpresa(inv.tarjetas, "p900").map((t) => t.idEfevoo), [5, 6]);
-    assert.deepEqual(tarjetasDeEmpresa(inv.tarjetas, SIN_EMPRESA).map((t) => t.idEfevoo), [1]);
-    assert.equal(tarjetasDeEmpresa(inv.tarjetas, null).length, 5);
+  it("lee los filtros de la dirección solo si tienen forma válida", () => {
+    assert.equal(estadoDe("con_saldo"), "con_saldo");
+    assert.equal(estadoDe("x"), "todas");
     assert.equal(empresaDe(EMPRESA.toUpperCase()), EMPRESA);
-    assert.equal(empresaDe("p900"), "p900");
-    assert.equal(empresaDe("ninguna"), "ninguna");
-    assert.equal(empresaDe("p0"), null);
-    assert.equal(empresaDe("'; drop"), null);
-    assert.equal(enlaceTablero("con_saldo", "p900"), "/operacion/tarjetas?ver=con_saldo&empresa=p900");
-    assert.equal(enlaceTablero("todas", null), "/operacion/tarjetas");
+    assert.equal(empresaDe("p42"), "p42");
+    assert.equal(empresaDe(SIN_EMPRESA), SIN_EMPRESA);
+    for (const malo of ["p0", "abc", "", undefined]) assert.equal(empresaDe(malo), null, String(malo));
+    assert.equal(paginaDe("3"), 3);
+    for (const malo of ["0", "-2", "x", "1234567", undefined]) assert.equal(paginaDe(malo), 1, String(malo));
+  });
+
+  it("la dirección lleva solo los filtros que no están en su valor de siempre", () => {
+    assert.equal(enlaceTarjetas({}), "/operacion/tarjetas");
+    assert.equal(enlaceTarjetas({ q: " 1234 ", estado: "todas", pagina: 1 }), "/operacion/tarjetas?q=1234");
+    assert.equal(enlaceTarjetas({ estado: "disponibles", empresa: "p4", pagina: 2, tarjeta: 9 }), "/operacion/tarjetas?estado=disponibles&empresa=p4&pagina=2&tarjeta=9");
+  });
+});
+
+describe("copia del inventario", () => {
+  const ahora = new Date("2026-11-23T20:00:00.000Z");
+  const estado = (e: Partial<EstadoLectura>): EstadoLectura => ({
+    completaEn: null, paginaSiguiente: null, paginas: null, total: null, error: null, errorEn: null, ocupadaHasta: null, ...e,
+  });
+
+  it("se lee si nunca se completó, si va a medias o si tiene más de 10 minutos", () => {
+    assert.equal(haceFaltaLeer(null, ahora), true);
+    assert.equal(haceFaltaLeer(estado({}), ahora), true);
+    assert.equal(haceFaltaLeer(estado({ completaEn: "2026-11-23T19:55:00.000Z" }), ahora), false);
+    assert.equal(haceFaltaLeer(estado({ completaEn: "2026-11-23T19:49:00.000Z" }), ahora), true);
+    assert.equal(haceFaltaLeer(estado({ completaEn: "2026-11-23T19:59:00.000Z", paginaSiguiente: 3 }), ahora), true);
+  });
+
+  it("si el procesador acaba de fallar, espera un minuto", () => {
+    assert.equal(haceFaltaLeer(estado({ error: "efevoo_incierto", errorEn: "2026-11-23T19:59:30.000Z" }), ahora), false);
+    assert.equal(haceFaltaLeer(estado({ error: "efevoo_incierto", errorEn: "2026-11-23T19:58:00.000Z" }), ahora), true);
+  });
+
+  it("dice qué tan fresca es en palabras", () => {
+    assert.equal(haceCuanto(new Date("2026-11-23T19:59:40.000Z"), ahora), "hace un momento");
+    assert.equal(haceCuanto(new Date("2026-11-23T19:57:00.000Z"), ahora), "hace 3 min");
+    assert.equal(haceCuanto(new Date("2026-11-23T17:00:00.000Z"), ahora), "hace 3 h");
+    assert.equal(haceCuanto(new Date("2026-11-22T19:00:00.000Z"), ahora), "hace 1 día");
   });
 });
 

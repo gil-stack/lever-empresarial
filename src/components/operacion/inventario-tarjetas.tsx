@@ -1,334 +1,192 @@
+import Form from "next/form";
 import Link from "next/link";
 
-import { Hoja, Insignia, NotaRegla, Vacio } from "@/components/sistema";
+import { NotaRegla, Vacio } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
-import { contar, type Afiliacion, type ClaseTarjeta, type InventarioTarjetas, type TarjetaDelInventario } from "@/server/efevoo/inventario";
+import { ESTADOS, ESTADO_DE_CLASE, NOMBRE_DEL_ESTADO, SIN_EMPRESA, enlaceTarjetas, haceCuanto, textoDeBusqueda } from "@/dominio/tarjetas/inventario";
+import { POR_PAGINA, type VistaTarjetas } from "@/server/efevoo/inventario";
 
-import { fechaHora } from "./formato";
+import { SelectorQueEnvia } from "./enviar-al-cambiar";
 
-/** Los filtros del tablero: cada cifra lleva a la lista de sus tarjetas. */
-export const FILTROS = ["todas", "sin_asignar", "asignada", "activa", "con_saldo", "sin_saldo", "bloqueada", "cancelada"] as const;
-export type Filtro = (typeof FILTROS)[number];
+/**
+ * Operación → Tarjetas: arriba cuatro cifras de todo el inventario; abajo la lista, que se busca, se filtra por estado
+ * y por empresa y se pagina en el servidor. Cada renglón abre el detalle en una ventana sobre la lista (`?tarjeta=`).
+ */
 
-export function filtroDe(valor: string | undefined): Filtro {
-  return (FILTROS as readonly string[]).includes(valor ?? "") ? (valor as Filtro) : "todas";
-}
-
-const DEL_FILTRO: Record<Filtro, (c: ClaseTarjeta) => boolean> = {
-  todas: (c) => c !== "cancelada",
-  sin_asignar: (c) => c === "sin_asignar",
-  asignada: (c) => c === "asignada",
-  activa: (c) => c === "activa_con_saldo" || c === "activa_sin_saldo",
-  con_saldo: (c) => c === "activa_con_saldo",
-  sin_saldo: (c) => c === "activa_sin_saldo",
-  bloqueada: (c) => c === "bloqueada",
-  cancelada: (c) => c === "cancelada",
+const ERRORES: Record<string, string> = {
+  efevoo_incierto: "El procesador de tarjetas no respondió.",
+  efevoo_no_autorizado: "El procesador de tarjetas rechazó la conexión.",
+  efevoo_rechazo: "El procesador de tarjetas rechazó la consulta.",
 };
 
-export function tarjetasDelFiltro(tarjetas: readonly TarjetaDelInventario[], filtro: Filtro) {
-  return tarjetas.filter((t) => DEL_FILTRO[filtro](t.clase));
-}
+const numero = (n: number) => n.toLocaleString("es-MX");
 
-/** La empresa elegida en la dirección (`?empresa=`): el id de una empresa de Lever, «p» + el número de un cliente del procesador o «ninguna» (stock libre). */
-export function empresaDe(valor: string | undefined): string | null {
-  const v = valor?.trim().toLowerCase() ?? "";
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v) || /^p[1-9][0-9]{0,9}$/.test(v) || v === "ninguna" ? v : null;
-}
-
-export const SIN_EMPRESA = "ninguna";
-
-export function tarjetasDeEmpresa(tarjetas: readonly TarjetaDelInventario[], empresa: string | null) {
-  if (empresa === null) return [...tarjetas];
-  return tarjetas.filter((t) => (t.afiliacion?.clave ?? SIN_EMPRESA) === empresa);
-}
-
-export type FilaEmpresa = Afiliacion & { tarjetas: number; activas: number; conSaldo: number; saldoCentavos: number | null };
-
-/** Las tarjetas agrupadas por la empresa por la que se afiliaron (sin las canceladas), de la que más tiene a la que menos. El stock libre va al final. */
-export function porEmpresa(inventario: InventarioTarjetas): FilaEmpresa[] {
-  const filas = new Map<string, FilaEmpresa>();
-  for (const t of inventario.tarjetas) {
-    if (t.clase === "cancelada") continue;
-    const af: Afiliacion = t.afiliacion ?? { clave: SIN_EMPRESA, nombre: "Sin empresa (stock libre)", enLever: false, companyId: null };
-    const fila = filas.get(af.clave) ?? { ...af, tarjetas: 0, activas: 0, conSaldo: 0, saldoCentavos: inventario.fuente === "efevoo" ? 0 : null };
-    fila.tarjetas += 1;
-    if (t.clase === "activa_con_saldo" || t.clase === "activa_sin_saldo") fila.activas += 1;
-    if (t.clase === "activa_con_saldo") fila.conSaldo += 1;
-    if (fila.saldoCentavos !== null) fila.saldoCentavos += t.saldoCentavos ?? 0;
-    filas.set(af.clave, fila);
+function Frescura({ vista, ahora }: { vista: VistaTarjetas; ahora: Date }) {
+  const l = vista.lectura;
+  const pruebas = vista.ambiente === "sandbox" ? " · ambiente de pruebas" : "";
+  if (!l?.completaEn) {
+    if (l?.paginaSiguiente && l.paginas) return <p className="pista tarjetas-frescura" role="status">Leyendo el inventario del procesador de tarjetas: van {numero(Math.min(l.paginaSiguiente - 1, l.paginas))} de {numero(l.paginas)} páginas. La lista se completa sola en unos minutos.{pruebas}</p>;
+    return null;
   }
-  return [...filas.values()].sort((a, b) =>
-    (a.clave === SIN_EMPRESA ? 1 : 0) - (b.clave === SIN_EMPRESA ? 1 : 0) || b.tarjetas - a.tarjetas || a.nombre.localeCompare(b.nombre, "es"),
+  return (
+    <p className="pista tarjetas-frescura">
+      Datos del procesador de tarjetas, actualizados {haceCuanto(new Date(l.completaEn), ahora)}
+      {l.paginaSiguiente ? " (actualizando ahora)" : ""}
+      {pruebas}
+    </p>
   );
 }
 
-/** La dirección del tablero con un filtro y una empresa. */
-export function enlaceTablero(filtro: Filtro, empresa: string | null): string {
-  const q = new URLSearchParams();
-  if (filtro !== "todas") q.set("ver", filtro);
-  if (empresa) q.set("empresa", empresa);
-  const s = q.toString();
-  return s ? `/operacion/tarjetas?${s}` : "/operacion/tarjetas";
-}
-
-const TITULO_LISTA: Record<Filtro, string> = {
-  todas: "Todo el stock",
-  sin_asignar: "Sin asignar",
-  asignada: "Asignadas sin activar",
-  activa: "Activas",
-  con_saldo: "Activas con saldo",
-  sin_saldo: "Activas sin saldo",
-  bloqueada: "Bloqueadas",
-  cancelada: "Canceladas",
-};
-
-export const ESTADO: Record<ClaseTarjeta, { texto: string; tono: "neutro" | "sello" | "aviso" }> = {
-  sin_asignar: { texto: "Sin asignar", tono: "neutro" },
-  asignada: { texto: "Asignada", tono: "neutro" },
-  activa_con_saldo: { texto: "Activa", tono: "sello" },
-  activa_sin_saldo: { texto: "Activa", tono: "sello" },
-  bloqueada: { texto: "Bloqueada", tono: "aviso" },
-  cancelada: { texto: "Cancelada", tono: "aviso" },
-};
-
-const ERRORES: Record<string, string> = {
-  efevoo_incierto: "El procesador no respondió.",
-  efevoo_no_autorizado: "El procesador rechazó las credenciales.",
-  efevoo_rechazo: "El procesador rechazó la consulta.",
-};
-
-function plural(n: number, uno: string, varios: string) {
-  return `${n} ${n === 1 ? uno : varios}`;
-}
-
-function porcentaje(parte: number, total: number) {
-  return total > 0 ? Math.round((parte / total) * 100) : 0;
-}
-
-/** Una cifra del tablero: enlace a su lista, marcada cuando es la que se ve. */
-function Cifra({
-  filtro,
-  actual,
-  empresa,
-  rotulo,
-  valor,
-  nota,
-  tono,
-}: {
-  filtro: Filtro;
-  actual: Filtro;
-  empresa: string | null;
-  rotulo: string;
-  valor: string;
-  nota: string;
-  tono?: Segmento;
-}) {
-  return (
-    <li>
-      <Link
-        href={enlaceTablero(filtro, empresa)}
-        className={`inventario-cifra${tono ? ` inventario-cifra-${tono}` : ""}`}
-        aria-current={filtro === actual ? "true" : undefined}
-        scroll={false}
-      >
+function Resumen({ vista }: { vista: VistaTarjetas }) {
+  const r = vista.resumen;
+  const cifra = (rotulo: string, valor: string, pista: string, enlace: string) => (
+    <li className="tarjetas-cifra">
+      <Link href={enlace}>
         <span className="rotulo">{rotulo}</span>
-        <span className="inventario-valor">{valor}</span>
-        <span className="pista">{nota}</span>
+        <span className="tarjetas-cifra-valor">{valor}</span>
+        <span className="pista">{pista}</span>
       </Link>
     </li>
   );
-}
-
-type Segmento = "libre" | "asignada" | "saldo" | "vacia" | "bloqueada";
-
-/** La barra del stock: cuánto está libre, entregado sin activar, activo con y sin saldo, y bloqueado. */
-function Reparto({ inventario, c }: { inventario: InventarioTarjetas; c: InventarioTarjetas["conteos"] }) {
-  const partes: { clave: Segmento; rotulo: string; n: number }[] = [
-    { clave: "libre", rotulo: "Sin asignar", n: c.sinAsignar },
-    { clave: "asignada", rotulo: "Asignadas sin activar", n: c.asignadas },
-    { clave: "saldo", rotulo: inventario.fuente === "efevoo" ? "Activas con saldo" : "Activas", n: c.conSaldo + (inventario.fuente === "efevoo" ? 0 : c.sinSaldo) },
-    ...(inventario.fuente === "efevoo" ? [{ clave: "vacia" as const, rotulo: "Activas sin saldo", n: c.sinSaldo }] : []),
-    { clave: "bloqueada", rotulo: "Bloqueadas", n: c.bloqueadas },
-  ];
-  if (c.stock === 0) return null;
   return (
-    <figure className="inventario-reparto">
-      <div className="inventario-barra" role="img" aria-label={partes.map((p) => `${p.rotulo}: ${p.n}`).join(", ")}>
-        {partes.filter((p) => p.n > 0).map((p) => (
-          <i key={p.clave} className={`inventario-tramo-${p.clave}`} style={{ flexGrow: p.n }} />
-        ))}
-      </div>
-      <figcaption>
-        <ul className="inventario-leyenda">
-          {partes.map((p) => (
-            <li key={p.clave}>
-              <i className={`inventario-tramo-${p.clave}`} aria-hidden="true" />
-              {p.rotulo} <strong>{p.n}</strong> <span className="pista">{porcentaje(p.n, c.stock)} %</span>
-            </li>
-          ))}
-        </ul>
-      </figcaption>
-    </figure>
+    <ul className="tarjetas-resumen" aria-label="Resumen del inventario">
+      {cifra("Activas", numero(r.activas), `${numero(r.conSaldo)} con saldo`, enlaceTarjetas({ estado: "con_saldo" }))}
+      {cifra("Por activar", numero(r.porActivar), "Ya tienen empresa", enlaceTarjetas({ estado: "por_activar" }))}
+      {cifra("Disponibles", numero(r.disponibles), "Sin empresa todavía", enlaceTarjetas({ estado: "disponibles" }))}
+      {cifra("Saldo en tarjetas", formatoPesos(r.saldoCentavos), `En ${numero(r.total - r.canceladas)} tarjetas`, enlaceTarjetas({}))}
+    </ul>
   );
 }
 
-function Empresa({ t, filtro }: { t: TarjetaDelInventario; filtro: Filtro }) {
-  if (!t.afiliacion) return <Link href={enlaceTablero(filtro, SIN_EMPRESA)} scroll={false} className="pista">Sin empresa (stock libre)</Link>;
+function Paginacion({ vista }: { vista: VistaTarjetas }) {
+  const { pagina } = vista.filtro;
+  const paginas = Math.max(1, Math.ceil(vista.total / POR_PAGINA));
+  if (paginas <= 1) return null;
+  const a = (p: number) => enlaceTarjetas({ ...vista.filtro, pagina: p });
   return (
-    <>
-      <Link href={enlaceTablero(filtro, t.afiliacion.clave)} scroll={false}>{t.afiliacion.nombre}</Link>
-      {t.afiliacion.enLever ? null : <small>Fuera de Lever</small>}
-    </>
+    <nav className="tarjetas-paginas" aria-label="Páginas de la lista">
+      {pagina > 1 ? <Link className="boton-texto boton-chico" href={a(pagina - 1)} scroll={false}>← Anterior</Link> : <span />}
+      <span className="pista">Página {numero(pagina)} de {numero(paginas)}</span>
+      {pagina < paginas ? <Link className="boton-texto boton-chico" href={a(pagina + 1)} scroll={false}>Siguiente →</Link> : <span />}
+    </nav>
   );
 }
 
-/** Las empresas con tarjetas: cada renglón filtra el tablero a las suyas. */
-function TablaEmpresas({ inventario, empresa, filtro }: { inventario: InventarioTarjetas; empresa: string | null; filtro: Filtro }) {
-  const filas = porEmpresa(inventario);
-  if (filas.length === 0) return null;
-  const conSaldos = inventario.fuente === "efevoo";
-  return (
-    <Hoja id="inventario-empresas" titulo={`Por empresa · ${filas.length}`} className="inventario-lista">
-      <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de tarjetas por empresa">
-        <table className="tabla operacion-tabla">
-          <thead>
-            <tr>
-              <th scope="col">Empresa</th>
-              <th scope="col" className="inventario-num">Tarjetas</th>
-              <th scope="col" className="inventario-num">Activas</th>
-              <th scope="col" className="inventario-num">Con saldo</th>
-              <th scope="col" className="inventario-num">Saldo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((f) => (
-              <tr key={f.clave} aria-current={f.clave === empresa ? "true" : undefined} className={f.clave === empresa ? "inventario-fila-actual" : undefined}>
-                <td>
-                  <Link href={enlaceTablero(filtro, f.clave)} scroll={false}>{f.nombre}</Link>
-                  {f.clave === SIN_EMPRESA ? null : f.enLever ? null : <small>Fuera de Lever</small>}
-                </td>
-                <td data-rotulo="Tarjetas" className="inventario-num">{f.tarjetas}</td>
-                <td data-rotulo="Activas" className="inventario-num">{f.activas}</td>
-                <td data-rotulo="Con saldo" className="inventario-num">{conSaldos ? f.conSaldo : "—"}</td>
-                <td data-rotulo="Saldo" className="inventario-num">{f.saldoCentavos === null ? "—" : formatoPesos(f.saldoCentavos)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Hoja>
-  );
-}
+export function TableroTarjetas({ vista, ahora }: { vista: VistaTarjetas; ahora: Date }) {
+  if (vista.conexion === "sin_conexion") {
+    return (
+      <Vacio titulo="Sin conexión con el procesador de tarjetas">
+        Este entorno no tiene configurada la conexión con el procesador, así que no hay inventario que mostrar.
+      </Vacio>
+    );
+  }
+  const { filtro } = vista;
+  const q = textoDeBusqueda(filtro.q);
+  const hayFiltros = q !== "" || filtro.empresa !== null || filtro.estado !== "todas";
+  const desde = vista.total === 0 ? 0 : (filtro.pagina - 1) * POR_PAGINA + 1;
+  const hasta = Math.min(vista.total, filtro.pagina * POR_PAGINA);
+  const empresaEnLista = filtro.empresa === null || filtro.empresa === SIN_EMPRESA || vista.empresas.some((e) => e.clave === filtro.empresa);
+  const error = vista.lectura?.error ? (ERRORES[vista.lectura.error] ?? "El procesador de tarjetas no respondió.") : null;
 
-export function TableroTarjetas({ inventario, filtro, empresa = null }: { inventario: InventarioTarjetas; filtro: Filtro; empresa?: string | null }) {
-  const conEfevoo = inventario.fuente === "efevoo";
-  const deEmpresa = tarjetasDeEmpresa(inventario.tarjetas, empresa);
-  const c = empresa === null ? inventario.conteos : contar(deEmpresa, conEfevoo);
-  const lista = tarjetasDelFiltro(deEmpresa, filtro);
-  const nombreEmpresa = empresa === null ? null : empresa === SIN_EMPRESA ? "Sin empresa (stock libre)" : deEmpresa[0]?.afiliacion?.nombre ?? "Empresa sin tarjetas";
-  const sinDato = "—";
   return (
-    <div className="inventario">
-      {!conEfevoo ? (
+    <div className="tarjetas">
+      <Resumen vista={vista} />
+      <Frescura vista={vista} ahora={ahora} />
+      {error ? (
         <NotaRegla>
-          {inventario.errorEfevoo
-            ? `${ERRORES[inventario.errorEfevoo] ?? "No se pudo leer el procesador."} Se muestran las tarjetas que Lever ya entregó; el stock libre y los saldos llegan del procesador.`
-            : "Este entorno todavía no está conectado con el procesador. Se muestran las tarjetas que Lever ya entregó; el stock libre y los saldos aparecerán al conectar las llaves del procesador."}
+          {error} {vista.lectura?.completaEn ? "Se muestra la última lista que se leyó; se vuelve a intentar sola." : "Se vuelve a intentar sola en un minuto."}
         </NotaRegla>
       ) : null}
 
-      <section aria-labelledby="inventario-cifras" className="inventario-cabeza">
-        <h2 id="inventario-cifras" className="solo-lector">Cifras del inventario</h2>
-        <div className="inventario-total">
-          <p className="rotulo">{nombreEmpresa ? `Tarjetas de ${nombreEmpresa}` : "Stock total"}</p>
-          <p className="inventario-total-valor">{c.stock}</p>
-          <p className="pista">
-            {conEfevoo ? "Plásticos en el procesador, sin contar cancelados" : "Tarjetas entregadas por Lever, sin contar canceladas"}
-            {inventario.ambiente === "sandbox" ? " · ambiente de pruebas" : ""}
+      <section className="tarjetas-lista" aria-labelledby="tarjetas-lista-titulo">
+        <h2 id="tarjetas-lista-titulo" className="solo-lector">Lista de tarjetas</h2>
+        <Form action="/operacion/tarjetas" className="tarjetas-buscador" role="search" aria-label="Buscar tarjetas" scroll={false}>
+          <div className="campo tarjetas-buscar">
+            <label htmlFor="tarjetas-q">Buscar</label>
+            <input id="tarjetas-q" name="q" type="search" defaultValue={q} maxLength={60} autoComplete="off" placeholder="Últimos 4 dígitos, empresa o nombre en la tarjeta" />
+          </div>
+          <div className="campo tarjetas-empresa">
+            <label htmlFor="tarjetas-empresa">Empresa</label>
+            <SelectorQueEnvia id="tarjetas-empresa" name="empresa" defaultValue={filtro.empresa ?? ""}>
+              <option value="">Todas las empresas</option>
+              <option value={SIN_EMPRESA}>Sin empresa (disponibles)</option>
+              {!empresaEnLista && vista.empresaElegida ? <option value={vista.empresaElegida.clave}>{vista.empresaElegida.nombre}</option> : null}
+              {vista.empresas.map((e) => (
+                <option key={e.clave} value={e.clave}>{e.nombre} · {numero(e.tarjetas)}</option>
+              ))}
+            </SelectorQueEnvia>
+          </div>
+          {filtro.estado !== "todas" ? <input type="hidden" name="estado" value={filtro.estado} /> : null}
+          <button className="boton boton-chico" type="submit">Buscar</button>
+        </Form>
+
+        <nav className="tarjetas-estados" aria-label="Filtrar por estado">
+          {ESTADOS.map((e) => (
+            <Link
+              key={e}
+              href={enlaceTarjetas({ q, empresa: filtro.empresa, estado: e })}
+              className="tarjetas-estado"
+              aria-current={filtro.estado === e ? "page" : undefined}
+              scroll={false}
+            >
+              {NOMBRE_DEL_ESTADO[e]} <span className="tarjetas-estado-cuantas">{numero(vista.porEstado[e])}</span>
+            </Link>
+          ))}
+        </nav>
+
+        <div className="tarjetas-conteo">
+          <p role="status">
+            {vista.total === 0 ? "Ninguna tarjeta" : `${numero(desde)}–${numero(hasta)} de ${numero(vista.total)} ${vista.total === 1 ? "tarjeta" : "tarjetas"}`}
+            {vista.empresaElegida ? <> · {vista.empresaElegida.nombre}</> : null}
+            {q ? <> · «{q}»</> : null}
           </p>
-          {conEfevoo && c.saldoTotalCentavos !== null ? (
-            <p className="inventario-saldo">
-              <span className="rotulo">Saldo en tarjetas</span>
-              <span className="monto">{formatoPesos(c.saldoTotalCentavos)}</span>
-            </p>
-          ) : null}
+          {hayFiltros ? <Link className="enlace-texto" href="/operacion/tarjetas" scroll={false}>Limpiar filtros</Link> : null}
         </div>
-        <Reparto inventario={inventario} c={c} />
-      </section>
 
-      <nav aria-label="Filtrar tarjetas">
-        <ul className="inventario-cifras">
-          <Cifra filtro="sin_asignar" actual={filtro} empresa={empresa} tono="libre" rotulo="Sin asignar" valor={conEfevoo ? String(c.sinAsignar) : sinDato} nota={conEfevoo ? "Listas para entregar" : "Se lee del procesador"} />
-          <Cifra filtro="activa" actual={filtro} empresa={empresa} rotulo="Activas" valor={String(c.activas)} nota={`${porcentaje(c.activas, c.stock)} % del stock`} />
-          <Cifra filtro="con_saldo" actual={filtro} empresa={empresa} tono="saldo" rotulo="Con saldo" valor={conEfevoo ? String(c.conSaldo) : sinDato} nota={conEfevoo ? "Activas con dinero" : "Se lee del procesador"} />
-          <Cifra filtro="sin_saldo" actual={filtro} empresa={empresa} tono="vacia" rotulo="Sin saldo" valor={conEfevoo ? String(c.sinSaldo) : sinDato} nota={conEfevoo ? "Activas en $0.00" : "Se lee del procesador"} />
-          <Cifra filtro="asignada" actual={filtro} empresa={empresa} tono="asignada" rotulo="Por activar" valor={String(c.asignadas)} nota="Asignadas, sin activar" />
-          <Cifra filtro="bloqueada" actual={filtro} empresa={empresa} tono="bloqueada" rotulo="Bloqueadas" valor={String(c.bloqueadas)} nota={plural(c.canceladas, "cancelada aparte", "canceladas aparte")} />
-        </ul>
-      </nav>
-
-      <TablaEmpresas inventario={inventario} empresa={empresa} filtro={filtro} />
-
-      <Hoja id="inventario-lista" titulo={`${TITULO_LISTA[filtro]}${nombreEmpresa ? ` de ${nombreEmpresa}` : ""} · ${lista.length}`} className="inventario-lista">
-        <div className="inventario-pestanas">
-          {filtro !== "todas" ? (
-            <Link href={enlaceTablero("todas", empresa)} className="enlace-texto" scroll={false}>Ver todo el stock</Link>
-          ) : null}
-          {filtro !== "cancelada" && c.canceladas > 0 ? (
-            <Link href={enlaceTablero("cancelada", empresa)} className="enlace-texto" scroll={false}>Ver canceladas ({c.canceladas})</Link>
-          ) : null}
-          {empresa ? <Link href={enlaceTablero(filtro, null)} className="enlace-texto" scroll={false}>Quitar el filtro de empresa</Link> : null}
-        </div>
-        {lista.length === 0 ? (
-          <Vacio titulo="No hay tarjetas aquí">
-            {deEmpresa.length === 0
-              ? conEfevoo
-                ? empresa ? "Esta empresa no tiene tarjetas." : "El procesador no tiene plásticos registrados para esta cuenta."
-                : "Lever todavía no ha entregado tarjetas."
-              : "Ninguna tarjeta está en este estado."}
+        {vista.tarjetas.length === 0 ? (
+          <Vacio titulo={vista.resumen.total === 0 ? "Todavía no hay tarjetas" : "No hay tarjetas con esta búsqueda"}>
+            {vista.resumen.total === 0 ? "Cuando el procesador tenga plásticos, aparecen aquí." : "Prueba con otros dígitos u otra empresa, o limpia los filtros."}
           </Vacio>
         ) : (
           <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de tarjetas">
-            <table className="tabla operacion-tabla">
+            <table className="tabla operacion-tabla tarjetas-tabla">
               <thead>
                 <tr>
                   <th scope="col">Tarjeta</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col" className="inventario-num">Saldo</th>
                   <th scope="col">Empresa</th>
-                  <th scope="col">Entregada</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" className="tarjetas-num">Saldo</th>
                 </tr>
               </thead>
               <tbody>
-                {lista.map((t) => (
-                  <tr key={t.clave}>
-                    <td>
-                      <Link href={`/operacion/tarjetas/${t.idEfevoo}`} className="inventario-tarjeta" aria-label={`Ver la tarjeta terminada en ${t.terminacion}`}>
-                        <span className="operacion-mono">•••• {t.terminacion}</span>
-                        <span aria-hidden="true"> →</span>
-                      </Link>
-                      {t.nombreTarjeta ? <small>{t.nombreTarjeta}</small> : null}
-                    </td>
-                    <td data-rotulo="Estado">
-                      <Insignia tono={ESTADO[t.clase].tono}>{ESTADO[t.clase].texto}</Insignia>
-                    </td>
-                    <td data-rotulo="Saldo" className="inventario-num">
-                      {t.saldoCentavos === null ? <span className="pista">{conEfevoo ? "Sin dato" : sinDato}</span> : formatoPesos(t.saldoCentavos)}
-                    </td>
-                    <td data-rotulo="Empresa"><Empresa t={t} filtro={filtro} /></td>
-                    <td data-rotulo="Entregada">{t.entregadaEn ? fechaHora(new Date(t.entregadaEn)) : <span className="pista">{sinDato}</span>}</td>
-                  </tr>
-                ))}
+                {vista.tarjetas.map((t) => {
+                  const estado = ESTADO_DE_CLASE[t.clase];
+                  return (
+                    <tr key={t.id}>
+                      <td data-rotulo="Tarjeta">
+                        <Link
+                          className="tarjetas-abrir"
+                          href={enlaceTarjetas({ ...filtro, tarjeta: t.id })}
+                          scroll={false}
+                          aria-label={`Ver la tarjeta terminada en ${t.terminacion}`}
+                        >
+                          <span className="operacion-mono">•••• {t.terminacion}</span>
+                        </Link>
+                        {t.nombreTarjeta ? <small>{t.nombreTarjeta}</small> : null}
+                      </td>
+                      <td data-rotulo="Empresa">{t.empresa ? t.empresa.nombre : <span className="pista">Sin empresa</span>}</td>
+                      <td data-rotulo="Estado"><span className={`tarjetas-punto tarjetas-punto-${estado.tono}`}>{estado.texto}</span></td>
+                      <td data-rotulo="Saldo" className="tarjetas-num">{t.saldoCentavos === null ? "—" : formatoPesos(t.saldoCentavos)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
-        {inventario.incompleto ? <NotaRegla>Se muestran los primeros 2,000 plásticos del procesador.</NotaRegla> : null}
-      </Hoja>
-
-      <NotaRegla>
-        Toca una tarjeta para ver su resumen y sus movimientos. Para asignar, activar o cancelar una, entra a la empresa en Clientes: ahí está su sección de Tarjetas.
-      </NotaRegla>
+        <Paginacion vista={vista} />
+      </section>
+      <p className="pista tarjetas-nota">Nunca se muestra el número completo de una tarjeta ni su código de seguridad.</p>
     </div>
   );
 }
