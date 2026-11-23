@@ -72,6 +72,11 @@ export function motivoDeEntrega(detalle: string | null): string | null {
  * La acción de la bitácora en palabras. Solo las que registran Operación y la entrada;
  * las demás se muestran con su código. La bitácora siempre enseña además el código y la tabla.
  */
+/** Un código interno tal como se enseña en pantalla: sin el nombre del proveedor de los plásticos (efevoo_carga → tarjetas_carga). */
+export function codigoVisible(codigo: string): string {
+  return codigo.replace(/efevoo/gi, "tarjetas");
+}
+
 export function etiquetaAccion(accion: string): string | null {
   const etiquetas: Record<string, string> = {
     entrada_contrasena: "Contraseña correcta",
@@ -108,6 +113,20 @@ export function etiquetaAccion(accion: string): string | null {
     rol_personal_asignado: "Asignó un rol del personal",
     rol_personal_retirado: "Quitó un rol del personal",
     expediente_consultado: "Abrió el expediente",
+    efevoo_alta_cliente: "Dio de alta la empresa en tarjetas",
+    efevoo_deposito_prueba: "Depósito de prueba al saldo de tarjetas",
+    efevoo_asignacion: "Asignó una tarjeta",
+    efevoo_activacion: "Activó una tarjeta",
+    efevoo_asignacion_cliente: "Asignó tarjetas a la empresa",
+    efevoo_carga: "Cargó saldo a una tarjeta",
+    efevoo_retiro: "Retiró saldo de una tarjeta",
+    efevoo_bloqueo: "Bloqueó una tarjeta",
+    efevoo_desbloqueo: "Desbloqueó una tarjeta",
+    efevoo_cancelacion: "Canceló una tarjeta",
+    efevoo_confirmada: "Operación de tarjeta confirmada",
+    efevoo_fallida: "Operación de tarjeta fallida",
+    efevoo_incierta: "Operación de tarjeta incierta",
+    efevoo_cierre_manual: "Cerró a mano una operación de tarjeta",
     expediente_documento_descargado: "Descargó un documento del expediente",
     expediente_version_creada: "Abrió una versión del expediente",
     expediente_datos_editados: "Editó los datos del expediente",

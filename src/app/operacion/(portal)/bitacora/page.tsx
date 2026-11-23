@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { etiquetaAccion, fechaHora } from "@/components/operacion/formato";
+import { codigoVisible, etiquetaAccion, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { Hoja, NotaRegla, Vacio } from "@/components/sistema";
@@ -51,9 +51,9 @@ export default async function BitacoraOperacion() {
                     </td>
                     <td data-rotulo="Quién">{evento.actor}</td>
                     <td data-rotulo="Acción">
-                      {etiquetaAccion(evento.accion) ?? evento.accion}
+                      {etiquetaAccion(evento.accion) ?? codigoVisible(evento.accion)}
                       <small className="operacion-mono">
-                        {evento.accion} · {evento.entidad}
+                        {codigoVisible(evento.accion)} · {codigoVisible(evento.entidad)}
                       </small>
                     </td>
                     <td data-rotulo="Motivo">{evento.motivo ?? "—"}</td>

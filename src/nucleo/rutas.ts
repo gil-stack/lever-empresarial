@@ -244,7 +244,7 @@ export const RUTAS = [
   // pronto» en las reales. Cada uno abre con la capacidad existente más cercana a su trabajo.
   { patron: "/consola/conciliacion", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.poliza.ver"] }, conEmpresa: true },
   { patron: "/consola/gastos", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] }, conEmpresa: true },
-  // Tarjetas: con la empresa vinculada a Efevoo Pay, las tarjetas reales; si no, como los demás módulos en demostración.
+  // Tarjetas: con la empresa vinculada al procesador, las tarjetas reales; si no, como los demás módulos en demostración.
   { patron: "/consola/tarjetas", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.tarjetas.ver"] }, conEmpresa: true },
   { patron: "/consola/tarjetas/[id]", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.tarjetas.ver"] }, conEmpresa: true },
   { patron: "/consola/movimientos", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] }, conEmpresa: true },
@@ -286,6 +286,7 @@ export const RUTAS = [
   { patron: "/operacion/clientes/nuevo", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/clientes/[id]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/tarjetas", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/tarjetas/[id]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/aprobaciones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/alertas", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/comisiones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },

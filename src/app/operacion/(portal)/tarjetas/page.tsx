@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { filtroDe, TableroTarjetas } from "@/components/operacion/inventario-tarjetas";
+import { empresaDe, filtroDe, TableroTarjetas } from "@/components/operacion/inventario-tarjetas";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { soloTexto, type Parametros } from "@/nucleo/direccion";
@@ -13,7 +13,7 @@ import "@/estilo/inventario-tarjetas.css";
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Tarjetas · Operación" };
 
-export default async function TarjetasOperacion({ searchParams }: { searchParams: Parametros<"ver"> }) {
+export default async function TarjetasOperacion({ searchParams }: { searchParams: Parametros<"ver" | "empresa"> }) {
   const ctx = await exigirContextoOperacion();
   if (!puedeEnOperacion(ctx, "plataforma.empresa.alta")) {
     return (
@@ -25,7 +25,7 @@ export default async function TarjetasOperacion({ searchParams }: { searchParams
   const [inventario, params] = await Promise.all([leerInventarioTarjetas(ctx), soloTexto(searchParams)]);
   return (
     <PaginaOperacion titulo="Tarjetas">
-      <TableroTarjetas inventario={inventario} filtro={filtroDe(params.ver)} />
+      <TableroTarjetas inventario={inventario} filtro={filtroDe(params.ver)} empresa={empresaDe(params.empresa)} />
     </PaginaOperacion>
   );
 }

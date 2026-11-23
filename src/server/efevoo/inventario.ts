@@ -43,7 +43,14 @@ export type TarjetaDelInventario = {
   idepClienteAjeno: number | null;
   nombreTarjeta: string | null;
   entregadaEn: string | null;
+  /**
+   * La empresa por la que se afilió la tarjeta, para agrupar y filtrar: la de Lever (clave = su id) o el cliente del
+   * procesador que no es de Lever (clave «p» + su número; el sandbox es compartido). Nula en el stock libre.
+   */
+  afiliacion: Afiliacion | null;
 };
+
+export type Afiliacion = { clave: string; nombre: string; enLever: boolean; companyId: string | null };
 
 export type Conteos = {
   /** Todos los plásticos, sin los cancelados. */
@@ -126,6 +133,8 @@ export function armarInventario(
     ambiente: "sandbox" | "produccion" | null;
     errorEfevoo: string | null;
     incompleto: boolean;
+    /** El nombre de los clientes del procesador que no son de Lever, si se pudo leer. */
+    nombresAjenos?: ReadonlyMap<number, string>;
   },
 ): InventarioTarjetas {
   const porIdEfevoo = new Map(entrada.lever.map((f) => [f.idEfevoo, f]));
@@ -136,6 +145,7 @@ export function armarInventario(
       const enLever = porIdEfevoo.get(t.id);
       const vinculo = t.idepCliente !== 0 ? porIdep.get(t.idepCliente) : undefined;
       const empresa = enLever ? { id: enLever.companyId, razonSocial: enLever.razonSocial } : vinculo ? { id: vinculo.companyId, razonSocial: vinculo.razonSocial } : null;
+      const idepClienteAjeno = !empresa && t.idepCliente !== 0 ? t.idepCliente : null;
       return {
         clave: `e${t.id}`,
         idEfevoo: t.id,
@@ -143,9 +153,14 @@ export function armarInventario(
         clase: claseDeEfevoo(t, enLever),
         saldoCentavos: t.saldoCentavos,
         empresa,
-        idepClienteAjeno: !empresa && t.idepCliente !== 0 ? t.idepCliente : null,
+        idepClienteAjeno,
         nombreTarjeta: enLever?.nombreTarjeta ?? null,
         entregadaEn: enLever?.creadaEn ?? null,
+        afiliacion: empresa
+          ? { clave: empresa.id, nombre: empresa.razonSocial, enLever: true, companyId: empresa.id }
+          : idepClienteAjeno !== null
+            ? { clave: `p${idepClienteAjeno}`, nombre: entrada.nombresAjenos?.get(idepClienteAjeno)?.trim() || `Cliente ${idepClienteAjeno}`, enLever: false, companyId: null }
+            : null,
       };
     });
   } else {
@@ -159,6 +174,7 @@ export function armarInventario(
       idepClienteAjeno: null,
       nombreTarjeta: f.nombreTarjeta,
       entregadaEn: f.creadaEn,
+      afiliacion: { clave: f.companyId, nombre: f.razonSocial, enLever: true, companyId: f.companyId },
     }));
   }
   return {
@@ -181,6 +197,20 @@ async function leerEfevoo(efevoo: ClienteEfevoo): Promise<{ tarjetas: TarjetaEfe
     if (pagina >= lista.paginaFinal || lista.tarjetas.length === 0) return { tarjetas, incompleto: false };
   }
   return { tarjetas, incompleto: true };
+}
+
+/** El nombre de los clientes del procesador que tienen tarjetas y no son empresas de Lever. Sin nombres si no responde: la lista sale igual. */
+async function nombresDeAjenos(efevoo: ClienteEfevoo, tarjetas: readonly TarjetaEfevoo[], vinculos: readonly Vinculo[]): Promise<Map<number, string>> {
+  const deLever = new Set(vinculos.map((v) => v.idepCliente));
+  const ids = [...new Set(tarjetas.map((t) => t.idepCliente).filter((id) => id !== 0 && !deLever.has(id)))];
+  if (ids.length === 0) return new Map();
+  try {
+    const clientes = await efevoo.listarClientes(ids);
+    return new Map(clientes.filter((c) => c.nombre).map((c) => [c.idepCliente, c.nombre!]));
+  } catch (error) {
+    if (!(error instanceof ErrorEfevoo)) throw error;
+    return new Map();
+  }
 }
 
 export async function leerInventarioTarjetas(ctx: ContextoDePersonal, deps?: Dependencias): Promise<InventarioTarjetas> {
@@ -221,7 +251,8 @@ export async function leerInventarioTarjetas(ctx: ContextoDePersonal, deps?: Dep
   if (!efevoo) return armarInventario({ efevoo: null, lever, vinculos, ambiente, errorEfevoo: null, incompleto: false });
   try {
     const leido = await leerEfevoo(efevoo);
-    return armarInventario({ efevoo: leido.tarjetas, lever, vinculos, ambiente, errorEfevoo: null, incompleto: leido.incompleto });
+    const nombresAjenos = await nombresDeAjenos(efevoo, leido.tarjetas, vinculos);
+    return armarInventario({ efevoo: leido.tarjetas, lever, vinculos, ambiente, errorEfevoo: null, incompleto: leido.incompleto, nombresAjenos });
   } catch (error) {
     if (!(error instanceof ErrorEfevoo)) throw error;
     return armarInventario({ efevoo: null, lever, vinculos, ambiente, errorEfevoo: error.codigo, incompleto: false });
