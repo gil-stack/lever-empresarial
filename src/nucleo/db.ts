@@ -238,6 +238,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (dePersonas) return new ErrorDeDominio(dePersonas);
     if (CODIGOS_DE_TENENCIA.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_ALTA_REGULADA.has(mensaje)) return new ErrorDeDominio(mensaje);
+    if (CODIGOS_DE_CLIENTES_DE_PRUEBA.has(mensaje)) return new ErrorDeDominio(mensaje);
     const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
     if (deProveedor) return new ErrorDeDominio(deProveedor);
     const deFlujo = FRASES_DE_FLUJO[mensaje.trim()];
@@ -304,6 +305,17 @@ function registrarErrorSinTraducir(error: unknown, codigo: string): void {
 /** Llave primaria de las tablas reguladas: su id es el del formulario que la crea. */
 const FORMULARIOS_REGULADOS =
   /^(kyb_versiones|kyb_documentos|kyb_representantes|kyb_accionistas|kyb_dictamenes|kyb_calificaciones_riesgo|lpb_cargas|company_suspensions)_pkey /;
+
+/** Clientes de prueba (0050): la puerta del alta rápida y la del archivo. */
+const CODIGOS_DE_CLIENTES_DE_PRUEBA = new Set([
+  "sin_permiso_cliente_de_prueba",
+  "rfc_duplicado",
+  "no_es_cliente_de_prueba",
+  "cliente_de_prueba_ya_archivado",
+  "cliente_de_prueba_por_su_puerta",
+  "cliente_de_prueba_no_se_desmarca",
+  "correo_es_de_personal",
+]);
 
 /** Reglas de la alta regulada (0028): roles, expediente, riesgo, lista de bloqueados, suspensión y candado. */
 const CODIGOS_DE_ALTA_REGULADA = new Set([

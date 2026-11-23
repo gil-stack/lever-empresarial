@@ -15,6 +15,8 @@ export type EstadoDelFormulario = {
   detalle?: string;
   /** La invitación emitida cuyo correo no salió: su enlace, para copiarlo (solo en la respuesta de ese envío). */
   enlace?: string;
+  /** El cliente de prueba que acaba de quedar dado de alta (alta rápida): para pintar el resultado en la misma pantalla. */
+  clienteDePrueba?: { id: string; razonSocial: string; correo: string; entrega: string; tarjetas: string | null };
 };
 
 /** El código del rechazo, para la página que responde a ese mismo envío (ver `rechazado` y `PaginaOperacion`). */

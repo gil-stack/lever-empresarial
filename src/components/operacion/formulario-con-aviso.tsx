@@ -53,6 +53,8 @@ export function useFormularioConAviso(accion: AccionConAviso, idAviso: string) {
     resumen: <AvisoOperacion codigo={aviso} id={idAviso} detalle={estado.detalle} />,
     /** El enlace de una invitación cuyo correo no salió (solo en la respuesta de ese envío). */
     enlace: estado.enlace ?? null,
+    /** El cliente de prueba que acaba de quedar dado de alta (solo en la respuesta de ese envío). */
+    clienteDePrueba: estado.clienteDePrueba ?? null,
   };
 }
 

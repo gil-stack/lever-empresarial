@@ -96,6 +96,8 @@ export function etiquetaAccion(accion: string): string | null {
     alta_personal: "Alta de personal de Operación",
     alta_empresa: "Alta de empresa",
     prospecto_registrado: "Registró un prospecto",
+    cliente_prueba_creado: "Dio de alta un cliente de prueba (alta rápida)",
+    cliente_prueba_archivado: "Archivó un cliente de prueba",
     activacion_solicitada: "Pidió la activación",
     activacion_aprobada: "Aprobó la activación",
     activacion_rechazada: "Rechazó la activación",

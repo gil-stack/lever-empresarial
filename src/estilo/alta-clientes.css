@@ -192,3 +192,41 @@
   font-family: var(--fm);
   font-size: 12px;
 }
+
+/* Clientes de prueba (alta rápida). */
+.prueba-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.prueba-resultado {
+  margin: 0 0 20px;
+  padding: 16px;
+  border: 1px solid var(--acc);
+  border-radius: 10px;
+}
+
+.prueba-resultado-titulo {
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.prueba-resultado-lista {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: var(--tx2);
+}
+
+.prueba-resultado-lista li + li {
+  margin-top: 6px;
+}
+
+.prueba-confirmar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  color: var(--tx2);
+}

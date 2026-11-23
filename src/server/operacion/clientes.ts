@@ -87,7 +87,7 @@ export async function listarClientes(ctx: ContextoDePersonal): Promise<ClienteRe
   exigirEnOperacion(ctx, "plataforma.operacion.ver");
   const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
     consulta.query(
-      `select c.id, c.rfc, c.razon_social, c.estado, c.alta_at,
+      `select c.id, c.rfc, c.razon_social, c.estado, c.alta_at, c.de_prueba,
         r.id as solicitud_pendiente_id,
         (select u.nombre from memberships m
           join membership_roles mr on mr.company_id = m.company_id and mr.user_id = m.user_id and mr.rol = 'administrador'
@@ -95,6 +95,7 @@ export async function listarClientes(ctx: ContextoDePersonal): Promise<ClienteRe
           where m.company_id = c.id order by m.alta_en, u.nombre limit 1) as administrador
        from companies c
        left join company_activation_requests r on r.company_id = c.id and r.estado = 'pendiente'
+       where c.archivada_en is null
        order by c.alta_at desc, c.razon_social
        limit 300`,
       [],
@@ -109,7 +110,7 @@ export async function leerCliente(ctx: ContextoDePersonal, companyId: unknown): 
   return conContexto(basePlataforma(ctx, companyId), async (consulta) => {
     const empresa = await consulta.query(
       `select c.id, c.rfc, c.razon_social, c.codigo_postal, c.regimen, c.uso_cfdi,
-        c.estado, c.alta_at, r.id as solicitud_pendiente_id, c.contacto_nombre, c.contacto_correo,
+        c.estado, c.alta_at, r.id as solicitud_pendiente_id, c.contacto_nombre, c.contacto_correo, c.de_prueba, c.archivada_en,
         (select u.nombre from memberships m
           join membership_roles mr on mr.company_id = m.company_id and mr.user_id = m.user_id and mr.rol = 'administrador'
           join users u on u.id = m.user_id
@@ -149,6 +150,7 @@ export async function leerCliente(ctx: ContextoDePersonal, companyId: unknown): 
       usoCfdi: String((fila as Record<string, unknown>).uso_cfdi),
       contactoNombre: textoONulo((fila as Record<string, unknown>).contacto_nombre),
       contactoCorreo: textoONulo((fila as Record<string, unknown>).contacto_correo),
+      archivadaEn: (fila as Record<string, unknown>).archivada_en ? fecha((fila as Record<string, unknown>).archivada_en) : null,
       historial: (historial.rows as Array<Record<string, unknown>>).map((evento) => ({
         id: String(evento.id),
         estadoAnterior: evento.estado_anterior === null ? null : (evento.estado_anterior as EstadoCliente),
@@ -177,6 +179,7 @@ function mapearResumen(valor: unknown): ClienteResumen {
     rfc: String(fila.rfc),
     razonSocial: String(fila.razon_social),
     estado: fila.estado as EstadoCliente,
+    dePrueba: fila.de_prueba === true,
     altaEn: fecha(fila.alta_at),
     solicitudPendienteId: typeof fila.solicitud_pendiente_id === "string" ? fila.solicitud_pendiente_id : null,
     administrador: typeof fila.administrador === "string" ? fila.administrador : null,

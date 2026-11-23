@@ -10,6 +10,8 @@ export type EmpresaDelContexto = {
   operadorId: string;
   estado: string;
   demostracion: boolean;
+  /** Cliente de prueba del alta rápida (0050). Ausente en un cliente real. */
+  dePrueba?: boolean;
 };
 
 export type PersonalDelContexto = {
