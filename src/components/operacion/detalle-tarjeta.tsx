@@ -2,11 +2,11 @@ import Link from "next/link";
 
 import { Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
+import { ESTADO_DE_CLASE } from "@/dominio/tarjetas/inventario";
 import { claseDeImporte, conceptoSeguro, importeMovimiento } from "@/dominio/tarjetas/vista";
 import type { DetalleTarjeta } from "@/server/efevoo/detalle-tarjeta";
 
 import { fechaHora } from "./formato";
-import { enlaceTablero, ESTADO } from "./inventario-tarjetas";
 
 const TIPOS: Record<string, string> = {
   asignacion: "Asignación",
@@ -22,7 +22,6 @@ const ESTADOS_OPERACION: Record<string, string> = { pendiente: "Pendiente", conf
 
 const SIN_MOVIMIENTOS: Record<NonNullable<DetalleTarjeta["sinMovimientos"]>, string> = {
   sin_titular: "La tarjeta todavía no tiene titular, así que no tiene movimientos.",
-  sin_conexion: "Este entorno no está conectado con el procesador de tarjetas: los movimientos se leen de ahí.",
   no_respondio: "El procesador no respondió al leer los movimientos. Intenta de nuevo en unos minutos.",
 };
 
@@ -40,77 +39,60 @@ export function fechaDelProcesador(valor: string): string {
 
 export function DetalleDeTarjeta({ detalle }: { detalle: DetalleTarjeta }) {
   const t = detalle.tarjeta;
-  const estado = ESTADO[t.clase];
-  const conSaldo = detalle.fuente === "efevoo";
+  const estado = ESTADO_DE_CLASE[t.clase];
   const r = detalle.resumen;
   return (
-    <div className="inventario">
-      <section className="inventario-cabeza" aria-labelledby="tarjeta-resumen">
-        <div className="inventario-total">
-          <h2 id="tarjeta-resumen" className="rotulo">Tarjeta</h2>
-          <p className="inventario-total-valor operacion-mono">•••• {t.terminacion}</p>
-          <p className="pista">
-            {t.nombreTarjeta ?? "Sin nombre en el plástico"}
-            {detalle.ambiente === "sandbox" ? " · ambiente de pruebas" : ""}
-          </p>
-          <p className="inventario-saldo">
-            <span className="rotulo">Saldo</span>
-            <span className="monto">{t.saldoCentavos === null ? (conSaldo ? "Sin dato" : "—") : formatoPesos(t.saldoCentavos)}</span>
-          </p>
+    <div className="tarjeta-detalle">
+      <section className="tarjeta-ficha" aria-label="Resumen de la tarjeta">
+        <div className="tarjeta-ficha-saldo">
+          <span className="rotulo">Saldo actual</span>
+          <span className="tarjeta-ficha-valor">{t.saldoCentavos === null ? "—" : formatoPesos(t.saldoCentavos)}</span>
+          <span className={`tarjetas-punto tarjetas-punto-${estado.tono}`}>{estado.texto}</span>
         </div>
         <Renglones>
-          <Renglon etiqueta="Estado"><Insignia tono={estado.tono}>{t.clase === "asignada" ? "Por activar" : estado.texto}</Insignia></Renglon>
           <Renglon etiqueta="Empresa">
-            {t.afiliacion ? (
+            {t.empresa ? (
               <>
-                <Link href={enlaceTablero("todas", t.afiliacion.clave)}>{t.afiliacion.nombre}</Link>
-                {t.afiliacion.companyId ? (
-                  <> · <Link href={`/operacion/clientes/${t.afiliacion.companyId}`}>Ficha del cliente</Link></>
+                {t.empresa.nombre}
+                {t.empresa.companyId ? (
+                  <> · <Link href={`/operacion/clientes/${t.empresa.companyId}`}>Ver ficha del cliente</Link></>
                 ) : (
-                  <span className="pista"> · fuera de Lever</span>
+                  <span className="pista"> · no es una empresa de Lever</span>
                 )}
               </>
             ) : (
-              <span className="pista">Sin empresa (stock libre)</span>
+              <span className="pista">Sin empresa: está disponible para entregarse</span>
             )}
           </Renglon>
           <Renglon etiqueta="Titular">{detalle.titular ?? <span className="pista">{t.clase === "sin_asignar" ? "Sin titular" : "No registrado en Lever"}</span>}</Renglon>
+          <Renglon etiqueta="Nombre en la tarjeta">{t.nombreTarjeta ?? <span className="pista">—</span>}</Renglon>
           <Renglon etiqueta="Entregada por Lever">{t.entregadaEn ? fechaHora(new Date(t.entregadaEn)) : <span className="pista">—</span>}</Renglon>
           {detalle.canceladaEn ? <Renglon etiqueta="Cancelada">{fechaHora(new Date(detalle.canceladaEn))}</Renglon> : null}
           {detalle.motivoCancelacion ? <Renglon etiqueta="Motivo de la cancelación">{detalle.motivoCancelacion}</Renglon> : null}
         </Renglones>
       </section>
 
-      {detalle.errorEfevoo ? (
-        <NotaRegla>El procesador no respondió: se muestra lo que Lever sabe de la tarjeta, sin saldo ni movimientos.</NotaRegla>
-      ) : null}
-
       {r ? (
-        <ul className="inventario-cifras inventario-cifras-cuatro" aria-label="Resumen de movimientos">
-          <li className="inventario-cifra">
-            <span className="rotulo">Movimientos</span>
-            <span className="inventario-valor">{r.cuantos}</span>
-            <span className="pista">{r.ultimo ? `Último: ${fechaDelProcesador(r.ultimo)}` : "Sin movimientos"}</span>
-          </li>
-          <li className="inventario-cifra inventario-cifra-saldo">
+        <ul className="tarjeta-cifras" aria-label="Resumen de movimientos">
+          <li>
             <span className="rotulo">Entró</span>
-            <span className="inventario-valor">{formatoPesos(r.abonadoCentavos)}</span>
-            <span className="pista">Cargas y abonos</span>
+            <span className="tarjeta-cifra-valor">{formatoPesos(r.abonadoCentavos)}</span>
+            <span className="pista">Cargas a la tarjeta</span>
           </li>
-          <li className="inventario-cifra inventario-cifra-asignada">
+          <li>
             <span className="rotulo">Salió</span>
-            <span className="inventario-valor">{formatoPesos(r.cargadoCentavos)}</span>
+            <span className="tarjeta-cifra-valor">{formatoPesos(r.cargadoCentavos)}</span>
             <span className="pista">Compras y retiros</span>
           </li>
-          <li className="inventario-cifra">
-            <span className="rotulo">Saldo actual</span>
-            <span className="inventario-valor">{t.saldoCentavos === null ? "—" : formatoPesos(t.saldoCentavos)}</span>
-            <span className="pista">Según el procesador</span>
+          <li>
+            <span className="rotulo">Movimientos</span>
+            <span className="tarjeta-cifra-valor">{r.cuantos}</span>
+            <span className="pista">{r.ultimo ? `Último: ${fechaDelProcesador(r.ultimo)}` : "Sin movimientos"}</span>
           </li>
         </ul>
       ) : null}
 
-      <Hoja id="tarjeta-movimientos" titulo={`Movimientos${detalle.movimientos ? ` · ${detalle.movimientos.length}` : ""}`} className="inventario-lista">
+      <Hoja id="tarjeta-movimientos" titulo={`Movimientos${detalle.movimientos ? ` · ${detalle.movimientos.length}` : ""}`} className="tarjeta-seccion">
         {detalle.movimientos === null ? (
           <Vacio titulo="Sin movimientos que mostrar">{detalle.sinMovimientos ? SIN_MOVIMIENTOS[detalle.sinMovimientos] : null}</Vacio>
         ) : detalle.movimientos.length === 0 ? (
@@ -122,8 +104,8 @@ export function DetalleDeTarjeta({ detalle }: { detalle: DetalleTarjeta }) {
                 <tr>
                   <th scope="col">Fecha</th>
                   <th scope="col">Concepto</th>
-                  <th scope="col" className="inventario-num">Importe</th>
-                  <th scope="col" className="inventario-num">Saldo después</th>
+                  <th scope="col" className="tarjetas-num">Importe</th>
+                  <th scope="col" className="tarjetas-num">Saldo después</th>
                   <th scope="col">Referencia</th>
                 </tr>
               </thead>
@@ -135,10 +117,10 @@ export function DetalleDeTarjeta({ detalle }: { detalle: DetalleTarjeta }) {
                       {conceptoSeguro(m.concepto) || <span className="pista">Sin concepto</span>}
                       {m.tipo ? <small>{m.tipo === "abono" ? "Abono" : "Cargo"}</small> : null}
                     </td>
-                    <td data-rotulo="Importe" className={`inventario-num ${claseDeImporte(m.tipo)}`}>
+                    <td data-rotulo="Importe" className={`tarjetas-num ${claseDeImporte(m.tipo)}`}>
                       {importeMovimiento({ montoCentavos: m.centavos, tipo: m.tipo }) ?? "—"}
                     </td>
-                    <td data-rotulo="Saldo después" className="inventario-num">
+                    <td data-rotulo="Saldo después" className="tarjetas-num">
                       {m.saldoDespuesCentavos === null ? "—" : formatoPesos(m.saldoDespuesCentavos)}
                     </td>
                     <td data-rotulo="Referencia" className="operacion-mono">{m.referencia ?? "—"}</td>
@@ -150,7 +132,7 @@ export function DetalleDeTarjeta({ detalle }: { detalle: DetalleTarjeta }) {
         )}
       </Hoja>
 
-      <Hoja id="tarjeta-operaciones" titulo={`Lo que hizo Lever con la tarjeta · ${detalle.operaciones.length}`} className="inventario-lista">
+      <Hoja id="tarjeta-operaciones" titulo={`Lo que hizo Lever con la tarjeta · ${detalle.operaciones.length}`} className="tarjeta-seccion">
         {detalle.operaciones.length === 0 ? (
           <Vacio titulo="Sin operaciones de Lever">Lever no ha asignado, cargado ni cambiado esta tarjeta.</Vacio>
         ) : (
@@ -161,7 +143,7 @@ export function DetalleDeTarjeta({ detalle }: { detalle: DetalleTarjeta }) {
                   <th scope="col">Fecha</th>
                   <th scope="col">Operación</th>
                   <th scope="col">Estado</th>
-                  <th scope="col" className="inventario-num">Monto</th>
+                  <th scope="col" className="tarjetas-num">Monto</th>
                   <th scope="col">Referencia</th>
                 </tr>
               </thead>
@@ -175,7 +157,7 @@ export function DetalleDeTarjeta({ detalle }: { detalle: DetalleTarjeta }) {
                         {ESTADOS_OPERACION[o.estado] ?? o.estado}
                       </Insignia>
                     </td>
-                    <td data-rotulo="Monto" className="inventario-num">{o.montoCentavos === null ? "—" : formatoPesos(o.montoCentavos)}</td>
+                    <td data-rotulo="Monto" className="tarjetas-num">{o.montoCentavos === null ? "—" : formatoPesos(o.montoCentavos)}</td>
                     <td data-rotulo="Referencia" className="operacion-mono">{o.referencia}</td>
                   </tr>
                 ))}

@@ -1,260 +1,273 @@
+import { after } from "next/server";
+
 import type { ContextoDePersonal } from "../../nucleo/contexto";
 import { basePlataforma } from "../../nucleo/contexto";
-import { aplicarSentencia, conContexto } from "../../nucleo/db";
-import { instante, registro, texto } from "../flujo/lectura";
+import { aplicarSentencia, conContexto, type Consulta } from "../../nucleo/db";
+import { CLASE_DEL_ESTADO, ESTADOS, SIN_EMPRESA, busquedaDe, type ClaseTarjeta, type EstadoFiltro } from "../../dominio/tarjetas/inventario";
+import { instanteONulo, registro, texto } from "../flujo/lectura";
 import { exigirEnOperacion } from "../operacion/permisos";
-import { clienteHttpEfevoo, type ClienteEfevoo, type TarjetaEfevoo } from "./cliente";
-import { configEfevoo, type ConfigEfevoo } from "./config";
-import { ErrorEfevoo } from "./errores";
+import { clienteHttpEfevoo, type ClienteEfevoo } from "./cliente";
+import { configEfevoo, type AmbienteEfevoo, type ConfigEfevoo } from "./config";
+import { haceFaltaLeer, leerEstadoLectura, refrescarCopia, type EstadoLectura } from "./inventario-copia";
+
+export type { ClaseTarjeta } from "../../dominio/tarjetas/inventario";
 
 /**
- * El inventario de tarjetas de toda la cartera, para la sección «Tarjetas» de
- * Operación (solo Administración de la plataforma, la misma capacidad que la
- * sección de Efevoo de la ficha del cliente).
+ * Operación → Tarjetas: el inventario de plásticos de toda la cartera (solo Administración de la plataforma, la misma
+ * capacidad que la sección de tarjetas de la ficha del cliente).
  *
- * La fuente de verdad del stock y de los saldos es Efevoo (getCardsList, por
- * páginas). Lever pone a qué empresa va cada tarjeta y su nombre. Sin conexión
- * con Efevoo (entorno sin EFEVOO_* o Efevoo sin responder) se pinta lo que hay
- * en Lever: tarjetas entregadas, sin stock ni saldos.
+ * El stock, el estado y el saldo vienen del procesador, por medio de la copia local (inventario-copia.ts). Lever pone
+ * a qué empresa va cada tarjeta y el nombre del plástico. Buscar, filtrar, contar y paginar se hace en la base, así
+ * que la pantalla responde igual con 15 tarjetas que con 100 mil.
  */
 
 const CAPACIDAD = "plataforma.empresa.alta" as const;
-/** Tope de páginas de getCardsList (40 × 50 = 2000 plásticos), el mismo que usa buscarTarjeta. */
-const PAGINAS = 40;
-const TAMANO = 50;
+export const POR_PAGINA = 50;
+/** Tope de empresas en el selector; con más, se encuentran escribiendo en el buscador. */
+const EMPRESAS_EN_SELECTOR = 300;
 
-/**
- * La clase de una tarjeta en el tablero. «sin_asignar» es stock libre: en Efevoo,
- * en inventario, sin titular y sin cliente. «asignada» ya tiene dueño pero aún
- * no se activa. Una activa se parte en «con saldo» y «sin saldo».
- */
-export type ClaseTarjeta = "sin_asignar" | "asignada" | "activa_con_saldo" | "activa_sin_saldo" | "bloqueada" | "cancelada";
+export type EmpresaDeTarjeta = { clave: string; nombre: string; companyId: string | null };
 
 export type TarjetaDelInventario = {
-  /** El id de Efevoo; el de Lever si solo se conoce por Lever. */
-  clave: string;
-  idEfevoo: number | null;
+  id: number;
   terminacion: string;
   clase: ClaseTarjeta;
   saldoCentavos: number | null;
-  /** La empresa de Lever a la que va, si la hay. */
-  empresa: { id: string; razonSocial: string } | null;
-  /** El cliente de Efevoo cuando no es una empresa de Lever (el sandbox es compartido). */
-  idepClienteAjeno: number | null;
+  /** La empresa por la que se afilió: una de Lever o un cliente del procesador que no es de Lever. Nula si está disponible. */
+  empresa: EmpresaDeTarjeta | null;
+  /** El nombre impreso en el plástico, si Lever lo entregó. */
   nombreTarjeta: string | null;
   entregadaEn: string | null;
-  /**
-   * La empresa por la que se afilió la tarjeta, para agrupar y filtrar: la de Lever (clave = su id) o el cliente del
-   * procesador que no es de Lever (clave «p» + su número; el sandbox es compartido). Nula en el stock libre.
-   */
-  afiliacion: Afiliacion | null;
 };
 
-export type Afiliacion = { clave: string; nombre: string; enLever: boolean; companyId: string | null };
-
-export type Conteos = {
-  /** Todos los plásticos, sin los cancelados. */
-  stock: number;
-  sinAsignar: number;
-  asignadas: number;
+export type Resumen = {
+  total: number;
   activas: number;
   conSaldo: number;
-  sinSaldo: number;
+  porActivar: number;
+  disponibles: number;
   bloqueadas: number;
   canceladas: number;
-  /** Suma de los saldos de las activas y bloqueadas. Nulo si no se leyó Efevoo. */
-  saldoTotalCentavos: number | null;
+  saldoCentavos: number;
 };
 
-export type InventarioTarjetas = {
-  /** efevoo: leído de Efevoo; lever: solo lo de Lever (sin conexión o Efevoo no respondió). */
-  fuente: "efevoo" | "lever";
-  ambiente: "sandbox" | "produccion" | null;
-  /** El código si Efevoo no respondió; nulo si leyó bien o si el entorno no tiene Efevoo. */
-  errorEfevoo: string | null;
-  /** La lectura de Efevoo se cortó en el tope de páginas. */
-  incompleto: boolean;
-  conteos: Conteos;
+export type FiltroTarjetas = { q: string; estado: EstadoFiltro; empresa: string | null; pagina: number };
+
+export type VistaTarjetas = {
+  /** sin_conexion: el entorno no tiene el procesador configurado. */
+  conexion: "lista" | "sin_conexion";
+  ambiente: AmbienteEfevoo | null;
+  lectura: EstadoLectura | null;
+  /** De todo el inventario, sin filtros. */
+  resumen: Resumen;
+  /** Cuántas hay en cada estado con la búsqueda y la empresa elegidas (para los botones de estado). */
+  porEstado: Record<EstadoFiltro, number>;
+  empresas: (EmpresaDeTarjeta & { tarjetas: number })[];
+  empresaElegida: EmpresaDeTarjeta | null;
+  filtro: FiltroTarjetas;
+  /** Cuántas cumplen todos los filtros. */
+  total: number;
   tarjetas: TarjetaDelInventario[];
 };
 
-export type FilaLever = {
-  id: string;
-  idEfevoo: number;
-  terminacion: string;
-  nombreTarjeta: string;
-  estado: "asignada" | "activa" | "bloqueada" | "cancelada";
-  companyId: string;
-  razonSocial: string;
-  creadaEn: string;
-};
+/**
+ * Cada plástico de la copia con su clase y su empresa. $1 es el ambiente. La política de RLS deja solo los del
+ * operador. Una tarjeta que Lever entregó lleva la empresa de Lever aunque el procesador no la ligue a un cliente.
+ */
+const BASE = `
+  with base as (
+    select i.id_tarjeta, i.terminacion, i.saldo_centavos, i.idep_cliente,
+           t.nombre_tarjeta, t.creada_en as entregada_en,
+           coalesce(t.company_id, v.company_id) as company_id,
+           case
+             when coalesce(t.company_id, v.company_id) is not null then coalesce(t.company_id, v.company_id)::text
+             when i.idep_cliente <> 0 then 'p' || i.idep_cliente
+             else '${SIN_EMPRESA}'
+           end as empresa_clave,
+           case
+             when coalesce(t.company_id, v.company_id) is not null then coalesce(ct.razon_social, cv.razon_social)
+             when i.idep_cliente <> 0 then coalesce(nullif(btrim(i.nombre_cliente), ''), 'Cliente externo ' || i.idep_cliente)
+           end as empresa_nombre,
+           case
+             when i.estado = 'cancelled' then 'cancelada'
+             when i.estado = 'blocked' then 'bloqueada'
+             when i.estado = 'inactive' then 'asignada'
+             when i.estado = 'active' and coalesce(i.saldo_centavos, 0) > 0 then 'activa_con_saldo'
+             when i.estado = 'active' then 'activa_sin_saldo'
+             when i.con_titular or i.idep_cliente <> 0 or t.id is not null then 'asignada'
+             else 'sin_asignar'
+           end as clase
+      from tarjetas_inventario i
+      left join efevoo_tarjetas t on t.ambiente = i.ambiente and t.id_efevoo = i.id_tarjeta
+      left join companies ct on ct.id = t.company_id
+      left join efevoo_clientes v on i.idep_cliente <> 0 and v.ambiente = i.ambiente and v.idep_cliente = i.idep_cliente
+      left join companies cv on cv.id = v.company_id
+     where i.ambiente = $1
+  )`;
 
-export type Vinculo = { idepCliente: number; companyId: string; razonSocial: string };
-
-function claseDeEfevoo(t: TarjetaEfevoo, enLever: FilaLever | undefined): ClaseTarjeta {
-  if (t.estado === "cancelled") return "cancelada";
-  if (t.estado === "blocked") return "bloqueada";
-  if (t.estado === "inactive") return "asignada";
-  if (t.estado === "active") return (t.saldoCentavos ?? 0) > 0 ? "activa_con_saldo" : "activa_sin_saldo";
-  return t.conTitular || t.idepCliente !== 0 || enLever ? "asignada" : "sin_asignar";
+/** La condición de la búsqueda y la empresa, con sus parámetros a partir de $desde. Pura: la prueban sin base. */
+export function condicion(filtro: Pick<FiltroTarjetas, "q" | "empresa">, desde: number): { sql: string; params: unknown[] } {
+  const partes: string[] = [];
+  const params: unknown[] = [];
+  const p = (valor: unknown) => {
+    params.push(valor);
+    return `$${desde + params.length - 1}`;
+  };
+  const b = busquedaDe(filtro.q);
+  if (b.tipo === "terminacion") {
+    const d = p(b.digitos);
+    partes.push(`(terminacion like '%' || ${d} or id_tarjeta::text = ${d})`);
+  } else if (b.tipo === "numero") {
+    partes.push(`id_tarjeta::text = ${p(b.digitos)}`);
+  } else if (b.tipo === "texto") {
+    const t = p(`%${b.texto.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
+    partes.push(`(empresa_nombre ilike ${t} or nombre_tarjeta ilike ${t})`);
+  }
+  if (filtro.empresa) partes.push(`empresa_clave = ${p(filtro.empresa)}`);
+  return { sql: partes.length ? partes.join(" and ") : "true", params };
 }
 
-function claseDeLever(estado: FilaLever["estado"]): ClaseTarjeta {
-  // Sin Efevoo no hay saldo: una activa se cuenta como activa «sin saldo leído» (clase sin saldo, saldo nulo).
-  return estado === "activa" ? "activa_sin_saldo" : estado;
-}
-
-export function contar(tarjetas: readonly TarjetaDelInventario[], conSaldos: boolean): Conteos {
-  const de = (clase: ClaseTarjeta) => tarjetas.filter((t) => t.clase === clase).length;
-  const conSaldo = de("activa_con_saldo");
-  const sinSaldo = de("activa_sin_saldo");
-  const canceladas = de("cancelada");
+function tarjetaDeFila(f: Record<string, unknown>): TarjetaDelInventario {
+  const clave = texto(f.empresa_clave);
   return {
-    stock: tarjetas.length - canceladas,
-    sinAsignar: de("sin_asignar"),
-    asignadas: de("asignada"),
-    activas: conSaldo + sinSaldo,
-    conSaldo,
-    sinSaldo,
-    bloqueadas: de("bloqueada"),
-    canceladas,
-    saldoTotalCentavos: conSaldos
-      ? tarjetas.filter((t) => t.clase !== "cancelada").reduce((suma, t) => suma + (t.saldoCentavos ?? 0), 0)
-      : null,
+    id: Number(f.id_tarjeta),
+    terminacion: texto(f.terminacion),
+    clase: texto(f.clase) as ClaseTarjeta,
+    saldoCentavos: f.saldo_centavos === null ? null : Number(f.saldo_centavos),
+    empresa: clave === SIN_EMPRESA ? null : { clave, nombre: texto(f.empresa_nombre), companyId: f.company_id === null ? null : texto(f.company_id) },
+    nombreTarjeta: f.nombre_tarjeta === null ? null : texto(f.nombre_tarjeta),
+    entregadaEn: instanteONulo(f.entregada_en),
   };
 }
 
-/** Junta lo de Efevoo (si se leyó) con lo de Lever. Pura: la prueban sin red ni base. */
-export function armarInventario(
-  entrada: {
-    efevoo: TarjetaEfevoo[] | null;
-    lever: readonly FilaLever[];
-    vinculos: readonly Vinculo[];
-    ambiente: "sandbox" | "produccion" | null;
-    errorEfevoo: string | null;
-    incompleto: boolean;
-    /** El nombre de los clientes del procesador que no son de Lever, si se pudo leer. */
-    nombresAjenos?: ReadonlyMap<number, string>;
-  },
-): InventarioTarjetas {
-  const porIdEfevoo = new Map(entrada.lever.map((f) => [f.idEfevoo, f]));
-  const porIdep = new Map(entrada.vinculos.map((v) => [v.idepCliente, v]));
-  let tarjetas: TarjetaDelInventario[];
-  if (entrada.efevoo) {
-    tarjetas = entrada.efevoo.map((t) => {
-      const enLever = porIdEfevoo.get(t.id);
-      const vinculo = t.idepCliente !== 0 ? porIdep.get(t.idepCliente) : undefined;
-      const empresa = enLever ? { id: enLever.companyId, razonSocial: enLever.razonSocial } : vinculo ? { id: vinculo.companyId, razonSocial: vinculo.razonSocial } : null;
-      const idepClienteAjeno = !empresa && t.idepCliente !== 0 ? t.idepCliente : null;
-      return {
-        clave: `e${t.id}`,
-        idEfevoo: t.id,
-        terminacion: t.terminacion,
-        clase: claseDeEfevoo(t, enLever),
-        saldoCentavos: t.saldoCentavos,
-        empresa,
-        idepClienteAjeno,
-        nombreTarjeta: enLever?.nombreTarjeta ?? null,
-        entregadaEn: enLever?.creadaEn ?? null,
-        afiliacion: empresa
-          ? { clave: empresa.id, nombre: empresa.razonSocial, enLever: true, companyId: empresa.id }
-          : idepClienteAjeno !== null
-            ? { clave: `p${idepClienteAjeno}`, nombre: entrada.nombresAjenos?.get(idepClienteAjeno)?.trim() || `Cliente ${idepClienteAjeno}`, enLever: false, companyId: null }
-            : null,
-      };
-    });
-  } else {
-    tarjetas = entrada.lever.map((f) => ({
-      clave: `l${f.id}`,
-      idEfevoo: f.idEfevoo,
-      terminacion: f.terminacion,
-      clase: claseDeLever(f.estado),
-      saldoCentavos: null,
-      empresa: { id: f.companyId, razonSocial: f.razonSocial },
-      idepClienteAjeno: null,
-      nombreTarjeta: f.nombreTarjeta,
-      entregadaEn: f.creadaEn,
-      afiliacion: { clave: f.companyId, nombre: f.razonSocial, enLever: true, companyId: f.companyId },
-    }));
-  }
-  return {
-    fuente: entrada.efevoo ? "efevoo" : "lever",
-    ambiente: entrada.ambiente,
-    errorEfevoo: entrada.errorEfevoo,
-    incompleto: entrada.incompleto,
-    conteos: contar(tarjetas, entrada.efevoo !== null),
-    tarjetas,
+const COLUMNAS = "id_tarjeta, terminacion, saldo_centavos, nombre_tarjeta, entregada_en, company_id, empresa_clave, empresa_nombre, clase";
+
+async function consultarVista(consulta: Consulta, ambiente: AmbienteEfevoo, filtro: FiltroTarjetas) {
+  const c = condicion(filtro, 2);
+  const conteos = (await aplicarSentencia(
+    consulta,
+    `${BASE}
+     select clase, count(*)::int as todas, (count(*) filter (where ${c.sql}))::int as filtradas,
+            coalesce(sum(saldo_centavos) filter (where clase <> 'cancelada'), 0)::text as saldo
+       from base group by clase`,
+    [ambiente, ...c.params],
+  )).rows.map(registro);
+  const deClase = (clase: ClaseTarjeta, campo: "todas" | "filtradas") => Number(conteos.find((f) => f.clase === clase)?.[campo] ?? 0);
+  const resumen: Resumen = {
+    total: conteos.reduce((s, f) => s + Number(f.todas), 0),
+    activas: deClase("activa_con_saldo", "todas") + deClase("activa_sin_saldo", "todas"),
+    conSaldo: deClase("activa_con_saldo", "todas"),
+    porActivar: deClase("asignada", "todas"),
+    disponibles: deClase("sin_asignar", "todas"),
+    bloqueadas: deClase("bloqueada", "todas"),
+    canceladas: deClase("cancelada", "todas"),
+    saldoCentavos: conteos.reduce((s, f) => s + Number(f.saldo), 0),
   };
-}
+  const porEstado = Object.fromEntries(
+    ESTADOS.map((e) => [e, e === "todas" ? conteos.reduce((s, f) => s + Number(f.filtradas), 0) : deClase(CLASE_DEL_ESTADO[e], "filtradas")]),
+  ) as Record<EstadoFiltro, number>;
+  const total = porEstado[filtro.estado];
 
-type Dependencias = { config?: ConfigEfevoo | null; efevoo?: ClienteEfevoo };
+  const conEstado = filtro.estado === "todas" ? c.sql : `${c.sql} and clase = $${2 + c.params.length}`;
+  const paramsLista = filtro.estado === "todas" ? [ambiente, ...c.params] : [ambiente, ...c.params, CLASE_DEL_ESTADO[filtro.estado]];
+  const n = paramsLista.length;
+  const tarjetas = (await aplicarSentencia(
+    consulta,
+    `${BASE}
+     select ${COLUMNAS} from base where ${conEstado}
+      order by saldo_centavos desc nulls last, id_tarjeta
+      limit $${n + 1} offset $${n + 2}`,
+    [...paramsLista, POR_PAGINA, (filtro.pagina - 1) * POR_PAGINA],
+  )).rows.map(registro).map(tarjetaDeFila);
 
-async function leerEfevoo(efevoo: ClienteEfevoo): Promise<{ tarjetas: TarjetaEfevoo[]; incompleto: boolean }> {
-  const tarjetas: TarjetaEfevoo[] = [];
-  for (let pagina = 1; pagina <= PAGINAS; pagina++) {
-    const lista = await efevoo.listarTarjetas({ estados: "todas", pagina, tamano: TAMANO });
-    tarjetas.push(...lista.tarjetas);
-    if (pagina >= lista.paginaFinal || lista.tarjetas.length === 0) return { tarjetas, incompleto: false };
+  const empresas = (await aplicarSentencia(
+    consulta,
+    `${BASE}
+     select empresa_clave, min(empresa_nombre) as empresa_nombre, min(company_id::text) as company_id, count(*)::int as tarjetas
+       from base where empresa_clave <> '${SIN_EMPRESA}' and clase <> 'cancelada'
+      group by empresa_clave order by count(*) desc, min(empresa_nombre) limit ${EMPRESAS_EN_SELECTOR}`,
+    [ambiente],
+  )).rows.map(registro).map((f) => ({
+    clave: texto(f.empresa_clave),
+    nombre: texto(f.empresa_nombre),
+    companyId: f.company_id === null ? null : texto(f.company_id),
+    tarjetas: Number(f.tarjetas),
+  }));
+
+  let empresaElegida: EmpresaDeTarjeta | null = null;
+  if (filtro.empresa === SIN_EMPRESA) empresaElegida = { clave: SIN_EMPRESA, nombre: "Sin empresa", companyId: null };
+  else if (filtro.empresa) {
+    empresaElegida = empresas.find((e) => e.clave === filtro.empresa) ?? null;
+    if (!empresaElegida) {
+      const fila = (await aplicarSentencia(
+        consulta,
+        `${BASE} select empresa_clave, empresa_nombre, company_id from base where empresa_clave = $2 limit 1`,
+        [ambiente, filtro.empresa],
+      )).rows[0];
+      if (fila) {
+        const f = registro(fila);
+        empresaElegida = { clave: texto(f.empresa_clave), nombre: texto(f.empresa_nombre), companyId: f.company_id === null ? null : texto(f.company_id) };
+      }
+    }
   }
-  return { tarjetas, incompleto: true };
+  return { resumen, porEstado, total, tarjetas, empresas, empresaElegida };
 }
 
-/** El nombre de los clientes del procesador que tienen tarjetas y no son empresas de Lever. Sin nombres si no responde: la lista sale igual. */
-async function nombresDeAjenos(efevoo: ClienteEfevoo, tarjetas: readonly TarjetaEfevoo[], vinculos: readonly Vinculo[]): Promise<Map<number, string>> {
-  const deLever = new Set(vinculos.map((v) => v.idepCliente));
-  const ids = [...new Set(tarjetas.map((t) => t.idepCliente).filter((id) => id !== 0 && !deLever.has(id)))];
-  if (ids.length === 0) return new Map();
-  try {
-    const clientes = await efevoo.listarClientes(ids);
-    return new Map(clientes.filter((c) => c.nombre).map((c) => [c.idepCliente, c.nombre!]));
-  } catch (error) {
-    if (!(error instanceof ErrorEfevoo)) throw error;
-    return new Map();
+type Dependencias = { config?: ConfigEfevoo | null; efevoo?: ClienteEfevoo; ahora?: Date; enSegundoPlano?: (tarea: () => Promise<void>) => void };
+
+const VACIO: Resumen = { total: 0, activas: 0, conSaldo: 0, porActivar: 0, disponibles: 0, bloqueadas: 0, canceladas: 0, saldoCentavos: 0 };
+
+async function clientesDeLever(ctx: ContextoDePersonal, ambiente: AmbienteEfevoo): Promise<Set<number>> {
+  return conContexto(basePlataforma(ctx), async (consulta) =>
+    new Set((await aplicarSentencia(consulta, "select idep_cliente from efevoo_clientes where ambiente = $1", [ambiente])).rows.map((f) => Number(registro(f).idep_cliente))),
+  );
+}
+
+/**
+ * Refresca la copia si hace falta: la primera vez en línea (para no pintar una lista vacía), después en segundo
+ * plano, para que la pantalla no espere al procesador.
+ */
+async function refrescarSiHaceFalta(ctx: ContextoDePersonal, efevoo: ClienteEfevoo, ambiente: AmbienteEfevoo, deps?: Dependencias): Promise<EstadoLectura | null> {
+  const ahora = deps?.ahora ?? new Date();
+  const estado = await leerEstadoLectura(ctx, ambiente);
+  if (!haceFaltaLeer(estado, ahora)) return estado;
+  const deLever = await clientesDeLever(ctx, ambiente);
+  if (!estado?.completaEn) {
+    const resultado = await refrescarCopia(ctx, efevoo, ambiente, { presupuestoMs: 20_000, deLever });
+    if (resultado === "a_medias") enSegundoPlano(deps, () => refrescarCopia(ctx, efevoo, ambiente, { presupuestoMs: 45_000, deLever }).then(() => undefined));
+    return leerEstadoLectura(ctx, ambiente);
   }
+  enSegundoPlano(deps, () => refrescarCopia(ctx, efevoo, ambiente, { presupuestoMs: 45_000, deLever }).then(() => undefined));
+  return estado;
 }
 
-export async function leerInventarioTarjetas(ctx: ContextoDePersonal, deps?: Dependencias): Promise<InventarioTarjetas> {
+function enSegundoPlano(deps: Dependencias | undefined, tarea: () => Promise<void>): void {
+  const correr = () => tarea().catch((error: unknown) => console.error("[tarjetas] la copia del inventario no se refrescó", error instanceof Error ? error.name : "error"));
+  if (deps?.enSegundoPlano) deps.enSegundoPlano(correr);
+  else after(correr);
+}
+
+export async function leerTarjetas(ctx: ContextoDePersonal, filtro: FiltroTarjetas, deps?: Dependencias): Promise<VistaTarjetas> {
   exigirEnOperacion(ctx, CAPACIDAD);
   const config = deps?.config === undefined ? configEfevoo() : deps.config;
-  const efevoo = deps?.efevoo ?? (config ? clienteHttpEfevoo(config) : null);
-  const ambiente = config?.ambiente ?? null;
-  const { lever, vinculos } = await conContexto(basePlataforma(ctx), async (consulta) => {
-    const tarjetas = (await aplicarSentencia(
-      consulta,
-      `select t.id, t.id_efevoo, t.terminacion, t.nombre_tarjeta, t.estado, t.company_id, c.razon_social, t.creada_en
-         from efevoo_tarjetas t join companies c on c.id = t.company_id
-        where ($1::text is null or t.ambiente = $1)
-        order by t.creada_en desc, t.id`,
-      [ambiente],
-    )).rows.map(registro);
-    const clientes = (await aplicarSentencia(
-      consulta,
-      `select v.idep_cliente, v.company_id, c.razon_social
-         from efevoo_clientes v join companies c on c.id = v.company_id
-        where ($1::text is null or v.ambiente = $1)`,
-      [ambiente],
-    )).rows.map(registro);
+  if (!config) {
     return {
-      lever: tarjetas.map((t): FilaLever => ({
-        id: texto(t.id),
-        idEfevoo: Number(t.id_efevoo),
-        terminacion: texto(t.terminacion),
-        nombreTarjeta: texto(t.nombre_tarjeta),
-        estado: texto(t.estado) as FilaLever["estado"],
-        companyId: texto(t.company_id),
-        razonSocial: texto(t.razon_social),
-        creadaEn: instante(t.creada_en),
-      })),
-      vinculos: clientes.map((v): Vinculo => ({ idepCliente: Number(v.idep_cliente), companyId: texto(v.company_id), razonSocial: texto(v.razon_social) })),
+      conexion: "sin_conexion", ambiente: null, lectura: null, resumen: VACIO,
+      porEstado: Object.fromEntries(ESTADOS.map((e) => [e, 0])) as Record<EstadoFiltro, number>,
+      empresas: [], empresaElegida: null, filtro, total: 0, tarjetas: [],
     };
-  });
-  if (!efevoo) return armarInventario({ efevoo: null, lever, vinculos, ambiente, errorEfevoo: null, incompleto: false });
-  try {
-    const leido = await leerEfevoo(efevoo);
-    const nombresAjenos = await nombresDeAjenos(efevoo, leido.tarjetas, vinculos);
-    return armarInventario({ efevoo: leido.tarjetas, lever, vinculos, ambiente, errorEfevoo: null, incompleto: leido.incompleto, nombresAjenos });
-  } catch (error) {
-    if (!(error instanceof ErrorEfevoo)) throw error;
-    return armarInventario({ efevoo: null, lever, vinculos, ambiente, errorEfevoo: error.codigo, incompleto: false });
   }
+  const efevoo = deps?.efevoo ?? clienteHttpEfevoo(config);
+  const lectura = await refrescarSiHaceFalta(ctx, efevoo, config.ambiente, deps);
+  const vista = await conContexto(basePlataforma(ctx), (consulta) => consultarVista(consulta, config.ambiente, filtro));
+  return { conexion: "lista", ambiente: config.ambiente, lectura, filtro, ...vista };
+}
+
+/** Una tarjeta de la copia, por su número en el procesador. Nula si no está. */
+export async function leerTarjetaDelInventario(ctx: ContextoDePersonal, ambiente: AmbienteEfevoo, id: number): Promise<TarjetaDelInventario | null> {
+  exigirEnOperacion(ctx, CAPACIDAD);
+  return conContexto(basePlataforma(ctx), async (consulta) => {
+    const fila = (await aplicarSentencia(consulta, `${BASE} select ${COLUMNAS} from base where id_tarjeta = $2`, [ambiente, id])).rows[0];
+    return fila ? tarjetaDeFila(registro(fila)) : null;
+  });
 }

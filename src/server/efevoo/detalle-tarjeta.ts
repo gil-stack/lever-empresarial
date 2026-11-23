@@ -6,7 +6,8 @@ import { exigirEnOperacion } from "../operacion/permisos";
 import { clienteHttpEfevoo, type ClienteEfevoo, type MovimientoTarjeta } from "./cliente";
 import { configEfevoo, type ConfigEfevoo } from "./config";
 import { ErrorEfevoo } from "./errores";
-import { leerInventarioTarjetas, type InventarioTarjetas, type TarjetaDelInventario } from "./inventario";
+import type { AmbienteEfevoo } from "./config";
+import { leerTarjetaDelInventario, type TarjetaDelInventario } from "./inventario";
 
 /**
  * El detalle de una tarjeta para la sección «Tarjetas» de Operación: su resumen, sus movimientos en el procesador y
@@ -31,9 +32,7 @@ export type ResumenMovimientos = { cuantos: number; abonadoCentavos: number; car
 
 export type DetalleTarjeta = {
   tarjeta: TarjetaDelInventario;
-  ambiente: InventarioTarjetas["ambiente"];
-  fuente: InventarioTarjetas["fuente"];
-  errorEfevoo: string | null;
+  ambiente: AmbienteEfevoo;
   /** El empleado de la empresa a quien se entregó; nulo si Lever no la entregó a nadie. */
   titular: string | null;
   motivoCancelacion: string | null;
@@ -41,7 +40,7 @@ export type DetalleTarjeta = {
   /** Nulo si no se pudieron leer (sin conexión, sin titular o el procesador no respondió). */
   movimientos: MovimientoTarjeta[] | null;
   /** Por qué no hay movimientos, si no los hay. */
-  sinMovimientos: "sin_titular" | "sin_conexion" | "no_respondio" | null;
+  sinMovimientos: "sin_titular" | "no_respondio" | null;
   resumen: ResumenMovimientos | null;
   operaciones: OperacionDeLaTarjeta[];
 };
@@ -76,23 +75,23 @@ export function idDeTarjeta(crudo: unknown): number | null {
   return Number.isSafeInteger(n) ? n : null;
 }
 
-/** Nulo si la tarjeta no está ni en el procesador ni en Lever (la página responde 404). */
+/** Nulo si la tarjeta no está en el inventario (la ventana dice que no se encontró). */
 export async function leerDetalleTarjeta(ctx: ContextoDePersonal, idCrudo: unknown, deps?: Dependencias): Promise<DetalleTarjeta | null> {
   exigirEnOperacion(ctx, CAPACIDAD);
   const id = idDeTarjeta(idCrudo);
   if (id === null) return null;
   const config = deps?.config === undefined ? configEfevoo() : deps.config;
-  const efevoo = deps?.efevoo ?? (config ? clienteHttpEfevoo(config) : null);
-  const inventario = await leerInventarioTarjetas(ctx, efevoo ? { config, efevoo } : { config });
-  const tarjeta = inventario.tarjetas.find((t) => t.idEfevoo === id);
+  if (!config) return null;
+  const efevoo = deps?.efevoo ?? clienteHttpEfevoo(config);
+  const tarjeta = await leerTarjetaDelInventario(ctx, config.ambiente, id);
   if (!tarjeta) return null;
 
   const lever = await conContexto(basePlataforma(ctx), async (consulta) => {
     const fila = (await aplicarSentencia(
       consulta,
       `select id, company_id, employee_id, motivo_cancelacion, cancelada_en from efevoo_tarjetas
-        where id_efevoo = $1 and ($2::text is null or ambiente = $2) limit 1`,
-      [id, config?.ambiente ?? null],
+        where id_efevoo = $1 and ambiente = $2 limit 1`,
+      [id, config.ambiente],
     )).rows[0];
     if (!fila) return null;
     const t = registro(fila);
@@ -124,9 +123,7 @@ export async function leerDetalleTarjeta(ctx: ContextoDePersonal, idCrudo: unkno
 
   let movimientos: MovimientoTarjeta[] | null = null;
   let sinMovimientos: DetalleTarjeta["sinMovimientos"] = null;
-  if (!efevoo || inventario.fuente !== "efevoo") {
-    sinMovimientos = inventario.errorEfevoo ? "no_respondio" : "sin_conexion";
-  } else if (tarjeta.clase === "sin_asignar") {
+  if (tarjeta.clase === "sin_asignar") {
     sinMovimientos = "sin_titular";
   } else {
     try {
@@ -141,9 +138,7 @@ export async function leerDetalleTarjeta(ctx: ContextoDePersonal, idCrudo: unkno
 
   return {
     tarjeta,
-    ambiente: inventario.ambiente,
-    fuente: inventario.fuente,
-    errorEfevoo: inventario.errorEfevoo,
+    ambiente: config.ambiente,
     titular: lever?.titular ?? null,
     motivoCancelacion: lever?.motivoCancelacion ?? null,
     canceladaEn: lever?.canceladaEn ?? null,

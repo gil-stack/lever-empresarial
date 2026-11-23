@@ -1966,7 +1966,8 @@ h1 + .rfc-cuenta {
 
 /* Diálogo (diseño .ovl + .modal) y panel lateral de detalle (diseño .gsd), sobre <dialog> */
 .dialogo,
-.panel-detalle {
+.panel-detalle,
+.ventana-detalle {
   border: 1px solid var(--line2);
   background: color-mix(in srgb, var(--s1) 94%, transparent);
   color: var(--tx);
@@ -1976,7 +1977,8 @@ h1 + .rfc-cuenta {
 }
 
 .dialogo::backdrop,
-.panel-detalle::backdrop {
+.panel-detalle::backdrop,
+.ventana-detalle::backdrop {
   background: color-mix(in srgb, var(--void) 55%, transparent);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
@@ -2047,8 +2049,72 @@ h1 + .rfc-cuenta {
   letter-spacing: -0.02em;
 }
 
+.ventana-detalle {
+  /* Opaca: encima de una lista larga, lo de atrás no se transparenta. */
+  background: var(--s1);
+  width: min(880px, calc(100% - 40px));
+  max-width: none;
+  max-height: calc(100dvh - 48px);
+  border-radius: 20px;
+  box-shadow: 0 50px 120px -40px var(--sombra-flotante);
+  overflow: hidden;
+}
+
+.ventana-detalle[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.ventana-detalle-cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ventana-detalle-titulo {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ventana-detalle-titulo h2 {
+  margin: 0;
+  font-family: var(--fd);
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+
+.ventana-detalle-cuerpo {
+  padding: 20px 24px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 640px) {
+  .ventana-detalle {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    margin: auto 0 0;
+    border-radius: 20px 20px 0 0;
+    border-width: 1px 0 0;
+  }
+
+  .ventana-detalle-cabeza {
+    padding: 16px 16px 12px;
+  }
+
+  .ventana-detalle-cuerpo {
+    padding: 16px 16px 24px;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  .dialogo[open] {
+  .dialogo[open],
+  .ventana-detalle[open] {
     animation: dialogo-entra 0.6s var(--ease);
   }
 
