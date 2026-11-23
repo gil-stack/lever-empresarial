@@ -27,8 +27,12 @@ export const REFERENCIA = /^[0-9]{7}$/;
 
 export type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 
-export type EstadoTarjetaEfevoo = "inStock" | "active" | "blocked" | "cancelled";
-const ESTADOS: readonly EstadoTarjetaEfevoo[] = ["inStock", "active", "blocked", "cancelled"];
+/**
+ * «inactive» es la tarjeta asignada a un titular que aún no se activa: el sandbox la devuelve en getCardsList con
+ * `status: []` (sondeo del 23/11/2026, tarjetas 556 y 557). Sin él, leer todas las tarjetas fallaba entero.
+ */
+export type EstadoTarjetaEfevoo = "inStock" | "inactive" | "active" | "blocked" | "cancelled";
+const ESTADOS: readonly EstadoTarjetaEfevoo[] = ["inStock", "inactive", "active", "blocked", "cancelled"];
 
 export type DatosEmpresa = {
   correo: string;

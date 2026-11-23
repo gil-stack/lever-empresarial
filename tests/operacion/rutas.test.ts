@@ -11,6 +11,7 @@ const PROTEGIDAS = [
   "/operacion",
   "/operacion/clientes",
   "/operacion/clientes/123",
+  "/operacion/tarjetas",
   "/operacion/aprobaciones",
   "/operacion/alertas",
   "/operacion/comisiones",
