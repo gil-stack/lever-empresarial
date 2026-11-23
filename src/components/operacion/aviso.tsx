@@ -25,6 +25,13 @@ const MENSAJES: Record<string, string> = {
   alerta_asignada: "Responsable actualizado.",
   alerta_cerrada: "Alerta cerrada con su motivo.",
   comision_solicitada: "Versión propuesta. La autoriza otra persona en Aprobaciones.",
+  plan_actualizado: "Plan guardado. El cobro del mes ya usa los montos nuevos.",
+  plan_asignado: "Plan asignado al cliente.",
+  plan_ausente: "Ese plan ya no existe. Recarga la página.",
+  plan_nombre_invalido: "Escribe el nombre del plan, de 1 a 60 caracteres.",
+  plan_mensualidad_invalida: "Escribe la mensualidad en pesos, como 1500 o 1,500.00.",
+  plan_spei_invalido: "Escribe el costo por SPEI en pesos, como 8 o 8.50 (hasta $100,000.00).",
+  cliente_en_baja: "Ese cliente está dado de baja; no se le asigna plan.",
   misma_persona_en_activacion: "Quien pidió la activación no puede decidirla.",
   misma_persona_en_comision: "Quien propuso la comisión no puede decidirla.",
   reautenticacion_requerida: "Para decidir, tu segundo factor debe ser de los últimos 30 minutos. Sal y vuelve a entrar.",
@@ -230,6 +237,10 @@ const MENSAJES: Record<string, string> = {
 
 /** El campo que causó cada error: el aviso se liga a ese campo con aria-describedby. */
 const CAMPO: Record<string, string> = {
+  plan_nombre_invalido: "nombre",
+  plan_mensualidad_invalida: "mensualidad",
+  plan_spei_invalido: "spei",
+  cliente_en_baja: "companyId",
   comision_valor_invalido: "valor",
   comision_tipo_invalido: "tipo",
   comision_pendiente: "tipo",
@@ -282,6 +293,8 @@ const ASENTADOS: ReadonlySet<string> = new Set([
   "alerta_asignada",
   "alerta_cerrada",
   "comision_solicitada",
+  "plan_actualizado",
+  "plan_asignado",
   "rol_asignado",
   "rol_retirado",
   "expediente_version_creada",

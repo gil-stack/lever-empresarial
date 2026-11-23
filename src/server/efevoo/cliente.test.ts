@@ -151,6 +151,13 @@ describe("Efevoo: cliente HTTP", () => {
     assert.deepEqual(JSON.parse(f.llamadas[0]!.cuerpo).payload.status, []);
   });
 
+  it("acepta «inactive» (asignada sin activar), que el sandbox devuelve con status vacío", async () => {
+    const crudo = contrato("getCardsList-vacio") as { response: { cards: { id: number; status: string }[] } };
+    for (const c of crudo.response.cards) if (c.id === 556 || c.id === 557) c.status = "inactive";
+    const lista = await clienteHttpEfevoo(CONFIG, falso([json(crudo)]).fetch).listarTarjetas({ estados: "todas", pagina: 1, tamano: 50 });
+    assert.deepEqual(lista.tarjetas.filter((t) => t.estado === "inactive").map((t) => t.id), [556, 557]);
+  });
+
   it("lee los movimientos de una tarjeta con su referencia y montos en texto o número", async () => {
     const f = falso([json(contrato("getTransactionsCard-560-b"))]);
     const m = await clienteHttpEfevoo(CONFIG, f.fetch).movimientosDeTarjeta(560, "t@lever.test");

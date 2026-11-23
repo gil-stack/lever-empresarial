@@ -40,6 +40,8 @@ export const ENTIDADES = {
   suspension_rechazada: "company_suspensions",
   reactivacion_aprobada: "company_suspensions",
   reactivacion_rechazada: "company_suspensions",
+  plan_actualizado: "billing_plans",
+  plan_asignado: "company_billing_plans",
 } as const;
 
 export type AccionOperacion = keyof typeof ENTIDADES;

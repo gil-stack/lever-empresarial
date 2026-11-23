@@ -98,6 +98,8 @@ export function etiquetaAccion(accion: string): string | null {
     comision_aprobada: "Autorizó una comisión",
     comision_rechazada: "Rechazó una comisión",
     comision_cerrada: "Cerró una comisión",
+    plan_actualizado: "Cambió un plan de mensualidad",
+    plan_asignado: "Asignó un plan de mensualidad",
     alerta_creada: "Creó una alerta",
     alerta_asignada: "Reasignó una alerta",
     alerta_cerrada: "Cerró una alerta",

@@ -7,6 +7,7 @@ import type { CapacidadPlataforma } from "../../nucleo/capacidades";
 export const SECCIONES_OPERACION = [
   ["/operacion", "Resumen", ["plataforma.operacion.ver"]],
   ["/operacion/clientes", "Clientes", ["plataforma.operacion.ver"]],
+  ["/operacion/tarjetas", "Tarjetas", ["plataforma.empresa.alta"]],
   ["/operacion/aprobaciones", "Aprobaciones", ["plataforma.activacion.aprobar", "plataforma.suspension.aprobar", "plataforma.empresa.alta"]],
   ["/operacion/cumplimiento", "Cumplimiento", ["plataforma.cumplimiento.bandeja"]],
   ["/operacion/lpb", "Personas bloqueadas", ["plataforma.cumplimiento.bandeja"]],

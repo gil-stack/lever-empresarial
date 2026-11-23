@@ -4,6 +4,8 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent
 
 import { IconoChevron } from "./iconos";
 
+const OPCIONES = '[role="menuitem"], [role="menuitemradio"]';
+
 /**
  * Un botón que abre un menú (la empresa y la persona, como el diseño). Al abrir,
  * el foco va a la primera opción; las flechas recorren (las opciones van con
@@ -14,13 +16,17 @@ import { IconoChevron } from "./iconos";
  *
  * `fijo`: el menú se coloca con posición fija bajo el botón, para que un
  * contenedor con scroll (el lateral de 240 px) no lo recorte. Se cierra si la
- * página o el lateral se desplazan o cambia el tamaño de la ventana.
+ * página o el lateral se desplazan o cambia el tamaño de la ventana. Con
+ * `hacia="arriba"` abre sobre el botón (el menú de la persona al pie del lateral).
+ *
+ * Las opciones de radio (`menuitemradio`, como el tema) se recorren igual que las demás.
  */
 export function MenuDesplegable({
   clase,
   etiqueta,
   disparador,
   fijo = false,
+  hacia = "abajo",
   children,
 }: {
   clase: string;
@@ -28,6 +34,8 @@ export function MenuDesplegable({
   etiqueta: string;
   disparador: ReactNode;
   fijo?: boolean;
+  /** Solo con `fijo`. */
+  hacia?: "abajo" | "arriba";
   children: ReactNode;
 }) {
   const [abierto, setAbierto] = useState(false);
@@ -39,7 +47,7 @@ export function MenuDesplegable({
 
   useEffect(() => {
     if (!abierto) return;
-    const opciones = () => [...(menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+    const opciones = () => [...(menu.current?.querySelectorAll<HTMLElement>(OPCIONES) ?? [])];
     opciones()[0]?.focus({ preventScroll: true });
 
     function cerrarAlBoton(evento: KeyboardEvent) {
@@ -83,14 +91,19 @@ export function MenuDesplegable({
   function alternar() {
     if (!abierto && fijo && boton.current) {
       const caja = boton.current.getBoundingClientRect();
-      const arriba = caja.bottom + 8;
-      setPosicion({ position: "fixed", top: arriba, left: caja.left, maxHeight: `calc(100dvh - ${Math.round(arriba + 16)}px)` });
+      if (hacia === "arriba") {
+        const abajo = window.innerHeight - caja.top + 8;
+        setPosicion({ position: "fixed", top: "auto", bottom: abajo, left: caja.left, width: Math.max(caja.width, 240), maxHeight: `calc(100dvh - ${Math.round(abajo + 16)}px)` });
+      } else {
+        const arriba = caja.bottom + 8;
+        setPosicion({ position: "fixed", top: arriba, left: caja.left, maxHeight: `calc(100dvh - ${Math.round(arriba + 16)}px)` });
+      }
     }
     setAbierto((valor) => !valor);
   }
 
   function alElegir(evento: MouseEvent<HTMLElement>) {
-    if ((evento.target as HTMLElement).closest('[role="menuitem"]')) setAbierto(false);
+    if ((evento.target as HTMLElement).closest(OPCIONES)) setAbierto(false);
   }
 
   return (
@@ -115,6 +128,7 @@ export function MenuDesplegable({
         role="menu"
         aria-label={etiqueta}
         className="menu-flotante"
+        data-hacia={fijo ? hacia : undefined}
         data-abierto={abierto ? "si" : "no"}
         style={fijo ? posicion : undefined}
         onClick={alElegir}

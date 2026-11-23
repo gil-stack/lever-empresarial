@@ -1,0 +1,263 @@
+/*
+ * El inventario de tarjetas de Operación (/operacion/tarjetas): el stock total con su
+ * reparto, las cifras que filtran la lista y la tabla. Colores del sistema (tokens.css).
+ */
+
+.inventario {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+  container-type: inline-size;
+
+  --tramo-libre: color-mix(in srgb, var(--tx) 22%, transparent);
+  --tramo-asignada: var(--warn);
+  --tramo-saldo: var(--sello);
+  --tramo-vacia: color-mix(in srgb, var(--acc) 38%, transparent);
+  --tramo-bloqueada: var(--blue);
+}
+
+.inventario > .nota-regla {
+  margin: 0;
+}
+
+.inventario-cabeza {
+  display: grid;
+  grid-template-columns: minmax(200px, 0.8fr) minmax(0, 2fr);
+  gap: 28px 40px;
+  align-items: center;
+  padding: 26px 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  background: var(--hoja);
+  backdrop-filter: blur(18px);
+}
+
+.inventario-total .rotulo {
+  margin-bottom: 8px;
+}
+
+.inventario-total-valor {
+  margin: 0;
+  font-family: var(--fd);
+  font-size: clamp(44px, 5vw, 64px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.inventario-total .pista {
+  margin: 8px 0 0;
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.inventario-saldo {
+  display: grid;
+  gap: 4px;
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.inventario-saldo .rotulo {
+  margin: 0;
+}
+
+.inventario-saldo .monto {
+  margin: 0;
+  font-size: 20px;
+}
+
+.inventario-reparto {
+  min-width: 0;
+  margin: 0;
+}
+
+.inventario-barra {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--realce);
+}
+
+.inventario-barra > i {
+  display: block;
+  min-width: 6px;
+  border-radius: 999px;
+}
+
+.inventario-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--tx2);
+  font-size: 13px;
+}
+
+.inventario-leyenda li {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.inventario-leyenda i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.inventario-leyenda strong {
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.inventario-leyenda .pista {
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.inventario-tramo-libre { background: var(--tramo-libre); }
+.inventario-tramo-asignada { background: var(--tramo-asignada); }
+.inventario-tramo-saldo { background: var(--tramo-saldo); }
+.inventario-tramo-vacia { background: var(--tramo-vacia); }
+.inventario-tramo-bloqueada { background: var(--tramo-bloqueada); }
+
+.inventario-cifras {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inventario-cifra {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  height: 100%;
+  padding: 16px 18px 15px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--hoja);
+  color: var(--tx);
+  text-decoration: none;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.2s var(--ease);
+}
+
+/* La marca de color de cada cifra, la misma del tramo de la barra. */
+.inventario-cifra::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: transparent;
+  content: "";
+}
+
+.inventario-cifra-libre::before { background: var(--tramo-libre); }
+.inventario-cifra-asignada::before { background: var(--tramo-asignada); }
+.inventario-cifra-saldo::before { background: var(--tramo-saldo); }
+.inventario-cifra-vacia::before { background: var(--tramo-vacia); }
+.inventario-cifra-bloqueada::before { background: var(--tramo-bloqueada); }
+
+.inventario-cifra:hover {
+  border-color: var(--line2);
+  transform: translateY(-1px);
+}
+
+.inventario-cifra:focus-visible {
+  outline: 2px solid var(--sello);
+  outline-offset: 2px;
+}
+
+.inventario-cifra[aria-current="true"] {
+  border-color: color-mix(in srgb, var(--sello) 55%, transparent);
+  background: color-mix(in srgb, var(--sello) 7%, var(--hoja));
+}
+
+.inventario-cifra .rotulo {
+  margin: 0;
+}
+
+.inventario-valor {
+  font-family: var(--fd);
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+.inventario-cifra .pista {
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.inventario-lista {
+  min-width: 0;
+}
+
+.inventario-pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: -6px 0 14px;
+}
+
+.inventario-pestanas:empty {
+  display: none;
+}
+
+.inventario-lista td small {
+  display: block;
+  margin-top: 3px;
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.inventario-num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tabla th.inventario-num {
+  text-align: right;
+}
+
+@container (max-width: 1040px) {
+  .inventario-cifras {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 720px) {
+  .inventario-cabeza {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 22px 20px;
+  }
+
+  .inventario-cifras {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inventario-num,
+  .tabla th.inventario-num {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventario-cifra {
+    transition: none;
+  }
+
+  .inventario-cifra:hover {
+    transform: none;
+  }
+}
