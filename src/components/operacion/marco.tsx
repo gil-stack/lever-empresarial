@@ -4,10 +4,14 @@ import { cookies } from "next/headers";
 
 import { AcentoInicial } from "@/components/apariencia/acento-inicial";
 import { AparienciaViva } from "@/components/apariencia/viva";
+import { salirOperacion } from "@/app/operacion/acciones";
+import { IconoSalir, IconoSeguridad } from "@/components/cromo/iconos";
 import { LateralMovil } from "@/components/cromo/lateral-movil";
 import { Logotipo } from "@/components/cromo/logotipo";
-import { SelectorTema } from "@/components/cromo/selector-tema";
-import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
+import { MenuDesplegable } from "@/components/cromo/menu-desplegable";
+import { OpcionesTema } from "@/components/cromo/opciones-tema";
+import { COOKIE_TEMA, temaDesde, type Tema } from "@/components/cromo/tema";
+import { BotonEnviar } from "@/components/sistema";
 
 import { idDeAncla } from "./envio-sin-script";
 import { NavegacionOperacion } from "./navegacion";
@@ -15,14 +19,20 @@ import { NavegacionOperacion } from "./navegacion";
 /**
  * El marco de Operación SOFIPO es el de la consola: escena detrás, lateral con
  * secciones (cajón en pantallas angostas) y lienzo. La barra de arriba la pone
- * cada página (`PaginaOperacion`), con su título y su acción.
+ * cada página (`PaginaOperacion`), con su título y su acción. La persona va al pie del lateral: su menú
+ * abre hacia arriba con el perfil, el tema y «Salir».
  */
 export async function MarcoOperacion({
   personaId,
+  nombre,
+  rol,
   capacidades,
   children,
 }: {
   personaId: string;
+  nombre: string;
+  /** Los roles de la persona en la plataforma, ya en texto («Administración»). */
+  rol: string;
   capacidades: readonly string[];
   children: ReactNode;
 }) {
@@ -45,7 +55,7 @@ export async function MarcoOperacion({
           </div>
           <NavegacionOperacion capacidades={capacidades} />
           <div className="operacion-lateral-pie">
-            <SelectorTema inicial={tema} />
+            <MenuCuenta nombre={nombre} rol={rol} tema={tema} />
           </div>
         </LateralMovil>
         <div className="lienzo">{children}</div>
@@ -65,4 +75,46 @@ function Marca() {
       <span className="solo-lector">Lever Operación SOFIPO, ir al resumen</span>
     </Link>
   );
+}
+
+function MenuCuenta({ nombre, rol, tema }: { nombre: string; rol: string; tema: Tema }) {
+  return (
+    <MenuDesplegable
+      clase="cuenta cuenta-lateral"
+      etiqueta="Tu cuenta"
+      fijo
+      hacia="arriba"
+      disparador={
+        <>
+          <span className="persona-iniciales" aria-hidden="true">
+            {iniciales(nombre)}
+          </span>
+          <span className="persona-datos">
+            <span className="persona-nombre">{nombre}</span>
+            <span className="persona-rol">{rol}</span>
+          </span>
+        </>
+      }
+    >
+      <p className="menu-seccion">Tú</p>
+      <Link href="/entrar/seguridad" role="menuitem" tabIndex={-1} className="menu-opcion">
+        <IconoSeguridad />
+        Mi perfil y seguridad
+      </Link>
+      <OpcionesTema inicial={tema} />
+      <form action={salirOperacion} className="menu-pie">
+        <BotonEnviar role="menuitem" tabIndex={-1} className="menu-opcion" enviando="Saliendo…">
+          <IconoSalir />
+          Salir
+        </BotonEnviar>
+      </form>
+    </MenuDesplegable>
+  );
+}
+
+function iniciales(nombre: string): string {
+  const palabras = nombre.trim().split(/\s+/).filter(Boolean);
+  return (palabras.length > 1 ? palabras.slice(0, 2).map((palabra) => palabra.charAt(0)) : [nombre.trim().slice(0, 2)])
+    .join("")
+    .toLocaleUpperCase("es-MX");
 }
