@@ -3,14 +3,100 @@
  * sistema (componentes.css). Aquí solo va lo que es propio de esta superficie.
  */
 
-/* El tema en el pie del lateral: sin el menú de Apariencia de la consola. */
+/* La persona al pie del lateral: su menú abre hacia arriba con el perfil, el tema y «Salir». Un filete la separa de
+   las secciones; el pie queda abajo aunque haya pocas secciones (margin-top: auto). */
 .operacion-lateral-pie {
-  margin-top: auto;
+  margin: auto -8px 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
 }
 
-/* El lateral mide 240 px: el selector de tema va solo con texto para que no se encime. */
-.operacion-lateral-pie .selector-tema label .icono {
-  display: none;
+.cuenta.cuenta-lateral .menu-desplegable-boton {
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 8px 8px 10px;
+  border-color: transparent;
+  border-radius: 12px;
+}
+
+.cuenta.cuenta-lateral .menu-desplegable-boton:hover,
+.cuenta.cuenta-lateral .menu-desplegable-boton[aria-expanded="true"] {
+  border-color: var(--line2);
+  background: color-mix(in srgb, var(--tx) 6%, transparent);
+}
+
+.cuenta.cuenta-lateral .menu-desplegable-boton:focus-visible {
+  outline: 1px solid var(--tx2);
+  outline-offset: 2px;
+}
+
+.cuenta.cuenta-lateral .persona-iniciales {
+  width: 34px;
+  height: 34px;
+  background: color-mix(in srgb, var(--acc) 16%, transparent);
+  border-color: color-mix(in srgb, var(--acc) 40%, transparent);
+}
+
+.cuenta.cuenta-lateral .persona-nombre {
+  font-size: 13.5px;
+}
+
+/* Abre hacia arriba: crece desde el botón. */
+.menu-flotante[data-hacia="arriba"] {
+  transform: translateY(6px) scale(0.98);
+  transform-origin: bottom left;
+}
+
+.menu-flotante[data-hacia="arriba"][data-abierto="si"] {
+  transform: none;
+}
+
+/* El tema dentro del menú: la opción elegida lleva su palomita a la derecha. */
+.menu-tema .menu-opcion .lazo {
+  width: 16px;
+  height: 16px;
+}
+
+.menu-marca {
+  width: 14px;
+  height: 8px;
+  margin: 0 2px 3px auto;
+}
+
+.menu-opcion[aria-checked="true"] {
+  color: var(--tx);
+}
+
+.menu-opcion[aria-checked="true"] .menu-marca {
+  border-bottom: 1.5px solid var(--acc);
+  border-left: 1.5px solid var(--acc);
+  transform: rotate(-45deg);
+}
+
+/* Las secciones del lateral de Operación: fondo suave al pasar y foco visible con teclado. */
+.lateral:has(.operacion-lateral-pie) .seccion:hover:not([aria-current="page"]) {
+  background: color-mix(in srgb, var(--tx) 3%, transparent);
+}
+
+.lateral:has(.operacion-lateral-pie) .seccion:focus-visible {
+  outline: 1px solid var(--tx2);
+  outline-offset: -1px;
+}
+
+/* En el cajón (pantallas angostas) el nombre y el rol sí caben: el chip de la barra de arriba los ocultaba. */
+@media (max-width: 960px) {
+  .cuenta.cuenta-lateral .persona-datos {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .cuenta.cuenta-lateral .menu-desplegable-boton {
+    gap: 10px;
+    padding: 8px 8px 8px 10px;
+  }
 }
 
 .operacion-pagina > .saludo {
