@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/migrar.mjs --al-construir && next build",
+    "build": "npx tsx scripts/sondeo-inventario.ts; node scripts/migrar.mjs --al-construir && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
