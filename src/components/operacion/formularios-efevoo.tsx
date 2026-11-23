@@ -5,7 +5,7 @@ import { BotonEnviar } from "@/components/sistema";
 
 import { useFormularioConAviso } from "./formulario-con-aviso";
 
-/** O2: depósito de prueba al saldo de la empresa en Efevoo (solo sandbox). */
+/** O2: depósito de prueba al saldo de la empresa en el procesador (solo sandbox). */
 export function FormularioDepositoEfevoo({ companyId, llave }: { companyId: string; llave: string }) {
   const { forma, enviar, vuelta, valor, ligado, mensaje, resumen } = useFormularioConAviso(depositoEfevooAccion, "aviso-efevoo-deposito");
   return (
@@ -20,7 +20,7 @@ export function FormularioDepositoEfevoo({ companyId, llave }: { companyId: stri
       </div>
       <div className="acciones">
         <BotonEnviar>Depositar dinero de prueba</BotonEnviar>
-        <p>Solo existe en el ambiente de pruebas de Efevoo. En producción este botón no aparece.</p>
+        <p>Solo existe en el ambiente de pruebas del procesador. En producción este botón no aparece.</p>
       </div>
     </form>
   );
@@ -28,7 +28,7 @@ export function FormularioDepositoEfevoo({ companyId, llave }: { companyId: stri
 
 /**
  * O3: asignar un plástico del inventario a un empleado y activarlo. Los datos del
- * titular viajan a Efevoo y no se guardan en Lever: si algo se rechaza, se
+ * titular viajan al procesador y no se guardan en Lever: si algo se rechaza, se
  * vuelven a escribir (solo regresan el empleado, el plástico, el nombre a embozar y el país).
  */
 export function FormularioAsignarEfevoo({
@@ -86,7 +86,7 @@ export function FormularioAsignarEfevoo({
         </select>
       </div>
       {texto("ultimos8", "Últimos 8 dígitos del plástico", { inputMode: "numeric", maxLength: 8, required: true, pattern: "[0-9]{8}" },
-        "Se leen del plástico físico. Solo viajan a Efevoo; Lever guarda la terminación.")}
+        "Se leen del plástico físico. Solo viajan al procesador; Lever guarda la terminación.")}
       {texto("nombre", "Nombre(s)", { required: true, maxLength: 40 })}
       {texto("primerApellido", "Primer apellido", { required: true, maxLength: 40 })}
       {texto("segundoApellido", "Segundo apellido", { maxLength: 40 }, "Déjalo vacío si no tiene.")}
@@ -97,7 +97,7 @@ export function FormularioAsignarEfevoo({
       {texto("domicilio", "Domicilio", { required: true, maxLength: 120 })}
       <div className="acciones">
         <BotonEnviar>Asignar y activar la tarjeta</BotonEnviar>
-        <p>Los datos del titular se mandan a Efevoo y no se guardan en Lever.</p>
+        <p>Los datos del titular se mandan al procesador y no se guardan en Lever.</p>
       </div>
     </form>
   );
@@ -116,7 +116,7 @@ export function FormularioCancelarEfevoo({ companyId, llave, tarjetaId, terminac
       <input type="hidden" name="llave" value={llave} />
       <input type="hidden" name="tarjetaId" value={tarjetaId} />
       {resumen}
-      <p className="pista">Cancelar es irreversible en Efevoo: la tarjeta ****{terminacion} deja de funcionar para siempre.</p>
+      <p className="pista">Cancelar es irreversible en el procesador: la tarjeta ****{terminacion} deja de funcionar para siempre.</p>
       <div className="campo">
         <label htmlFor={`efevoo-motivo-${terminacion}`}>Motivo de la cancelación</label>
         {mensaje("motivo")}

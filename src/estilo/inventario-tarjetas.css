@@ -261,3 +261,36 @@
     transform: none;
   }
 }
+
+/* El detalle de una tarjeta (/operacion/tarjetas/[id]) y la tabla por empresa. */
+.inventario-cifras-cuatro {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.inventario-cabeza .renglones {
+  margin: 0;
+}
+
+.inventario-tarjeta {
+  color: var(--tx);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.inventario-tarjeta:hover,
+.inventario-tarjeta:focus-visible {
+  color: var(--sello);
+}
+
+.inventario-fila-actual > td {
+  background: color-mix(in srgb, var(--sello) 7%, transparent);
+}
+
+.inventario-lista td.monto-abono { color: var(--sello); }
+.inventario-lista td.monto-cargo { color: var(--tx); }
+
+@container (max-width: 720px) {
+  .inventario-cifras-cuatro {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

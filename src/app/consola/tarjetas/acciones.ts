@@ -15,7 +15,7 @@ import {
 } from "@/server/tarjetas";
 
 /**
- * Acciones de Tarjetas con Efevoo. Cada una vuelve a pedir el contexto de la sesión y el servicio exige
+ * Acciones de Tarjetas con el emisor. Cada una vuelve a pedir el contexto de la sesión y el servicio exige
  * cliente.tarjetas.operar aunque el formulario llegue armado a mano. La llave de intento viaja en el formulario: el
  * doble clic y el reenvío regresan la misma operación.
  */
@@ -27,10 +27,10 @@ const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   sin_empresa: { titulo: "Sin empresa elegida", mensaje: "Elige la empresa desde el menú y repite la operación." },
   tarjeta_ausente: { titulo: "No encontramos esa tarjeta", mensaje: "Recarga la página." },
   tarjeta_no_operable: { titulo: "Esa tarjeta no se puede operar", mensaje: "Está cancelada o todavía no se activa." },
-  saldo_insuficiente: { titulo: "No alcanza el saldo", mensaje: "Efevoo dice que no hay saldo suficiente. No se movió dinero." },
+  saldo_insuficiente: { titulo: "No alcanza el saldo", mensaje: "El emisor dice que no hay saldo suficiente. No se movió dinero." },
   operacion_ausente: { titulo: "No encontramos esa operación", mensaje: "Recarga la página." },
   operacion_no_incierta: { titulo: "Esa operación ya está resuelta", mensaje: "Recarga la página para ver su estado." },
-  operacion_no_reintentable: { titulo: "Concíliala antes de reintentar", mensaje: "Solo se reintenta una operación que se buscó en Efevoo y no apareció." },
+  operacion_no_reintentable: { titulo: "Concíliala antes de reintentar", mensaje: "Solo se reintenta una operación que se buscó en el emisor y no apareció." },
   intento_invalido: { titulo: "No se entendió el formulario", mensaje: "Recarga la página y vuelve a intentar." },
   entrada_invalida: { titulo: "No se entendió el formulario", mensaje: "Recarga la página y vuelve a intentar." },
   monto_invalido: { titulo: "Revisa el monto", mensaje: "Escribe un monto mayor que cero, en pesos y con centavos válidos." },
@@ -43,7 +43,7 @@ const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   sin_permiso_para_efevoo: { titulo: "Sin permiso para operar tarjetas", mensaje: "Tu rol puede ver las tarjetas; las cargan, retiran y bloquean administración y liberación." },
   empresa_sin_vinculo: { titulo: "Tarjetas no está conectada", mensaje: "La empresa no está dada de alta con el emisor. Comunícate con Lever." },
   operacion_no_encontrada: { titulo: "No encontramos esa operación", mensaje: "Recarga la página." },
-  reintento_no_valido: { titulo: "Concíliala antes de reintentar", mensaje: "Solo se reintenta una operación que se buscó en Efevoo y no apareció." },
+  reintento_no_valido: { titulo: "Concíliala antes de reintentar", mensaje: "Solo se reintenta una operación que se buscó en el emisor y no apareció." },
   efevoo_no_configurado: { titulo: "Tarjetas no está conectada", mensaje: "La conexión con el emisor no está configurada. Comunícate con Lever." },
   efevoo_no_autorizado: { titulo: "El emisor rechazó la conexión", mensaje: "No se movió dinero. Lever ya tiene el aviso." },
   efevoo_rechazo: { titulo: "El emisor no hizo la operación", mensaje: "No se movió dinero. Revisa el detalle de la operación." },
@@ -107,7 +107,7 @@ async function ejecutar(fn: () => Promise<EstadoFlujo>): Promise<EstadoFlujo> {
   }
 }
 
-/** Cargar o retirar saldo de una tarjeta. El saldo se revisa antes en el servidor y Efevoo lo vuelve a revisar. */
+/** Cargar o retirar saldo de una tarjeta. El saldo se revisa antes en el servidor y el emisor lo vuelve a revisar. */
 export async function enviarSaldoTarjeta(_previo: EstadoFlujo, datos: FormData): Promise<EstadoFlujo> {
   const tipo = campo(datos, "tipo");
   if (tipo !== "carga" && tipo !== "retiro") return { tipo: "rechazado", ...RECHAZO.intento_invalido! };

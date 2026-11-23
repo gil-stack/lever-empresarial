@@ -92,15 +92,15 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
 
   test("O1: alta de la empresa en Efevoo con doble clic deja un solo cliente", async () => {
     await page.goto(`/operacion/clientes/${ceiba()}`);
-    await expect(page.getByRole("heading", { name: "Tarjetas (Efevoo)" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tarjetas", exact: true })).toBeVisible();
     await expect(page.getByText("Pruebas (sandbox)")).toBeVisible();
     await captura(page, "o1-antes-del-alta");
-    const { envios } = await dobleClic(page.getByRole("button", { name: "Dar de alta en Efevoo" }), { esperar: /aviso=efevoo_alta_confirmada/ });
+    const { envios } = await dobleClic(page.getByRole("button", { name: "Dar de alta en el procesador" }), { esperar: /aviso=efevoo_alta_confirmada/ });
     expect(envios).toBeGreaterThanOrEqual(1);
-    await expect(page.getByText("Empresa dada de alta en Efevoo.")).toBeVisible();
+    await expect(page.getByText("Empresa dada de alta en el procesador.")).toBeVisible();
     expect(await ops("alta_cliente")).toBe(1);
     expect((await estadoFalso()).clientes).toHaveLength(1);
-    await expect(page.getByRole("button", { name: "Dar de alta en Efevoo" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Dar de alta en el procesador" })).toHaveCount(0);
     await captura(page, "o1-alta-confirmada");
   });
 
@@ -215,7 +215,7 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     const incierta = page.locator("li[data-operacion='cancelacion'][data-estado='incierta']");
     await expect(incierta).toContainText("Código timeout");
     await captura(page, "timeout-incierta");
-    await incierta.getByRole("button", { name: "Conciliar con Efevoo" }).click();
+    await incierta.getByRole("button", { name: "Conciliar con el procesador" }).click();
     await page.waitForURL(/aviso=efevoo_conciliada/);
     await expect(page.locator("li[data-tarjeta='1363']")).toContainText("Cancelada");
     expect(await ops("cancelacion", "confirmada")).toBe(2);
@@ -257,9 +257,9 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     await page.waitForURL(/aviso=efevoo_incierta/);
     const incierto = page.locator("li[data-operacion='deposito_prueba'][data-estado='incierta']");
     await expect(incierto).toContainText("Código 901");
-    await incierto.getByRole("button", { name: "Conciliar con Efevoo" }).click();
+    await incierto.getByRole("button", { name: "Conciliar con el procesador" }).click();
     await page.waitForURL(/aviso=efevoo_espera/);
-    await expect(page.getByText("Todavía no aparece en Efevoo.")).toBeVisible();
+    await expect(page.getByText("Todavía no aparece en el procesador.")).toBeVisible();
     expect(await ops("deposito_prueba", "incierta")).toBe(1);
     await captura(page, "901-incierto-espera");
   });
@@ -271,6 +271,6 @@ test("una persona de la empresa no llega a la sección de Efevoo en Operación",
   await sesionDe(contexto, CORREOS.laura);
   await pagina.goto(`/operacion/clientes/${ceiba()}`);
   await expect(pagina).toHaveURL(/\/operacion\/entrar/);
-  await expect(pagina.getByRole("heading", { name: "Tarjetas (Efevoo)" })).toHaveCount(0);
+  await expect(pagina.getByRole("heading", { name: "Tarjetas", exact: true })).toHaveCount(0);
   await contexto.close();
 });

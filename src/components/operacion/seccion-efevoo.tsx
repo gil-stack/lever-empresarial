@@ -10,7 +10,7 @@ import { fechaHora } from "./formato";
 import { FormularioAsignarEfevoo, FormularioCancelarEfevoo, FormularioDepositoEfevoo } from "./formularios-efevoo";
 
 const TIPOS: Record<string, string> = {
-  alta_cliente: "Alta en Efevoo",
+  alta_cliente: "Alta en el procesador",
   deposito_prueba: "Depósito de prueba",
   asignacion: "Asignación",
   activacion: "Activación",
@@ -24,48 +24,48 @@ const TIPOS: Record<string, string> = {
 const ESTADOS_OPERACION: Record<string, string> = { pendiente: "Pendiente", confirmada: "Confirmada", fallida: "Fallida", incierta: "Incierta" };
 const ESTADOS_TARJETA: Record<string, string> = { asignada: "Asignada", activa: "Activa", bloqueada: "Bloqueada", cancelada: "Cancelada" };
 const ERRORES_DE_LECTURA: Record<string, string> = {
-  efevoo_incierto: "Efevoo no respondió al leer el saldo y el inventario. Lo de abajo es lo que hay en Lever.",
-  efevoo_no_autorizado: "Efevoo rechazó las credenciales al leer. Avisa a Tecnología.",
-  efevoo_rechazo: "Efevoo rechazó la lectura del saldo o del inventario.",
+  efevoo_incierto: "El procesador no respondió al leer el saldo y el inventario. Lo de abajo es lo que hay en Lever.",
+  efevoo_no_autorizado: "El procesador rechazó las credenciales al leer. Avisa a Tecnología.",
+  efevoo_rechazo: "El procesador rechazó la lectura del saldo o del inventario.",
 };
 
-/** «Tarjetas (Efevoo)» en la ficha del cliente. Solo la pinta la página para Administración de la plataforma. */
+/** «Tarjetas» en la ficha del cliente. Solo la pinta la página para Administración de la plataforma. */
 export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: string; seccion: SeccionEfevoo }) {
   if (seccion.estado === "sin_configurar") {
     return (
-      <Hoja id="efevoo-titulo" titulo="Tarjetas (Efevoo)">
-        <Vacio titulo="Efevoo no está configurado">En este entorno no hay conexión con Efevoo Pay.</Vacio>
+      <Hoja id="efevoo-titulo" titulo="Tarjetas">
+        <Vacio titulo="El procesador no está configurado">En este entorno no hay conexión con el procesador de tarjetas.</Vacio>
       </Hoja>
     );
   }
   if (seccion.estado === "demostracion") {
     return (
-      <Hoja id="efevoo-titulo" titulo="Tarjetas (Efevoo)">
-        <Vacio titulo="Empresa de demostración">Las empresas de demostración se quedan con sus tarjetas de ejemplo y no van a Efevoo.</Vacio>
+      <Hoja id="efevoo-titulo" titulo="Tarjetas">
+        <Vacio titulo="Empresa de demostración">Las empresas de demostración se quedan con sus tarjetas de ejemplo y no van al procesador.</Vacio>
       </Hoja>
     );
   }
   const sandbox = seccion.ambiente === "sandbox";
   const puedeOperar = sandbox || seccion.empresaActiva;
   return (
-    <Hoja id="efevoo-titulo" titulo="Tarjetas (Efevoo)">
+    <Hoja id="efevoo-titulo" titulo="Tarjetas">
       <Renglones>
         <Renglon etiqueta="Ambiente">{sandbox ? "Pruebas (sandbox)" : "Producción"}</Renglon>
-        {seccion.idepCliente ? <Renglon etiqueta="Cliente en Efevoo">{seccion.idepCliente}</Renglon> : null}
+        {seccion.idepCliente ? <Renglon etiqueta="Cliente en el procesador">{seccion.idepCliente}</Renglon> : null}
         {seccion.idepCliente ? (
-          <Renglon etiqueta="Saldo de la empresa en Efevoo">{seccion.saldoCentavos === null ? "Sin leer" : formatoPesos(seccion.saldoCentavos)}</Renglon>
+          <Renglon etiqueta="Saldo de la empresa en el procesador">{seccion.saldoCentavos === null ? "Sin leer" : formatoPesos(seccion.saldoCentavos)}</Renglon>
         ) : null}
       </Renglones>
-      {seccion.errorEfevoo ? <NotaRegla>{ERRORES_DE_LECTURA[seccion.errorEfevoo] ?? "No se pudo leer Efevoo."}</NotaRegla> : null}
+      {seccion.errorEfevoo ? <NotaRegla>{ERRORES_DE_LECTURA[seccion.errorEfevoo] ?? "No se pudo leer el procesador."}</NotaRegla> : null}
 
       {seccion.estado === "sin_vinculo" ? (
         <section aria-labelledby="efevoo-alta-titulo" className="efevoo-bloque">
-          <h3 id="efevoo-alta-titulo">Alta de la empresa en Efevoo</h3>
+          <h3 id="efevoo-alta-titulo">Alta de la empresa en el procesador</h3>
           {seccion.expediente ? (
             <>
               <p>
                 {sandbox ? (
-                  <>En pruebas solo se manda la razón social ({seccion.expediente.razonSocial}) y un correo de prueba @lever.test: el ambiente de pruebas de Efevoo es compartido.</>
+                  <>En pruebas solo se manda la razón social ({seccion.expediente.razonSocial}) y un correo de prueba @lever.test: el ambiente de pruebas del procesador es compartido.</>
                 ) : (
                   <>
                     Se manda la razón social ({seccion.expediente.razonSocial}), el RFC, el domicilio
@@ -79,7 +79,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
                   <input type="hidden" name="companyId" value={companyId} />
                   <input type="hidden" name="llave" value={randomUUID()} />
                   <div className="acciones">
-                    <BotonEnviar>Dar de alta en Efevoo</BotonEnviar>
+                    <BotonEnviar>Dar de alta en el procesador</BotonEnviar>
                   </div>
                 </form>
               ) : (
@@ -87,7 +87,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
               )}
             </>
           ) : (
-            <Vacio titulo="Falta el expediente">El alta en Efevoo toma los datos del expediente enviado. Complétalo primero.</Vacio>
+            <Vacio titulo="Falta el expediente">El alta en el procesador toma los datos del expediente enviado. Complétalo primero.</Vacio>
           )}
         </section>
       ) : null}
@@ -99,7 +99,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
               <h3 id="efevoo-deposito-titulo">Dinero de prueba</h3>
               <FormularioDepositoEfevoo companyId={companyId} llave={randomUUID()} />
               {seccion.movimientos.length > 0 ? (
-                <ul className="operacion-lista" aria-label="Movimientos del saldo de la empresa en Efevoo">
+                <ul className="operacion-lista" aria-label="Movimientos del saldo de la empresa en el procesador">
                   {seccion.movimientos.map((m) => (
                     <li key={m.id}>
                       <p>{m.operacion === "deposit" ? "Depósito" : "Retiro"} de {formatoPesos(m.centavos)}</p>
@@ -123,7 +123,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
             {!puedeOperar ? (
               <NotaRegla>La empresa debe estar activa para asignar o activar tarjetas en producción.</NotaRegla>
             ) : seccion.inventario.length === 0 ? (
-              <Vacio titulo="Sin plásticos en el inventario">{seccion.errorEfevoo ? "No se pudo leer el inventario de Efevoo." : "Efevoo no tiene plásticos disponibles."}</Vacio>
+              <Vacio titulo="Sin plásticos en el inventario">{seccion.errorEfevoo ? "No se pudo leer el inventario del procesador." : "El procesador no tiene plásticos disponibles."}</Vacio>
             ) : seccion.empleados.length === 0 ? (
               <Vacio titulo="Sin empleados activos">Da de alta a la persona en la empresa antes de asignarle una tarjeta.</Vacio>
             ) : (
@@ -170,7 +170,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
 
       {seccion.operaciones.length > 0 ? (
         <section aria-labelledby="efevoo-operaciones-titulo" className="efevoo-bloque">
-          <h3 id="efevoo-operaciones-titulo">Operaciones con Efevoo</h3>
+          <h3 id="efevoo-operaciones-titulo">Operaciones con el procesador</h3>
           <ul className="operacion-lista">
             {seccion.operaciones.map((o) => (
               <li key={o.id} data-operacion={o.tipo} data-estado={o.estado}>
@@ -192,7 +192,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
                   <form action={conciliarEfevooAccion}>
                     <input type="hidden" name="companyId" value={companyId} />
                     <input type="hidden" name="operacionId" value={o.id} />
-                    <div className="acciones"><BotonEnviar>Conciliar con Efevoo</BotonEnviar></div>
+                    <div className="acciones"><BotonEnviar>Conciliar con el procesador</BotonEnviar></div>
                   </form>
                 ) : null}
                 {o.cerrable ? (
@@ -201,7 +201,7 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
                     <form action={cerrarEfevooAccion}>
                       <input type="hidden" name="companyId" value={companyId} />
                       <input type="hidden" name="operacionId" value={o.id} />
-                      <p className="pista">Úsalo solo si conciliar ya no puede leer la tarjeta. El resultado en Efevoo queda desconocido y la operación no se podrá reintentar.</p>
+                      <p className="pista">Úsalo solo si conciliar ya no puede leer la tarjeta. El resultado en el procesador queda desconocido y la operación no se podrá reintentar.</p>
                       <div className="campo">
                         <label htmlFor={`efevoo-cierre-${o.id}`}>Motivo del cierre</label>
                         <textarea id={`efevoo-cierre-${o.id}`} name="motivo" minLength={10} maxLength={500} required />
