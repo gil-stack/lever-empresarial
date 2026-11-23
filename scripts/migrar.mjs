@@ -165,6 +165,26 @@ export async function aplicar(cliente, { directorio = DIRECTORIO, avisar = () =>
   }
 }
 
+/**
+ * La aplicación entra con `plataforma_app`, nunca con la dueña. Con `PLATAFORMA_APP_CLAVE`, la dueña
+ * le da entrada a ese rol con esa clave y le abre la base. Se repite en cada build sin daño: deja la
+ * misma clave. Corre solo donde se migra (el build de producción), después de las migraciones. La
+ * clave no se imprime; va como literal escapado por el driver.
+ */
+export async function prepararRolDeAplicacion(cliente, clave) {
+  if (!/^[A-Za-z0-9_-]{32,}$/.test(clave)) {
+    throw new Error("PLATAFORMA_APP_CLAVE tiene que tener al menos 32 letras, números, - o _.");
+  }
+  await cliente.query(`ALTER ROLE plataforma_app WITH LOGIN PASSWORD ${cliente.escapeLiteral(clave)}`);
+  const base = (await cliente.query("SELECT current_database() AS base")).rows[0].base;
+  await cliente.query(`GRANT CONNECT ON DATABASE ${cliente.escapeIdentifier(base)} TO plataforma_app`);
+}
+
+/** ¿Hay que dejar lista la entrada de la aplicación? Solo donde se migra y si la clave está. */
+export function tocaRolDeAplicacion(env) {
+  return (env.PLATAFORMA_APP_CLAVE?.trim() ?? "") !== "";
+}
+
 async function principal() {
   const alConstruir = process.argv.includes("--al-construir");
   const decision = decidir(process.env, alConstruir);
@@ -188,6 +208,10 @@ async function principal() {
     await cliente.connect();
     const aplicadas = await aplicar(cliente, { avisar: (texto) => console.log(texto) });
     console.log(aplicadas.length === 0 ? "Nada que aplicar: la base ya está al día." : `Listo: ${aplicadas.length} aplicadas.`);
+    if (tocaRolDeAplicacion(process.env)) {
+      await prepararRolDeAplicacion(cliente, process.env.PLATAFORMA_APP_CLAVE.trim());
+      console.log("La entrada de plataforma_app quedó lista.");
+    }
     return 0;
   } catch (error) {
     console.error(tachar(`La migración falló y no se aplicó nada: ${error instanceof Error ? error.message : error}`));
