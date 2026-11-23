@@ -59,6 +59,12 @@ describe("inventario de tarjetas", () => {
     assert.equal(inv.tarjetas.find((t) => t.idEfevoo === 5)!.idepClienteAjeno, 900);
   });
 
+  it("una «inactive» de Efevoo (asignada sin activar) cuenta como por activar, no como libre", () => {
+    const inv = armarInventario({ efevoo: [efevoo(1, "inactive", { conTitular: true }), efevoo(2, "inStock")], lever: [], vinculos: [], ambiente: "sandbox", errorEfevoo: null, incompleto: false });
+    assert.equal(inv.conteos.asignadas, 1);
+    assert.equal(inv.conteos.sinAsignar, 1);
+  });
+
   it("una tarjeta en inventario que Lever ya entregó no cuenta como libre", () => {
     const inv = armarInventario({
       efevoo: [efevoo(3, "inStock")],

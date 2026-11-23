@@ -87,6 +87,7 @@ export type Vinculo = { idepCliente: number; companyId: string; razonSocial: str
 function claseDeEfevoo(t: TarjetaEfevoo, enLever: FilaLever | undefined): ClaseTarjeta {
   if (t.estado === "cancelled") return "cancelada";
   if (t.estado === "blocked") return "bloqueada";
+  if (t.estado === "inactive") return "asignada";
   if (t.estado === "active") return (t.saldoCentavos ?? 0) > 0 ? "activa_con_saldo" : "activa_sin_saldo";
   return t.conTitular || t.idepCliente !== 0 || enLever ? "asignada" : "sin_asignar";
 }
