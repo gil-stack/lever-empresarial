@@ -459,6 +459,9 @@ form + .operacion-lista {
 
 .operacion-pagina > .operacion-confirmar + .hoja,
 .operacion-pagina > .metricas + .hoja,
+.operacion-pagina > .metricas + .rejilla,
+.operacion-pagina > .rejilla + .hoja,
+.operacion-pagina > .hoja + .rejilla,
 .operacion-pagina > .hoja + .metricas,
 .operacion-pagina > .operacion-ficha-cabeza + .hoja {
   margin-top: 24px;
@@ -514,4 +517,56 @@ form + .operacion-lista {
 }
 .efevoo-cancelar > summary {
   cursor: pointer;
+}
+
+/* Comisiones: el mes del cobro y los tres planes. */
+.cobro-mes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.cobro-mes input {
+  width: auto;
+}
+
+.planes-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+}
+
+.plan-tarjeta {
+  border: 1px solid var(--linea);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.plan-tarjeta > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.plan-tarjeta h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.plan-cifras {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.plan-cifras dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
 }

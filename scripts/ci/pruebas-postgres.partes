@@ -21,6 +21,7 @@
 1 tests/operacion/portal-postgres.test.ts
 1 tests/proveedores/relectura-69b.test.ts
 1 tests/esquema/deriva.test.ts
+1 tests/operacion/planes-postgres.test.ts
 2 tests/pld/reglas-postgres.test.ts
 2 tests/operacion/alta-regulada-postgres.test.ts
 2 tests/personas/colaboradores-postgres.test.ts
