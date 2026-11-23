@@ -241,6 +241,13 @@ async function recuperacionesPendientes(personas: readonly string[]): Promise<st
   return ids;
 }
 
+/** Abre el cajón del lateral y espera a que termine de deslizarse (el menú de la persona se coloca al abrir). */
+async function abrirCajon(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Secciones" }).click();
+  await expect(page.locator("#lateral")).toHaveAttribute("data-abierto", "si");
+  await page.waitForFunction(() => document.getElementById("lateral")!.getAnimations().length === 0);
+}
+
 // La persona va al pie del lateral: su menú abre hacia arriba con el perfil, el tema y «Salir». El tema ya no vive suelto
 // en el lateral ni el chip en la barra de arriba.
 test.describe("Operación SOFIPO: menú de la persona al pie del lateral", () => {
@@ -251,7 +258,7 @@ test.describe("Operación SOFIPO: menú de la persona al pie del lateral", () =>
       await page.goto("/operacion/clientes");
       await expect(page.locator(".barra-superior .cuenta")).toHaveCount(0);
       await expect(page.locator(".lateral .selector-tema")).toHaveCount(0);
-      if (ancho < 960) await page.getByRole("button", { name: "Secciones" }).click();
+      if (ancho < 960) await abrirCajon(page);
       const boton = page.locator(".operacion-lateral-pie .cuenta .menu-desplegable-boton");
       await expect(boton).toBeVisible();
       await expect(boton.locator(".persona-nombre")).not.toBeEmpty();
@@ -273,7 +280,7 @@ test.describe("Operación SOFIPO: menú de la persona al pie del lateral", () =>
       await page.screenshot({ path: test.info().outputPath(`menu-persona-${ancho}.png`) });
       await page.reload();
       await expect(page.locator("html")).toHaveAttribute("data-tema", "claro");
-      if (ancho < 960) await page.getByRole("button", { name: "Secciones" }).click();
+      if (ancho < 960) await abrirCajon(page);
       await boton.click();
       await expect(menu.getByRole("menuitemradio", { name: "Claro" })).toHaveAttribute("aria-checked", "true");
       // Con el teclado: las flechas recorren también las opciones del tema.
