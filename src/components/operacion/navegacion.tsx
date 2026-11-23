@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 
-import { IconoEmpresas, IconoInicio, IconoPendientes } from "@/components/cromo/iconos";
+import { IconoEmpresas, IconoInicio, IconoPendientes, IconoTarjetas } from "@/components/cromo/iconos";
 import { ProgresoEnlace } from "@/components/cromo/progreso-enlace";
 
 import {
@@ -23,6 +23,7 @@ import { rutaSeccionOperacion, seccionesVisibles, type RutaOperacion } from "./s
 const ICONOS: Record<RutaOperacion, () => ReactNode> = {
   "/operacion": IconoInicio,
   "/operacion/clientes": IconoEmpresas,
+  "/operacion/tarjetas": IconoTarjetas,
   "/operacion/aprobaciones": IconoPendientes,
   "/operacion/cumplimiento": IconoCumplimiento,
   "/operacion/lpb": IconoBloqueadas,
