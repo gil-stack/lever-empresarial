@@ -687,14 +687,38 @@ async function afirmarRolDeAplicacion(creado: PoolPg): Promise<void> {
 }
 
 function leerConnectionString(): string {
-  const valor = process.env.DATABASE_URL;
+  return connectionStringDeAplicacion(process.env);
+}
+
+/** Rol con el que entra la aplicación cuando la conexión se arma con `PLATAFORMA_APP_CLAVE`. */
+export const ROL_DE_APLICACION = "plataforma_app";
+
+/**
+ * El connection string del servidor. `DATABASE_URL` lo publica la integración de Neon con la
+ * dueña de la base, y la aplicación no entra como dueña. Si `PLATAFORMA_APP_CLAVE` existe, se
+ * conserva el host, la base y los parámetros de `DATABASE_URL` y se cambia la credencial por la
+ * de `plataforma_app`. Sin esa variable, `DATABASE_URL` se usa tal cual (local, pruebas, o una
+ * `DATABASE_URL` que ya trae el rol de la aplicación).
+ */
+export function connectionStringDeAplicacion(env: Readonly<Record<string, string | undefined>>): string {
+  const valor = env.DATABASE_URL;
   if (typeof valor !== "string" || valor.length === 0) {
     throw new ErrorDeDominio("base_no_configurada");
   }
   if (!valor.startsWith("postgres://") && !valor.startsWith("postgresql://")) {
     throw new ErrorDeDominio("base_no_configurada");
   }
-  return valor;
+  const clave = env.PLATAFORMA_APP_CLAVE?.trim() ?? "";
+  if (clave.length === 0) return valor;
+  let analizada: URL;
+  try {
+    analizada = new URL(valor);
+  } catch {
+    throw new ErrorDeDominio("base_no_configurada");
+  }
+  analizada.username = ROL_DE_APLICACION;
+  analizada.password = clave;
+  return analizada.toString();
 }
 
 function esLocal(connectionString: string): boolean {
