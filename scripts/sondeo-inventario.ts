@@ -3,7 +3,8 @@ import { clienteHttpEfevoo } from "../src/server/efevoo/cliente";
 import { configEfevoo } from "../src/server/efevoo/config";
 import { armarInventario } from "../src/server/efevoo/inventario";
 
-if (process.env.VERCEL_ENV === "preview") {
+async function sondear() {
+  if (process.env.VERCEL_ENV !== "preview") return;
   const config = configEfevoo();
   console.log(`SONDEO_INV config=${config ? config.ambiente : "ninguna"}`);
   if (config) {
@@ -22,3 +23,4 @@ if (process.env.VERCEL_ENV === "preview") {
     }
   }
 }
+void sondear();
