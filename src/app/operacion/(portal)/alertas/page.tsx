@@ -3,11 +3,19 @@ import Link from "next/link";
 
 import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { asignarAlertaAccion } from "@/app/operacion/acciones";
+import { guardarAjusteDeAlertaAccion } from "@/app/operacion/acciones-alertas";
 import { etiquetaCategoria, etiquetaEstado, fechaHora } from "@/components/operacion/formato";
 import { FormularioAlerta, FormularioCierre } from "@/components/operacion/formularios-alerta";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BotonEnviar, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
-import { exigirContextoOperacion, listarAlertas, listarClientes, listarPersonal } from "@/server/operacion";
+import {
+  exigirContextoOperacion,
+  listarAjustesDeAlertas,
+  listarAlertas,
+  listarClientes,
+  listarPersonal,
+} from "@/server/operacion";
+import type { AjusteDeAlerta, CategoriaAutomatica } from "@/server/operacion/tipos";
 import { puedeEnOperacion } from "@/server/operacion/permisos";
 
 export const runtime = "nodejs";
@@ -15,7 +23,13 @@ export const metadata: Metadata = { title: "Alertas · Operación" };
 
 export default async function AlertasOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
-  const [alertas, clientes, personal, params] = await Promise.all([listarAlertas(ctx), listarClientes(ctx), listarPersonal(ctx), soloTexto(searchParams)]);
+  const [alertas, clientes, personal, ajustes, params] = await Promise.all([
+    listarAlertas(ctx),
+    listarClientes(ctx),
+    listarPersonal(ctx),
+    listarAjustesDeAlertas(ctx),
+    soloTexto(searchParams),
+  ]);
   const gestiona = puedeEnOperacion(ctx, "plataforma.empresa.alta");
   const abiertas = alertas.filter((alerta) => alerta.estado === "abierta").length;
   const seguimiento = alertas.length === 0 ? "Seguimiento" : `Seguimiento · ${abiertas} ${abiertas === 1 ? "abierta" : "abiertas"} de ${alertas.length}`;
@@ -90,7 +104,95 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
           ) : undefined
         }
       />
+      <ConfigurarAlertas ajustes={ajustes} personal={personal} gestiona={gestiona} />
       <NotaRegla>Una alerta se cierra con un motivo, que no se puede reescribir.</NotaRegla>
     </PaginaOperacion>
+  );
+}
+
+/** Qué hace cada alerta automática, en palabras: cuándo se abre y cuándo se cierra sola. */
+const DESCRIPCION_AUTOMATICA: Record<CategoriaAutomatica, { titulo: string; cuando: string }> = {
+  activacion: {
+    titulo: "Prospecto nuevo por activar",
+    cuando: "Se abre al registrar un prospecto y se cierra sola cuando se aprueba o rechaza su activación.",
+  },
+  comision: {
+    titulo: "Comisión por autorizar",
+    cuando: "Se abre al proponer una comisión y se cierra sola cuando otra persona la autoriza o la rechaza.",
+  },
+};
+
+function ConfigurarAlertas({
+  ajustes,
+  personal,
+  gestiona,
+}: {
+  ajustes: AjusteDeAlerta[];
+  personal: Array<{ id: string; nombre: string }>;
+  gestiona: boolean;
+}) {
+  return (
+    <Hoja id="configurar-alertas-titulo" titulo="Configurar alertas automáticas">
+      <p className="operacion-detalle">
+        Elige qué alertas abre el sistema solo y a quién se le asignan. Los cambios aplican desde el próximo trámite; las
+        alertas que ya existen no cambian. Las alertas se ven en esta pantalla: por ahora no se mandan por correo.
+      </p>
+      <ul className="operacion-lista">
+        {ajustes.map((ajuste) => {
+          const texto = DESCRIPCION_AUTOMATICA[ajuste.categoria];
+          const responsableVigente = ajuste.responsableId !== null && personal.some((persona) => persona.id === ajuste.responsableId);
+          const asignada = ajuste.responsableId === null
+            ? "Quien hizo el trámite"
+            : responsableVigente
+              ? (ajuste.responsable ?? "Persona del personal")
+              : "Quien hizo el trámite (la persona elegida ya no está activa)";
+          return (
+            <li key={ajuste.categoria}>
+              <div className="operacion-fila">
+                <div className="operacion-fila-cuerpo">
+                  <h3>{texto.titulo}</h3>
+                  <p className="operacion-detalle">{texto.cuando}</p>
+                  <p className="operacion-meta">
+                    <span>Responsable: {asignada}</span>
+                    {ajuste.actualizadoPor && ajuste.actualizadoEn ? (
+                      <span>Último cambio: {ajuste.actualizadoPor} · {fechaHora(ajuste.actualizadoEn)}</span>
+                    ) : null}
+                  </p>
+                </div>
+                <Insignia tono={ajuste.activa ? "sello" : "neutro"}>{ajuste.activa ? "Prendida" : "Apagada"}</Insignia>
+              </div>
+              {gestiona ? (
+                <div className="operacion-acciones">
+                  <form action={guardarAjusteDeAlertaAccion}>
+                    <input type="hidden" name="categoria" value={ajuste.categoria} />
+                    <div className="campo">
+                      <label htmlFor={`activa-${ajuste.categoria}`}>Estado</label>
+                      <select id={`activa-${ajuste.categoria}`} name="activa" defaultValue={ajuste.activa ? "si" : "no"}>
+                        <option value="si">Prendida</option>
+                        <option value="no">Apagada</option>
+                      </select>
+                    </div>
+                    <div className="campo">
+                      <label htmlFor={`responsable-ajuste-${ajuste.categoria}`}>Asignar a</label>
+                      <select
+                        id={`responsable-ajuste-${ajuste.categoria}`}
+                        name="responsableId"
+                        defaultValue={responsableVigente ? (ajuste.responsableId ?? "") : ""}
+                      >
+                        <option value="">Quien hizo el trámite</option>
+                        {personal.map((persona) => (
+                          <option key={persona.id} value={persona.id}>{persona.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <BotonEnviar className="boton-texto">Guardar configuración</BotonEnviar>
+                  </form>
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </Hoja>
   );
 }

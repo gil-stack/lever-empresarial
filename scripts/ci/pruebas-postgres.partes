@@ -19,6 +19,7 @@
 1 tests/inicio/resumen-postgres.test.ts
 1 tests/aislamiento/aislamiento.test.ts
 1 tests/operacion/portal-postgres.test.ts
+1 tests/operacion/ajustes-alertas-postgres.test.ts
 1 tests/proveedores/relectura-69b.test.ts
 1 tests/esquema/deriva.test.ts
 2 tests/pld/reglas-postgres.test.ts

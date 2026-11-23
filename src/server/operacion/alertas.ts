@@ -5,7 +5,7 @@ import { conContexto, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { textoMultilinea, textoOperativo, uuidValido } from "../../dominio/operacion";
 import { auditarOperacion } from "./auditar";
-import type { AlertaOperativa } from "./tipos";
+import type { AjusteDeAlerta, AlertaOperativa, CategoriaAutomatica } from "./tipos";
 import { exigirEnOperacion } from "./permisos";
 
 export async function crearAlertaEnTransaccion(
@@ -46,6 +46,109 @@ export async function crearAlertaEnTransaccion(
     ocurridoEn: entrada.ahora,
   });
   return id;
+}
+
+/** Las alertas que el sistema abre solo, en el orden de la pantalla de configuración. */
+export const CATEGORIAS_AUTOMATICAS = ["activacion", "comision"] as const satisfies readonly CategoriaAutomatica[];
+
+function esCategoriaAutomatica(valor: unknown): valor is CategoriaAutomatica {
+  return typeof valor === "string" && (CATEGORIAS_AUTOMATICAS as readonly string[]).includes(valor);
+}
+
+/**
+ * Abre una alerta automática según la configuración del operador: si ese tipo está apagado no abre nada y devuelve
+ * `null`; si tiene responsable fijo y esa persona sigue activa en el personal, se le asigna a ella; si no, a quien
+ * hizo el trámite (lo de siempre).
+ */
+export async function crearAlertaAutomatica(
+  consulta: Consulta,
+  ctx: ContextoDePersonal,
+  entrada: { companyId: string; categoria: CategoriaAutomatica; titulo: string; detalle: string; ahora: Date },
+): Promise<string | null> {
+  const ajuste = await consulta.query(
+    `select a.activa, s.user_id as responsable_activo
+     from operational_alert_settings a
+     left join platform_staff s on s.operator_id = a.operator_id and s.user_id = a.responsable_id and s.estado = 'activo'
+     where a.operator_id = $1 and a.categoria = $2`,
+    [ctx.personal.operadorId, entrada.categoria],
+  );
+  const fila = ajuste.rows[0] as { activa?: unknown; responsable_activo?: unknown } | undefined;
+  if (fila && fila.activa === false) return null;
+  const responsableId = typeof fila?.responsable_activo === "string" ? fila.responsable_activo : ctx.persona.id;
+  return crearAlertaEnTransaccion(consulta, ctx, { ...entrada, responsableId });
+}
+
+/** La configuración de cada alerta automática. Un tipo sin ajuste guardado sale prendido y a quien hizo el trámite. */
+export async function listarAjustesDeAlertas(ctx: ContextoDePersonal): Promise<AjusteDeAlerta[]> {
+  exigirEnOperacion(ctx, "plataforma.operacion.ver");
+  const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
+    consulta.query(
+      `select a.categoria, a.activa, a.responsable_id, responsable.nombre as responsable,
+        quien.nombre as actualizado_por, a.actualizado_en
+       from operational_alert_settings a
+       left join users responsable on responsable.id = a.responsable_id
+       join users quien on quien.id = a.actualizado_por
+       where a.operator_id = $1`,
+      [ctx.personal.operadorId],
+    ),
+  );
+  const guardados = new Map(
+    (resultado.rows as Array<Record<string, unknown>>).map((fila) => [String(fila.categoria), fila] as const),
+  );
+  return CATEGORIAS_AUTOMATICAS.map((categoria) => {
+    const fila = guardados.get(categoria);
+    if (!fila) return { categoria, activa: true, responsableId: null, responsable: null, actualizadoPor: null, actualizadoEn: null };
+    return {
+      categoria,
+      activa: fila.activa !== false,
+      responsableId: typeof fila.responsable_id === "string" ? fila.responsable_id : null,
+      responsable: typeof fila.responsable === "string" ? fila.responsable : null,
+      actualizadoPor: typeof fila.actualizado_por === "string" ? fila.actualizado_por : null,
+      actualizadoEn: fila.actualizado_en ? fecha(fila.actualizado_en) : null,
+    };
+  });
+}
+
+/**
+ * Prende o apaga un tipo de alerta automática y elige su responsable (vacío: quien hizo el trámite). Solo la
+ * Administración de la plataforma; deja `alerta_configurada` en la bitácora. No toca las alertas que ya existen.
+ */
+export async function guardarAjusteDeAlerta(
+  ctx: ContextoDePersonal,
+  entrada: { categoria: unknown; activa: unknown; responsableId: unknown },
+): Promise<void> {
+  exigirEnOperacion(ctx, "plataforma.empresa.alta");
+  if (!esCategoriaAutomatica(entrada.categoria)) throw new ErrorDeDominio("ajuste_invalido");
+  if (entrada.activa !== "si" && entrada.activa !== "no") throw new ErrorDeDominio("ajuste_invalido");
+  const responsable = entrada.responsableId === "" || entrada.responsableId === null || entrada.responsableId === undefined
+    ? null
+    : entrada.responsableId;
+  if (responsable !== null && !uuidValido(responsable)) throw new ErrorDeDominio("responsable_invalido");
+  const categoria = entrada.categoria;
+  const activa = entrada.activa === "si";
+  const ahora = new Date();
+  await conContexto(basePlataforma(ctx), async (consulta) => {
+    if (responsable !== null) await exigirResponsable(consulta, ctx, responsable);
+    const guardado = await consulta.query(
+      `insert into operational_alert_settings (
+        id, operator_id, categoria, activa, responsable_id, actualizado_por, actualizado_en
+      ) values ($1, $2, $3, $4, $5, $6, $7)
+      on conflict (operator_id, categoria) do update
+        set activa = excluded.activa, responsable_id = excluded.responsable_id,
+          actualizado_por = excluded.actualizado_por, actualizado_en = excluded.actualizado_en
+      returning id`,
+      [randomUUID(), ctx.personal.operadorId, categoria, activa, responsable, ctx.persona.id, ahora],
+    );
+    const id = (guardado.rows[0] as { id?: unknown } | undefined)?.id;
+    if (typeof id !== "string") throw new ErrorDeDominio("base_no_disponible");
+    await auditarOperacion(consulta, ctx, {
+      companyId: null,
+      accion: "alerta_configurada",
+      identificador: id,
+      ocurridoEn: ahora,
+      cambio: { categoria, activa, responsable_fijo: responsable !== null },
+    });
+  });
 }
 
 export async function listarAlertas(ctx: ContextoDePersonal, companyId?: string): Promise<AlertaOperativa[]> {
