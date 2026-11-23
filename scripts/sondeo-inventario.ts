@@ -1,26 +1,19 @@
-// TEMPORAL: lee el inventario de Efevoo sandbox con el código nuevo en el build de preview. Solo cifras. Se revierte.
-import { clienteHttpEfevoo } from "../src/server/efevoo/cliente";
-import { configEfevoo } from "../src/server/efevoo/config";
-import { armarInventario } from "../src/server/efevoo/inventario";
-
+// TEMPORAL: forma cruda de getCardsList (todas) en el sandbox, sin datos personales. Se revierte.
 async function sondear() {
   if (process.env.VERCEL_ENV !== "preview") return;
-  const config = configEfevoo();
-  console.log(`SONDEO_INV config=${config ? config.ambiente : "ninguna"}`);
-  if (config) {
-    try {
-      const efevoo = clienteHttpEfevoo(config);
-      const todas = [];
-      for (let p = 1; p <= 40; p++) {
-        const l = await efevoo.listarTarjetas({ estados: "todas", pagina: p, tamano: 50 });
-        todas.push(...l.tarjetas);
-        if (p >= l.paginaFinal || l.tarjetas.length === 0) break;
-      }
-      const inv = armarInventario({ efevoo: todas, lever: [], vinculos: [], ambiente: config.ambiente, errorEfevoo: null, incompleto: false });
-      console.log(`SONDEO_INV leidas=${todas.length} conteos=${JSON.stringify(inv.conteos)}`);
-    } catch (e) {
-      console.log(`SONDEO_INV error=${(e as { codigo?: string })?.codigo ?? (e as Error)?.name}`);
-    }
+  const url = (process.env.EFEVOO_URL ?? "").trim().replace(/\/+$/, "") + "/v1/apiservice";
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json", "X-API-USER": (process.env.EFEVOO_API_USER ?? "").trim(), "X-API-KEY": (process.env.EFEVOO_API_KEY ?? "").trim() },
+    body: JSON.stringify({ method: "getCardsList", payload: { status: [], size: 50, page: 1, currency: "MXN", card_bin: "" } }),
+  });
+  const j = await r.json();
+  const resp = j?.response ?? {};
+  const meta = Object.fromEntries(Object.entries(resp).filter(([k]) => k !== "cards"));
+  console.log(`SONDEO_RAW http=${r.status} code=${j?.status?.code} meta=${JSON.stringify(meta)}`);
+  for (const c of Array.isArray(resp.cards) ? resp.cards : []) {
+    const bin = typeof c?.bin === "string" ? c.bin.replace(/[0-9](?=[0-9]{4})/g, "#") : `(${typeof c?.bin})`;
+    console.log(`SONDEO_RAW id=${JSON.stringify(c?.id)} status=${JSON.stringify(c?.status)} bin=${bin} balance=${JSON.stringify(c?.balance)} subclient=${JSON.stringify(c?.subclient)} product=${JSON.stringify(c?.product)}/${JSON.stringify(c?.subproduct)} email=${typeof c?.email === "string" && c.email.trim() ? "si" : "no"}`);
   }
 }
-void sondear();
+void sondear().catch((e) => console.log(`SONDEO_RAW error=${e?.name}`));
