@@ -30,11 +30,16 @@ const efevoo = () => {
   return url;
 };
 type EstadoFalso = {
-  clientes: { id: number; saldoCentavos: number }[];
+  clientes: { id: number; email: string; saldoCentavos: number }[];
   tarjetas: { id: number; estado: string; email: string; transacciones: unknown[] }[];
 };
 async function estadoFalso(): Promise<EstadoFalso> {
   return (await (await fetch(`${efevoo()}/estado`)).json()) as EstadoFalso;
+}
+/** Los clientes del falso que son de Ceiba (su correo de sandbox sale de su id): otros specs dan de alta los suyos. */
+async function clientesDeCeiba(): Promise<EstadoFalso["clientes"]> {
+  const correo = `empresa-${ceiba().replace(/-/g, "").slice(0, 12)}@lever.test`;
+  return (await estadoFalso()).clientes.filter((c) => c.email === correo);
 }
 async function simular(falla: Record<string, unknown>): Promise<void> {
   const r = await fetch(`${efevoo()}/simular`, { method: "POST", body: JSON.stringify(falla) });
@@ -99,7 +104,7 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     expect(envios).toBeGreaterThanOrEqual(1);
     await expect(page.getByText("Empresa dada de alta en el procesador.")).toBeVisible();
     expect(await ops("alta_cliente")).toBe(1);
-    expect((await estadoFalso()).clientes).toHaveLength(1);
+    expect(await clientesDeCeiba()).toHaveLength(1);
     await expect(page.getByRole("button", { name: "Dar de alta en el procesador" })).toHaveCount(0);
     await captura(page, "o1-alta-confirmada");
   });
@@ -113,7 +118,7 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     await page.getByLabel("Monto del depósito de prueba (pesos)").fill("1000.00");
     await dobleClic(page.getByRole("button", { name: "Depositar dinero de prueba" }), { esperar: /aviso=efevoo_deposito_confirmado/ });
     expect(await ops("deposito_prueba", "confirmada")).toBe(1);
-    expect((await estadoFalso()).clientes[0]!.saldoCentavos).toBe(100_000);
+    expect((await clientesDeCeiba())[0]!.saldoCentavos).toBe(100_000);
     await expect(page.getByText("$1,000.00").first()).toBeVisible();
     await captura(page, "o2-deposito-confirmado");
   });
