@@ -111,7 +111,7 @@ export async function leerSeccionEfevoo(ctx: ContextoDePersonal, companyIdCrudo:
   const { config, efevoo } = cliente(deps);
   const base = basePlataforma(ctx, companyId);
   const lever = await conContexto(base, async (consulta) => {
-    const empresa = registro((await aplicarSentencia(consulta, "select demostracion, estado, razon_social, rfc from companies where id = $1", [companyId])).rows[0]);
+    const empresa = registro((await aplicarSentencia(consulta, "select demostracion, de_prueba, estado, razon_social, rfc from companies where id = $1", [companyId])).rows[0]);
     const vinculo = (await aplicarSentencia(consulta, "select idep_cliente, ambiente from efevoo_clientes where company_id = $1", [companyId])).rows[0];
     const empleados = (await aplicarSentencia(consulta, "select id, nombre from efevoo_empleados_asignables($1)", [companyId])).rows
       .map((f) => ({ id: texto(registro(f).id), nombre: texto(registro(f).nombre) }));
@@ -188,6 +188,13 @@ export async function leerSeccionEfevoo(ctx: ContextoDePersonal, companyIdCrudo:
       conDomicilio: Boolean(lever.version.domicilio_calle),
       representantes: Number(lever.version.representantes),
       correo: textoONulo(lever.version.correo),
+    } : lever.empresa.de_prueba === true && config?.ambiente === "sandbox" ? {
+      // Cliente de prueba sin expediente: en sandbox el alta solo lleva la razón social y un correo de prueba.
+      razonSocial: texto(lever.empresa.razon_social),
+      rfc: texto(lever.empresa.rfc),
+      conDomicilio: false,
+      representantes: 0,
+      correo: null,
     } : null,
   };
   if (seccion.estado === "vinculada" && efevoo && seccion.idepCliente) {
@@ -231,7 +238,12 @@ async function armarAlta(ctx: ContextoDePersonal, companyId: string, config: Con
          from kyb_versiones v where v.company_id = $1 and v.estado = 'enviada' order by v.numero desc limit 1`,
       [companyId],
     )).rows[0];
-    if (!v) throw new ErrorDeDominio("expediente_sin_datos");
+    if (!v) {
+      // Un cliente de prueba (0050) no tiene expediente: en sandbox solo se manda la razón social y el correo de prueba.
+      const prueba = await razonSocialDePrueba(consulta, companyId, config.ambiente);
+      if (!prueba) throw new ErrorDeDominio("expediente_sin_datos");
+      return { version: { razon_social: prueba }, representantes: [], correo: await correoDeAltaEfevoo(consulta, companyId, config.ambiente) };
+    }
     const version = registro(v);
     const representantes = (await aplicarSentencia(
       consulta, "select nombre, rfc, curp from kyb_representantes where version_id = $1 order by nombre, id limit 4", [texto(version.id)],
@@ -465,6 +477,13 @@ export async function cerrarEnEfevoo(
 // Ayudantes ----------------------------------------------------------------------------
 
 /** Rechazo temprano antes de preparar datos o consultar inventario. La base lo repite al asentar cada operación. */
+/** La razón social de un cliente de prueba, solo con el procesador en sandbox; null en cualquier otro caso. */
+async function razonSocialDePrueba(consulta: Consulta, companyId: string, ambiente: ConfigEfevoo["ambiente"] | null): Promise<string | null> {
+  if (ambiente !== "sandbox") return null;
+  const fila = (await aplicarSentencia(consulta, "select razon_social from companies where id = $1 and de_prueba", [companyId])).rows[0];
+  return fila ? textoONulo(registro(fila).razon_social) : null;
+}
+
 async function exigirEmpresaActiva(consulta: Consulta, companyId: string, ambiente: ConfigEfevoo["ambiente"]): Promise<void> {
   if (ambiente === "sandbox") return;
   const empresa = (await aplicarSentencia(consulta, "select estado from companies where id = $1", [companyId])).rows[0];

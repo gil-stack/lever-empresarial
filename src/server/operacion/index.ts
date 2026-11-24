@@ -2,6 +2,7 @@ export * from "./activaciones";
 export * from "./alertas";
 export * from "./bitacora";
 export * from "./clientes";
+export * from "./clientes-de-prueba";
 export * from "./comisiones";
 export * from "./contexto";
 export * from "./cumplimiento";

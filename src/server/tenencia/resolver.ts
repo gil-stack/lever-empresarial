@@ -83,6 +83,7 @@ export async function resolverContexto(
         operadorId: elegida.operadorId,
         estado: elegida.estado,
         demostracion: elegida.demostracion,
+        ...(elegida.dePrueba ? { dePrueba: true } : {}),
       }
     : null;
 
@@ -116,12 +117,12 @@ export const SQL = {
    */
   bajasVencidas: "select aplicar_bajas_vencidas_propias()",
   membresias: `
-    select c.id, c.rfc, c.razon_social, c.operator_id, c.estado, c.demostracion,
+    select c.id, c.rfc, c.razon_social, c.operator_id, c.estado, c.demostracion, c.de_prueba,
            coalesce(array_agg(r.rol order by r.rol) filter (where r.rol is not null), '{}') as roles
     from memberships m
     join companies c on c.id = m.company_id
     left join membership_roles r on r.user_id = m.user_id and r.company_id = m.company_id
-    where m.user_id = $1 and m.estado = 'activa'
+    where m.user_id = $1 and m.estado = 'activa' and c.archivada_en is null
     group by c.id
     order by c.razon_social, c.id
   `,
@@ -180,6 +181,8 @@ function mapearMembresia(fila: unknown): MembresiaLeida {
     operadorId: r.operator_id,
     estado: r.estado,
     demostracion: r.demostracion,
+    // Cliente de prueba del alta rápida (0050): solo cuando lo es, para que el contexto de siempre no cambie.
+    ...(r.de_prueba === true ? { dePrueba: true } : {}),
     roles: rolesLeidos(r.roles),
   };
 }

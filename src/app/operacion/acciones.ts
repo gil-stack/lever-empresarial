@@ -15,6 +15,8 @@ import {
   decidirComision,
   exigirContextoOperacion,
   invitarPrimerAdministrador,
+  darDeAltaClienteDePrueba,
+  archivarClienteDePrueba,
   registrarProspecto,
   solicitarActivacion,
   solicitarComision,
@@ -43,6 +45,53 @@ export async function registrarProspectoAccion(previo: EstadoDelFormulario, form
   }
   actualizar();
   redirect(`/operacion/clientes/${id}?aviso=prospecto_registrado`);
+}
+
+/**
+ * Alta rápida de un cliente de prueba: queda activo, con su administrador invitado y, si el procesador responde, dado de
+ * alta en tarjetas. El resultado se pinta en la misma pantalla porque el enlace de la invitación no va en la dirección.
+ */
+export async function altaRapidaAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
+  const ctx = await exigirContextoOperacion();
+  const razonSocial = String(formData.get("razonSocial") ?? "");
+  let resultado: Awaited<ReturnType<typeof darDeAltaClienteDePrueba>>;
+  try {
+    resultado = await darDeAltaClienteDePrueba(ctx, {
+      razonSocial,
+      rfc: formData.get("rfc"),
+      nombre: formData.get("nombre"),
+      correo: formData.get("correo"),
+    });
+  } catch (error) {
+    return rechazado(previo, error, formData, ["razonSocial", "rfc", "nombre", "correo"]);
+  }
+  actualizar();
+  refresh();
+  return {
+    aviso: "cliente_prueba_creado",
+    valores: {},
+    vuelta: previo.vuelta + 1,
+    enlace: resultado.invitacion.enlace,
+    clienteDePrueba: {
+      id: resultado.companyId,
+      razonSocial: razonSocial.trim().replace(/\s+/g, " "),
+      correo: String(formData.get("correo") ?? "").trim().toLowerCase(),
+      entrega: resultado.invitacion.entrega,
+      tarjetas: resultado.tarjetas.vinculada ? null : resultado.tarjetas.codigo,
+    },
+  };
+}
+
+export async function archivarClienteDePruebaAccion(formData: FormData): Promise<void> {
+  const ctx = await exigirContextoOperacion();
+  const id = String(formData.get("companyId") ?? "");
+  try {
+    await archivarClienteDePrueba(ctx, id);
+  } catch (error) {
+    return fallo(error, `/operacion/clientes/${id}`);
+  }
+  actualizar();
+  redirect("/operacion/clientes?aviso=cliente_prueba_archivado");
 }
 
 export async function solicitarActivacionAccion(formData: FormData): Promise<void> {

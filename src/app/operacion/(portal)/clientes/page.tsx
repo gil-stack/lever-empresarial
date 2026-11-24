@@ -7,7 +7,7 @@ import { AvanceCorto } from "@/components/operacion/avance-alta";
 import { etiquetaEstado } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { Hoja, Insignia, Metrica, Metricas, Vacio } from "@/components/sistema";
-import { exigirContextoOperacion, leerHechosDelAlta, listarClientes } from "@/server/operacion";
+import { altaRapidaDisponible, exigirContextoOperacion, leerHechosDelAlta, listarClientes } from "@/server/operacion";
 import { puedeEnOperacion } from "@/server/operacion/permisos";
 
 import "@/estilo/alta-clientes.css";
@@ -21,15 +21,28 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
   const registra = puedeEnOperacion(ctx, "plataforma.prospecto.registrar");
   const avances = new Map<string, AvanceAlta>();
   for (const [id, h] of hechos) avances.set(id, avanceDelAlta(h));
-  const enAlta = clientes.filter((cliente) => cliente.estado === "prospecto" || cliente.estado === "en_alta").length;
-  const porDecidir = clientes.filter((cliente) => cliente.estado === "en_alta").length;
-  const activas = clientes.filter((cliente) => cliente.estado === "activa").length;
-  const atencion = [...avances.values()].filter((avance) => avance.siguiente?.estado === "atencion").length;
-  const alta = registra ? (
-    <Link className="boton" href="/operacion/clientes/nuevo">
-      Dar de alta cliente
-    </Link>
-  ) : undefined;
+  const reales = clientes.filter((cliente) => !cliente.dePrueba);
+  const enAlta = reales.filter((cliente) => cliente.estado === "prospecto" || cliente.estado === "en_alta").length;
+  const porDecidir = reales.filter((cliente) => cliente.estado === "en_alta").length;
+  const activas = reales.filter((cliente) => cliente.estado === "activa").length;
+  const atencion = reales.filter((cliente) => avances.get(cliente.id)?.siguiente?.estado === "atencion").length;
+  // El alta rápida de prueba: solo Administración de la plataforma y solo con las tarjetas en su ambiente de pruebas.
+  const prueba = puedeEnOperacion(ctx, "plataforma.empresa.alta") && altaRapidaDisponible();
+  const alta =
+    registra || prueba ? (
+      <div className="prueba-acciones">
+        {prueba ? (
+          <Link className="boton-secundario" href="/operacion/clientes/prueba">
+            Cliente de prueba
+          </Link>
+        ) : null}
+        {registra ? (
+          <Link className="boton" href="/operacion/clientes/nuevo">
+            Dar de alta cliente
+          </Link>
+        ) : null}
+      </div>
+    ) : undefined;
   return (
     <PaginaOperacion titulo="Clientes" aviso={params.aviso} accion={alta}>
       <Metricas etiqueta="Resumen de la cartera">
@@ -75,9 +88,23 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
                     <tr key={cliente.id}>
                       <td>
                         <Link href={`/operacion/clientes/${cliente.id}`}>{cliente.razonSocial}</Link>
+                        {cliente.dePrueba ? (
+                          <>
+                            {" "}
+                            <Insignia tono="aviso">Prueba</Insignia>
+                          </>
+                        ) : null}
                         <small className="operacion-mono">{cliente.rfc}</small>
                       </td>
-                      <td data-rotulo="Avance del alta">{avance ? <AvanceCorto avance={avance} /> : <span className="pista">Sin datos</span>}</td>
+                      <td data-rotulo="Avance del alta">
+                        {cliente.dePrueba ? (
+                          <span className="pista">Alta rápida de prueba</span>
+                        ) : avance ? (
+                          <AvanceCorto avance={avance} />
+                        ) : (
+                          <span className="pista">Sin datos</span>
+                        )}
+                      </td>
                       <td data-rotulo="Administrador">{cliente.administrador ?? <span className="pista">Sin administrador</span>}</td>
                       <td data-rotulo="Estado">
                         <Insignia tono={cliente.estado === "activa" ? "sello" : cliente.estado === "suspendida" ? "aviso" : "neutro"}>

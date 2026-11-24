@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { soloTexto, type Parametros } from "@/nucleo/direccion";
-import { solicitarActivacionAccion } from "@/app/operacion/acciones";
+import { archivarClienteDePruebaAccion, solicitarActivacionAccion } from "@/app/operacion/acciones";
 import { REGIMENES, USOS_CFDI, conNombre, etiquetaEstado, fechaDia, fechaHora, motivoDeEntrega } from "@/components/operacion/formato";
 import { AvanceDelAlta } from "@/components/operacion/avance-alta";
 import { FormularioInvitacion } from "@/components/operacion/formulario-invitacion";
@@ -113,11 +113,33 @@ export default async function FichaCliente({ params, searchParams }: { params: P
       <div className="operacion-ficha-cabeza">
         <EtiquetaMono nombre="RFC">{cliente.rfc}</EtiquetaMono>
         <Insignia tono={cliente.estado === "activa" ? "sello" : "neutro"}>{etiquetaEstado(cliente.estado)}</Insignia>
+        {cliente.dePrueba ? <Insignia tono="aviso">{cliente.archivadaEn ? "Cliente de prueba · archivado" : "Cliente de prueba"}</Insignia> : null}
       </div>
       <Rejilla
         principal={
           <>
-            {avance ? (
+            {cliente.dePrueba ? (
+              <Hoja id="prueba-titulo" titulo="Cliente de prueba">
+                <p>
+                  Se dio de alta con el alta rápida, para pruebas: nació activo, sin expediente ni aprobación, y sus tarjetas van al
+                  ambiente de pruebas.
+                </p>
+                {cliente.archivadaEn ? (
+                  <NotaRegla>Archivado el {fechaHora(cliente.archivadaEn)}. Ya no aparece en Clientes y su gente ya no entra.</NotaRegla>
+                ) : veEfevoo ? (
+                  <form action={archivarClienteDePruebaAccion} className="prueba-archivar">
+                    <input type="hidden" name="companyId" value={cliente.id} />
+                    <label className="prueba-confirmar">
+                      <input type="checkbox" name="confirmo" required /> Su gente ya no podrá entrar a esta empresa
+                    </label>
+                    <div className="acciones">
+                      <BotonEnviar>Archivar cliente de prueba</BotonEnviar>
+                      <p>Sale de la lista de Clientes. Lo hecho queda en la Bitácora.</p>
+                    </div>
+                  </form>
+                ) : null}
+              </Hoja>
+            ) : avance ? (
               <Hoja id="alta-titulo" titulo={avance.siguiente ? `Alta paso a paso · ${avance.hechos} de ${avance.total}` : "Alta completa"}>
                 <AvanceDelAlta avance={avance} acciones={accionesDelAlta} />
                 {pasoActual !== "activacion" ? solicitarActivacion : null}

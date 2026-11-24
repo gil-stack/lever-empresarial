@@ -5,6 +5,8 @@ export type ClienteResumen = {
   rfc: string;
   razonSocial: string;
   estado: EstadoCliente;
+  /** Cliente de prueba del alta rápida (0050): nació activo sin el alta regulada. */
+  dePrueba: boolean;
   altaEn: Date;
   solicitudPendienteId: string | null;
   administrador: string | null;
@@ -19,6 +21,8 @@ export type ClienteDetalle = ClienteResumen & {
   /** Quien será el primer administrador, anotado en el alta (puede no haberse anotado). */
   contactoNombre: string | null;
   contactoCorreo: string | null;
+  /** Solo un cliente de prueba se archiva: cuándo. */
+  archivadaEn: Date | null;
   historial: Array<{
     id: string;
     estadoAnterior: EstadoCliente | null;
